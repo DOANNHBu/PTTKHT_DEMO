@@ -6,6 +6,7 @@
     <title>Chợ Online - Mua bán, rao vặt</title>
     <link rel="stylesheet" href="/asset/css/style.css" />
     <link rel="stylesheet" href="/asset/css/category.css" />
+    <link rel="stylesheet" href="/asset/css/login.css" />
   </head>
   <body>
     <!-- Include Header -->
@@ -28,20 +29,22 @@
     <script src="/asset/js/products-data.js"></script>
     <!-- Liên kết file script chính -->
     <script src="/asset/js/script.js"></script>
+    <!-- Liên kết file login -->
+    <script src="/asset/js/login.js"></script>
     <script>
       // Hàm async để tải nội dung HTML
       async function loadHTML() {
         try {
           document.getElementById("header-container").innerHTML = await fetch(
-            "page/header.html"
+            "header.html"
           ).then((res) => res.text());
           document.getElementById("categories-container").innerHTML =
-            await fetch("page/categories.html").then((res) => res.text());
+            await fetch("categories.html").then((res) => res.text());
           document.getElementById("products-container").innerHTML = await fetch(
-            "page/products.html"
+            "products.html"
           ).then((res) => res.text());
           document.getElementById("product-detail-container").innerHTML =
-            await fetch("page/product-detail.html").then((res) => res.text());
+            await fetch("product-detail.html").then((res) => res.text());
 
           // Gọi hàm renderProducts sau khi tải xong products.html
           renderProducts(productsData);
