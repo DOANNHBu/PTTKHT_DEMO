@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chợ Online - Mua bán, rao vặt</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <link rel="stylesheet" href="/asset/css/category.css" />
+  </head>
+  <body>
+    <!-- Include Header -->
+    <div id="header-container"></div>
+
+    <div class="container" id="main-content">
+      <!-- Include Categories -->
+      <div id="categories-container"></div>
+
+      <!-- Include Products -->
+      <div id="products-container"></div>
+
+      <!-- Include Product Detail -->
+      <div id="product-detail-container"></div>
+    </div>
+
+    <a href="#" class="post-button">+ ĐĂNG TIN</a>
+
+    <!-- Liên kết file dữ liệu sản phẩm -->
+    <script src="/asset/js/products-data.js"></script>
+    <!-- Liên kết file script chính -->
+    <script src="/asset/js/script.js"></script>
+    <script>
+      // Hàm async để tải nội dung HTML
+      async function loadHTML() {
+        try {
+          document.getElementById("header-container").innerHTML = await fetch(
+            "page/header.html"
+          ).then((res) => res.text());
+          document.getElementById("categories-container").innerHTML =
+            await fetch("page/categories.html").then((res) => res.text());
+          document.getElementById("products-container").innerHTML = await fetch(
+            "page/products.html"
+          ).then((res) => res.text());
+          document.getElementById("product-detail-container").innerHTML =
+            await fetch("page/product-detail.html").then((res) => res.text());
+
+          // Gọi hàm renderProducts sau khi tải xong products.html
+          renderProducts(productsData);
+        } catch (error) {
+          console.error("Error loading HTML files:", error);
+        }
+      }
+
+      // Gọi hàm loadHTML
+      loadHTML();
+    </script>
+  </body>
+</html>
