@@ -131,26 +131,94 @@ function showProductList() {
 }
 
 // Tìm kiếm sản phẩm
-document.querySelector(".search-form").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const searchTerm = document
-    .querySelector(".search-input")
-    .value.toLowerCase();
-  if (!searchTerm) {
-    renderProducts(productsData);
-    return;
+// Gắn sự kiện cho form tìm kiếm
+function setupSearchForm() {
+  const searchForm = document.querySelector(".search-form");
+  if (searchForm) {
+    searchForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const searchTerm = document
+        .querySelector(".search-input")
+        .value.toLowerCase();
+      if (!searchTerm) {
+        renderProducts(productsData);
+        return;
+      }
+
+      const searchResults = productsData.filter(
+        (product) =>
+          product.title.toLowerCase().includes(searchTerm) ||
+          product.description.toLowerCase().includes(searchTerm) ||
+          product.categoryName.toLowerCase().includes(searchTerm) ||
+          product.location.toLowerCase().includes(searchTerm)
+      );
+
+      renderProducts(searchResults);
+    });
   }
+}
 
-  const searchResults = productsData.filter(
-    (product) =>
-      product.title.toLowerCase().includes(searchTerm) ||
-      product.description.toLowerCase().includes(searchTerm) ||
-      product.categoryName.toLowerCase().includes(searchTerm) ||
-      product.location.toLowerCase().includes(searchTerm)
-  );
+// Gắn sự kiện cho nút đăng xuất
+function setupLogoutButton() {
+  const logoutButton = document.getElementById("logout-button");
+  if (logoutButton) {
+    logoutButton.addEventListener("click", function () {
+      // Xóa thông tin đăng nhập
+      localStorage.removeItem("loggedInUser");
+      sessionStorage.removeItem("loggedInUser");
 
-  renderProducts(searchResults);
-});
+      // Chuyển hướng về trang login.html
+      window.location.href = "/page/login.html";
+    });
+  }
+}
+
+// Hàm async để tải nội dung HTML
+async function loadHTML() {
+  try {
+    // Tải header
+    const headerContainer = document.getElementById("header-container");
+    if (headerContainer) {
+      headerContainer.innerHTML = await fetch("header.html").then((res) =>
+        res.text()
+      );
+      // Gắn sự kiện cho nút đăng xuất ngay sau khi header được tải
+      setupLogoutButton();
+    }
+
+    // Tải các phần khác
+    const categoriesContainer = document.getElementById("categories-container");
+    if (categoriesContainer) {
+      categoriesContainer.innerHTML = await fetch("categories.html").then(
+        (res) => res.text()
+      );
+    }
+
+    const productsContainer = document.getElementById("products-container");
+    if (productsContainer) {
+      productsContainer.innerHTML = await fetch("products.html").then((res) =>
+        res.text()
+      );
+    }
+
+    const productDetailContainer = document.getElementById(
+      "product-detail-container"
+    );
+    if (productDetailContainer) {
+      productDetailContainer.innerHTML = await fetch(
+        "product-detail.html"
+      ).then((res) => res.text());
+    }
+
+    // Thiết lập các event listener sau khi tải xong HTML
+    setupSearchForm();
+
+    // Gọi hàm renderProducts sau khi tải xong products.html
+    renderProducts(productsData);
+  } catch (error) {
+    console.error("Error loading HTML files:", error);
+  }
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   const loggedInUser = localStorage.getItem("loggedInUser");
@@ -162,21 +230,9 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
-  // Gọi hàm loadHTML để tải header và các phần khác
-  loadHTML().then(() => {
-    // Gắn sự kiện cho nút Đăng xuất sau khi header đã được tải
-    const logoutButton = document.getElementById("logout-button");
-    if (logoutButton) {
-      logoutButton.addEventListener("click", function () {
-        // Xóa thông tin đăng nhập
-        localStorage.removeItem("loggedInUser");
-        sessionStorage.removeItem("loggedInUser");
-
-        // Chuyển hướng về trang login.html
-        window.location.href = "/page/login.html";
-      });
-    }
-  });
+  // Tải HTML components và khởi tạo dữ liệu
+  loadHTML();
+  loadProductsData();
 });
 
 // Khởi tạo trang

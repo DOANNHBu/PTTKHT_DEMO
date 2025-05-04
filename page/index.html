@@ -25,39 +25,9 @@
 
     <a href="#" class="post-button">+ ĐĂNG TIN</a>
 
-    <!-- Liên kết file dữ liệu sản phẩm -->
-    <!-- <script src="/asset/js/products-data.js"></script> -->
     <!-- Liên kết file script chính -->
     <script src="/asset/js/script.js"></script>
     <!-- Liên kết file login -->
     <script src="/asset/js/login.js"></script>
-    <script>
-      // Hàm async để tải nội dung HTML
-      async function loadHTML() {
-        try {
-          document.getElementById("header-container").innerHTML = await fetch(
-            "header.html"
-          ).then((res) => res.text());
-          document.getElementById("categories-container").innerHTML =
-            await fetch("categories.html").then((res) => res.text());
-          document.getElementById("products-container").innerHTML = await fetch(
-            "products.html"
-          ).then((res) => res.text());
-          document.getElementById("product-detail-container").innerHTML =
-            await fetch("product-detail.html").then((res) => res.text());
-
-          // Gọi hàm renderProducts sau khi tải xong products.html
-          renderProducts(productsData);
-        } catch (error) {
-          console.error("Error loading HTML files:", error);
-        }
-      }
-
-      // Gọi hàm loadHTML
-      loadHTML();
-
-      // Gọi hàm loadProductsData sau khi tải xong HTML
-      loadProductsData();
-    </script>
   </body>
 </html>
