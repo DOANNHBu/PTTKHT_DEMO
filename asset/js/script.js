@@ -1,5 +1,19 @@
 // Biến lưu trạng thái danh mục hiện tại
 let currentCategory = "all";
+let productsData = [];
+
+async function loadProductsData() {
+  try {
+    const response = await fetch("/asset/json/products.json"); // Sửa đường dẫn
+    if (!response.ok) {
+      throw new Error("Không thể tải file products.json");
+    }
+    productsData = await response.json();
+    renderProducts(productsData); // Hiển thị sản phẩm sau khi tải xong
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
+  }
+}
 
 // Hiển thị sản phẩm
 function renderProducts(products) {
@@ -136,6 +150,33 @@ document.querySelector(".search-form").addEventListener("submit", function (e) {
   );
 
   renderProducts(searchResults);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const loggedInUser = localStorage.getItem("loggedInUser");
+
+  // Kiểm tra trạng thái đăng nhập
+  if (!loggedInUser) {
+    // Nếu chưa đăng nhập, chuyển hướng về trang login.html
+    window.location.href = "/page/login.html";
+    return;
+  }
+
+  // Gọi hàm loadHTML để tải header và các phần khác
+  loadHTML().then(() => {
+    // Gắn sự kiện cho nút Đăng xuất sau khi header đã được tải
+    const logoutButton = document.getElementById("logout-button");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", function () {
+        // Xóa thông tin đăng nhập
+        localStorage.removeItem("loggedInUser");
+        sessionStorage.removeItem("loggedInUser");
+
+        // Chuyển hướng về trang login.html
+        window.location.href = "/page/login.html";
+      });
+    }
+  });
 });
 
 // Khởi tạo trang

@@ -1,6 +1,6 @@
 let users = [];
 
-fetch("users.json")
+fetch("/asset/json/users.json")
   .then((response) => response.json())
   .then((data) => {
     users = data;
@@ -30,10 +30,15 @@ document.getElementById("login-form").addEventListener("submit", function (e) {
   const password = document.getElementById("password").value;
 
   if (checkLogin(username, password)) {
-    hideLoginModal();
-    alert("Đăng nhập thành công!");
+    // Lưu thông tin đăng nhập vào localStorage
+    localStorage.setItem("loggedInUser", username);
+
+    // Chuyển hướng đến trang index.html
+    window.location.href = "/page/index.html";
   } else {
     document.getElementById("login-error").textContent =
       "Tên đăng nhập hoặc mật khẩu không đúng!";
   }
 });
+
+console.log("Users data loaded:", users); // Kiểm tra xem dữ liệu users có load được hay không
