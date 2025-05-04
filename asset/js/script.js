@@ -220,7 +220,6 @@ async function loadHTML() {
   } catch (error) {
     console.error("Error loading HTML files:", error);
   }
-  renderProducts(productsData);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
