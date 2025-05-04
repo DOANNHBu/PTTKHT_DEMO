@@ -24,20 +24,27 @@ function hideLoginModal() {
   document.getElementById("login-modal").style.display = "none";
 }
 
-document.getElementById("login-form").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+document.addEventListener("DOMContentLoaded", function () {
+  const loginForm = document.getElementById("login-form");
+  if (loginForm) {
+    loginForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-  if (checkLogin(username, password)) {
-    // Lưu thông tin đăng nhập vào localStorage
-    localStorage.setItem("loggedInUser", username);
+      if (checkLogin(username, password)) {
+        // Lưu thông tin đăng nhập vào localStorage
+        localStorage.setItem("loggedInUser", username);
 
-    // Chuyển hướng đến trang index.html
-    window.location.href = "/page/index.html";
+        // Chuyển hướng đến trang index.html
+        window.location.href = "/page/index.html";
+      } else {
+        document.getElementById("login-error").textContent =
+          "Tên đăng nhập hoặc mật khẩu không đúng!";
+      }
+    });
   } else {
-    document.getElementById("login-error").textContent =
-      "Tên đăng nhập hoặc mật khẩu không đúng!";
+    console.error("Không tìm thấy phần tử #login-form trong DOM.");
   }
 });
 

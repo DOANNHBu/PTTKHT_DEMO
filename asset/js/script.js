@@ -2,6 +2,12 @@
 let currentCategory = "all";
 let productsData = [];
 
+// Format giá tiền
+function formatPrice(price) {
+  if (price === 0) return "Thỏa thuận";
+  return price.toLocaleString("vi-VN") + " đ";
+}
+
 async function loadProductsData() {
   try {
     const response = await fetch("/asset/json/products.json"); // Sửa đường dẫn
@@ -41,12 +47,7 @@ function renderProducts(products) {
   });
 }
 
-// Format giá tiền
-function formatPrice(price) {
-  if (price === 0) return "Thỏa thuận";
-  return price.toLocaleString("vi-VN") + " đ";
-}
-
+//! catagory
 // Lấy tên danh mục từ id
 function getCategoryName(id) {
   const map = {
@@ -158,6 +159,7 @@ function setupSearchForm() {
   }
 }
 
+//! logout
 // Gắn sự kiện cho nút đăng xuất
 function setupLogoutButton() {
   const logoutButton = document.getElementById("logout-button");
@@ -218,6 +220,7 @@ async function loadHTML() {
   } catch (error) {
     console.error("Error loading HTML files:", error);
   }
+  renderProducts(productsData);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -235,7 +238,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadProductsData();
 });
 
-// Khởi tạo trang
-window.onload = function () {
-  renderProducts(productsData); // Hiển thị tất cả sản phẩm khi vào trang chính
-};
+// // Khởi tạo trang
+// window.onload = function () {
+//   renderProducts(productsData); // Hiển thị tất cả sản phẩm khi vào trang chính
+// };
