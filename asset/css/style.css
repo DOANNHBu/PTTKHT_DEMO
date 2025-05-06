@@ -151,3 +151,20 @@ header {
 .logout-button:hover {
   background-color: #e60000;
 }
+
+/* CSS cho nút Hoạt động */
+.activities-button {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+  margin-left: 15px;
+  transition: background-color 0.3s ease;
+}
+
+.activities-button:hover {
+  background-color: #45a049;
+}
