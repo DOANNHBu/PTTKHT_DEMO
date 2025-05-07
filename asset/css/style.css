@@ -168,3 +168,18 @@ header {
 .activities-button:hover {
   background-color: #45a049;
 }
+
+/* Nút avatar */
+.avatar-link {
+  display: inline-block;
+  margin-left: 15px;
+  vertical-align: middle;
+}
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff8800;
+  background: #fff;
+}

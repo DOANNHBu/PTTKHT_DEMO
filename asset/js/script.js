@@ -187,7 +187,13 @@ async function loadHTML() {
       // Gắn sự kiện cho nút đăng xuất ngay sau khi header được tải
       setupLogoutButton();
     }
-
+    if (headerContainer) {
+      headerContainer.innerHTML = await fetch("header.html").then((res) =>
+        res.text()
+      );
+      setupLogoutButton();
+      await setHeaderAvatar(); // Thêm dòng này
+    }
     // Tải các phần khác
     const categoriesContainer = document.getElementById("categories-container");
     if (categoriesContainer) {
@@ -236,6 +242,20 @@ document.addEventListener("DOMContentLoaded", function () {
   loadHTML();
   loadProductsData();
 });
+
+async function setHeaderAvatar() {
+  const username = localStorage.getItem("loggedInUser");
+  if (!username) return;
+  try {
+    const res = await fetch("/asset/json/users.json");
+    const users = await res.json();
+    const user = users.find((u) => u.username === username);
+    if (user && user.avatar) {
+      const avatarImg = document.getElementById("avatar-img");
+      if (avatarImg) avatarImg.src = "/asset/images/" + user.avatar;
+    }
+  } catch {}
+}
 
 // // Khởi tạo trang
 // window.onload = function () {
