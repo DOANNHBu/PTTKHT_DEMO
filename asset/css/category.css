@@ -1,0 +1,35 @@
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  gap: 15px;
+  user-select: none; /* Ngăn chọn nội dung .... */
+}
+.category {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: calc(20% - 15px);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.category:hover {
+  transform: translateY(-5px);
+}
+.category-icon {
+  background-color: #f8f9fa;
+  padding: 15px 0;
+  font-size: 24px;
+}
+.category-name {
+  padding: 10px;
+  font-weight: 500;
+}
+
+.category.active {
+  background-color: #ff8800;
+  color: white;
+  /* transform: none; Không di chuyển khi hover */
+}

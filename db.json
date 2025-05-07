@@ -1,0 +1,41 @@
+{
+  "activities": [
+    {
+      "id": "1",
+      "title": "Quyên góp sách vở quần áo",
+      "description": "Chương trình quyên góp sách vở cho học sinh vùng cao",
+      "start_date": "2025-05-13T14:00",
+      "end_date": "2025-06-13T23:00",
+      "location": "Trường THPT ABCD",
+      "guidelines": "",
+      "status": "approved",
+      "organizer_id": 1
+    }
+  ],
+  "activity_items": [
+    {
+      "id": "1",
+      "activity_id": "1",
+      "name": "Sách giáo khoa",
+      "description": "Sách giáo khoa các lớp",
+      "quantity_needed": 100,
+      "quantity_received": 8
+    },
+    {
+      "id": "2",
+      "activity_id": "1",
+      "name": "Vở viết",
+      "description": "Vở còn trống",
+      "quantity_needed": 200,
+      "quantity_received": 0
+    },
+    {
+      "id": "cb02",
+      "activity_id": 1,
+      "name": "Áo",
+      "description": "Đỗ cũ",
+      "quantity_needed": 20,
+      "quantity_received": 0
+    }
+  ]
+}
