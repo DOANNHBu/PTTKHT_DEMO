@@ -1,6 +1,6 @@
 let users = [];
 
-fetch("/asset/json/users.json")
+fetch("http://localhost:3000/users")
   .then((response) => response.json())
   .then((data) => {
     users = data;
@@ -27,30 +27,42 @@ function hideLoginModal() {
 document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const username = document.getElementById("username").value;
-      const password = document.getElementById("password").value;
-
-      if (checkLogin(username, password)) {
-        // Lưu thông tin đăng nhập vào localStorage
-        localStorage.setItem("loggedInUser", username);
-
-        // Kiểm tra nếu là admin thì chuyển đến trang admin
-        if (username === "admin") {
-          window.location.href = "/page/admin.html";
-        } else {
-          // Người dùng thường chuyển đến trang index
-          window.location.href = "/page/index.html";
-        }
-      } else {
-        document.getElementById("login-error").textContent =
-          "Tên đăng nhập hoặc mật khẩu không đúng!";
-      }
-    });
+    loginForm.addEventListener("submit", handleLogin);
   } else {
     console.error("Không tìm thấy phần tử #login-form trong DOM.");
   }
 });
+
+async function handleLogin(event) {
+  event.preventDefault();
+
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const response = await fetch(
+      `http://localhost:3000/users?username=${username}`
+    );
+    const users = await response.json();
+    const user = users[0];
+
+    if (user && user.password === password) {
+      // Lưu thông tin user vào sessionStorage thay vì localStorage
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
+
+      // Chuyển hướng dựa vào role
+      if (user.role_id === 1) {
+        window.location.href = "/page/admin.html";
+      } else {
+        window.location.href = "/page/index.html";
+      }
+    } else {
+      alert("Tên đăng nhập hoặc mật khẩu không đúng!");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Có lỗi xảy ra khi đăng nhập!");
+  }
+}
 
 console.log("Users data loaded:", users); // Kiểm tra xem dữ liệu users có load được hay không

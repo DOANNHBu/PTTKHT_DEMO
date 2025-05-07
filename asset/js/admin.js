@@ -1,9 +1,12 @@
-// Kiểm tra đăng nhập
+// Kiểm tra đăng nhập admin
 function checkAdminAuth() {
-    const user = localStorage.getItem('loggedInUser');
-    if (!user || user !== 'admin') {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    if (!currentUser || currentUser.role_id !== 1) {
+        alert('Bạn không có quyền truy cập trang này!');
         window.location.href = '/page/login.html';
+        return false;
     }
+    return true;
 }
 
 // Load nội dung cho từng section
@@ -29,30 +32,22 @@ function loadContent(section) {
 
 // Quản lý tài khoản
 function loadUserManagement() {
-    const content = `
-        <div class="card">
-            <h2>Quản lý tài khoản</h2>
-            <div class="tabs">
-                <button class="tab active">Học sinh</button>
-                <button class="tab">Giáo viên</button>
-            </div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tên người dùng</th>
-                        <th>Email</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="users-table">
-                    <!-- Data will be loaded here -->
-                </tbody>
-            </table>
-        </div>
-    `;
-    document.getElementById('content-area').innerHTML = content;
+    fetch('/page/user-management.html')
+        .then(r => r.text())
+        .then(html => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const content = doc.querySelector('.user-management').outerHTML;
+            const modal = doc.getElementById('createUserModal').outerHTML;
+            document.getElementById('content-area').innerHTML = content + modal;
+
+            // Manual init để gắn sự kiện vào DOM vừa inject
+            window.userManager = new UserManager();
+        })
+        .catch(err => {
+            console.error('Error loading user-management:', err);
+            document.getElementById('content-area')
+                .innerHTML = '<div class="error">Không thể tải trang quản lý tài khoản</div>';
+        });
 }
 
 // Duyệt bài đăng
@@ -144,12 +139,16 @@ function loadReports() {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function () {
-    checkAdminAuth();
+    if (!checkAdminAuth()) return;
 
     // Handle navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function (e) {
             e.preventDefault();
+            if (this.id === 'logout') {
+                handleLogout();
+                return;
+            }
             const section = this.getAttribute('href').substring(1);
             loadContent(section);
 
@@ -159,13 +158,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Handle logout
-    document.getElementById('logout').addEventListener('click', function (e) {
-        e.preventDefault();
-        localStorage.removeItem('loggedInUser');
-        window.location.href = '/page/login.html';
-    });
-
     // Load default content
     loadContent('dashboard');
 });
+
+// Thêm hàm xử lý đăng xuất
+function handleLogout() {
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+        sessionStorage.removeItem('currentUser');
+        window.location.href = '/page/login.html';
+    }
+}

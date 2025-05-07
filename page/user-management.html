@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tài khoản</title>
+    <link rel="stylesheet" href="/asset/css/admin.css">
+    <link rel="stylesheet" href="/asset/css/user-management.css">
+</head>
+
+<body>
+    <div class="user-management">
+        <div class="card">
+            <div class="card-header">
+                <h2>Quản lý tài khoản</h2>
+                <button class="btn btn-primary" onclick="userManager.showCreateModal()">
+                    + Tạo tài khoản mới
+                </button>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="searchUsername" placeholder="Tìm kiếm theo tên đăng nhập...">
+                <button class="btn btn-search" onclick="userManager.searchUsers()">
+                    Tìm kiếm
+                </button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" data-role="2">Học sinh</button>
+                <button class="tab" data-role="3">Giáo viên</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Họ và tên</th>
+                            <th>Email</th>
+                            <th>Lớp</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal tạo tài khoản -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Tạo tài khoản mới</h2>
+            <form id="createUserForm">
+                <div class="form-group">
+                    <label>Loại tài khoản:</label>
+                    <select name="role_id" required>
+                        <option value="2">Học sinh</option>
+                        <option value="3">Giáo viên</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tên đăng nhập:</label>
+                    <input type="text" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu:</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Họ và tên:</label>
+                    <input type="text" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group student-only">
+                    <label>Lớp:</label>
+                    <input type="text" name="class_name">
+                </div>
+                <div class="form-group">
+                    <label>Trường:</label>
+                    <input type="text" name="school_name" required>
+                </div>
+                <button type="submit" class="btn btn-submit">Tạo tài khoản</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/asset/js/user-management.js"></script>
+</body>
+
+</html>
