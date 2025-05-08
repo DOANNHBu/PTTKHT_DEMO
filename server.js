@@ -319,6 +319,33 @@ app.get("/api/categories/:category", isAuthenticated, (req, res) => {
   });
 });
 
+app.post("/api/posts", isAuthenticated, (req, res) => {
+  const { title, description, price, category, location } = req.body;
+  const authorId = req.session.user.id;
+
+  // Kiểm tra dữ liệu đầu vào
+  if (!title || !description || !price || !category || !location) {
+    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
+  }
+
+  const query = `
+    INSERT INTO posts (title, description, price, category_id, location, author_id, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+  `;
+
+  db.query(
+    query,
+    [title, description, price, category, location, authorId],
+    (err, result) => {
+      if (err) {
+        console.error("Lỗi khi thêm bài đăng:", err);
+        return res.status(500).json({ message: "Lỗi server." });
+      }
+      res.status(201).json({ message: "Bài đăng đã được thêm thành công!" });
+    }
+  );
+});
+
 // Route mặc định để phục vụ file login.html
 app.get("/", (req, res) => {
   res.redirect("page/login.html");

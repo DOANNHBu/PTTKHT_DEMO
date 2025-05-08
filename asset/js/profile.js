@@ -90,6 +90,97 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("add-post-modal");
+  const openModalButton = document.querySelector(".profile-post-btn");
+  const closeModalButton = modal.querySelector(".close-button");
+
+  // Mở modal
+  openModalButton.addEventListener("click", function () {
+    modal.style.display = "block";
+  });
+
+  // Đóng modal
+  closeModalButton.addEventListener("click", function () {
+    modal.style.display = "none";
+  });
+
+  // Đóng modal khi nhấn ra ngoài
+  window.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  });
+
+  // Xử lý gửi form thêm bài đăng
+  document
+    .getElementById("add-post-form")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          body: formData,
+          credentials: "include",
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert("Bài đăng đã được thêm thành công!");
+          modal.style.display = "none";
+          window.location.reload(); // Tải lại trang để cập nhật danh sách bài đăng
+        } else {
+          alert(result.message || "Đã xảy ra lỗi khi thêm bài đăng.");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gửi bài đăng:", error);
+        alert("Đã xảy ra lỗi khi thêm bài đăng.");
+      }
+    });
+});
+
+document
+  .getElementById("add-post-form")
+  .addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    try {
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: formData.get("title"),
+          description: formData.get("description"),
+          price: formData.get("price"),
+          category: formData.get("category"),
+          location: formData.get("location"),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Bài đăng đã được thêm thành công và đang chờ duyệt!");
+        document.getElementById("add-post-modal").style.display = "none";
+        window.location.reload(); // Tải lại trang để cập nhật danh sách bài đăng
+      } else {
+        alert(result.message || "Đã xảy ra lỗi khi thêm bài đăng.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi bài đăng:", error);
+      alert("Đã xảy ra lỗi khi thêm bài đăng.");
+    }
+  });
 // // nút đăng xuất
 // document.addEventListener("DOMContentLoaded", function () {
 //   const logoutBtn = document.getElementById("logout-button");
