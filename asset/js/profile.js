@@ -1,259 +1,156 @@
-class ProfileManager {
-  constructor() {
-    // Kiểm tra trạng thái đăng nhập từ sessionStorage thay vì localStorage
-    this.currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-
-    if (!this.currentUser) {
-      alert('Vui lòng đăng nhập để xem thông tin cá nhân');
-      window.location.href = '/page/login.html';
-      return;
-    }
-
-    this.loadUserProfile();
-    this.initializeEventListeners();
-    this.updateHeaderInfo();
-  }
-
-  async loadUserProfile() {
-    try {
-      // Thêm loading state
-      const profileInfo = document.getElementById('profileInfo');
-      if (profileInfo) {
-        profileInfo.innerHTML = '<p>Đang tải thông tin...</p>';
-      }
-
-      const response = await fetch(`http://localhost:3000/users/${this.currentUser.id}`);
-      if (!response.ok) throw new Error('Failed to load user profile');
-
-      const userData = await response.json();
-      this.currentUser = userData;
-      this.updateProfileDisplay(userData);
-
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      // Hiển thị lỗi trong giao diện
-      const profileInfo = document.getElementById('profileInfo');
-      if (profileInfo) {
-        profileInfo.innerHTML = `
-          <div class="error-message">
-            <p>Không thể tải thông tin người dùng</p>
-            <button class="btn btn-primary" onclick="location.reload()">
-              Thử lại
-            </button>
-          </div>
-        `;
-      }
-    }
-  }
-
-  updateProfileDisplay(user) {
-    const profileInfo = document.getElementById('profileInfo');
-    if (!profileInfo) return;
-
-    profileInfo.innerHTML = `
-          <p><strong>Họ và tên:</strong> ${user.full_name}</p>
-          <p><strong>Email:</strong> ${user.email}</p>
-          <p><strong>Số điện thoại:</strong> ${user.phone || 'Chưa cập nhật'}</p>
-          <p><strong>Địa chỉ:</strong> ${user.address || 'Chưa cập nhật'}</p>
-          <p><strong>Trường:</strong> ${user.school_name}</p>
-          <p><strong>Lớp:</strong> ${user.class_name || 'Không có'}</p>
-      `;
-
-    // Update avatar if exists
-    const avatarImg = document.getElementById('userAvatar');
-    if (avatarImg && user.avatar_url) {
-      avatarImg.src = user.avatar_url;
-    }
-
-    // Update school info in modal
-    document.getElementById('schoolName').textContent = user.school_name;
-    document.getElementById('className').textContent = user.class_name || 'Không có';
-  }
-
-  async updateProfile(formData) {
-    try {
-      const { confirmPassword, ...updateData } = formData;
-
-      // Show loading state
-      const submitBtn = document.querySelector('.btn-submit');
-      submitBtn.textContent = 'Đang cập nhật...';
-      submitBtn.disabled = true;
-
-      // Get current user data to compare changes
-      const currentResponse = await fetch(`http://localhost:3000/users/${this.currentUser.id}`);
-      if (!currentResponse.ok) {
-        throw new Error('Không thể tải thông tin người dùng');
-      }
-      const currentData = await currentResponse.json();
-
-      // Only include changed fields
-      const changedData = {};
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] && updateData[key] !== currentData[key]) {
-          changedData[key] = updateData[key];
-        }
-      });
-
-      // If there are changes to update
-      if (Object.keys(changedData).length > 0) {
-        const response = await fetch(`http://localhost:3000/users/${this.currentUser.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...changedData,
-            updated_at: new Date().toISOString()
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const updatedUser = await response.json();
-
-        // Update session storage
-        this.currentUser = updatedUser;
-        sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
-
-        // Update display
-        this.updateProfileDisplay(updatedUser);
-        this.closeModal();
-        alert('Cập nhật thông tin thành công!');
-      } else {
-        alert('Không có thông tin nào được thay đổi');
-        this.closeModal();
-      }
-
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert(`Lỗi cập nhật: ${error.message}`);
-    } finally {
-      // Reset button state
-      const submitBtn = document.querySelector('.btn-submit');
-      submitBtn.textContent = 'Lưu thay đổi';
-      submitBtn.disabled = false;
-    }
-  }
-
-  validateForm(formData) {
-    const { password, confirmPassword, email, full_name } = formData;
-
-    if (!full_name || full_name.trim() === '') {
-      alert('Họ và tên không được để trống');
-      return false;
-    }
-
-    if (!email || !email.match(/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/)) {
-      alert('Email không hợp lệ');
-      return false;
-    }
-
-    if (password) {
-      if (password.length < 6) {
-        alert('Mật khẩu phải có ít nhất 6 ký tự');
-        return false;
-      }
-      if (password !== confirmPassword) {
-        alert('Mật khẩu xác nhận không khớp');
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  initializeEventListeners() {
-    const updateForm = document.getElementById('updateProfileForm');
-    updateForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const formData = {
-        full_name: document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        phone: document.getElementById('phone').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        password: document.getElementById('newPassword').value,
-        confirmPassword: document.getElementById('confirmPassword').value
-      };
-
-      if (this.validateForm(formData)) {
-        await this.updateProfile(formData);
-      }
+document.addEventListener("DOMContentLoaded", async function () {
+  // Lấy thông tin người dùng
+  const userProfile = await fetch("/api/user/profile", {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .catch((err) => {
+      console.error("Lỗi khi lấy thông tin người dùng:", err);
+      return null;
     });
 
-    // Modal close handlers
-    const modal = document.getElementById('editModal');
-    const closeBtn = document.querySelector('.close');
-
-    closeBtn.onclick = () => this.closeModal();
-    window.onclick = (event) => {
-      if (event.target === modal) {
-        this.closeModal();
-      }
-    };
+  if (!userProfile) {
+    window.location.href = "/page/login.html";
+    return;
   }
 
-  openModal() {
-    const modal = document.getElementById('editModal');
+  // Hiển thị thông tin người dùng
+  document.getElementById("profile-info").innerHTML = `
+    <div class="profile-card-horizontal">
+      <div class="profile-avatar-large-wrap">
+        <img src="/asset/images/${userProfile.avatar || "default-avatar.png"}" 
+             class="profile-avatar-large" />
+      </div>
+      <div class="profile-info-box">
+        <div class="profile-details">
+          <div><b>Họ tên:</b> ${userProfile.fullname || ""}</div>
+          <div><b>Tên đăng nhập:</b> ${userProfile.username}</div>
+          <div><b>ID học sinh:</b> ${userProfile.studentId || ""}</div>
+          <div><b>Trường:</b> ${userProfile.school || ""}</div>
+          <div><b>Số điện thoại:</b> ${userProfile.phone || ""}</div>
+        </div>
+      </div>
+    </div>
+  `;
 
-    // Pre-fill form with current user data
-    document.getElementById('fullName').value = this.currentUser.full_name;
-    document.getElementById('email').value = this.currentUser.email;
-    document.getElementById('phone').value = this.currentUser.phone || '';
-    document.getElementById('address').value = this.currentUser.address || '';
+  // Lấy danh sách sản phẩm đã đăng
+  const userProducts = await fetch("/api/user/products", {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .catch((err) => {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", err);
+      return [];
+    });
 
-    modal.style.display = 'block';
+  // Hiển thị danh sách sản phẩm
+  const userProductsDiv = document.getElementById("user-products");
+  if (userProducts.length === 0) {
+    userProductsDiv.innerHTML = "<div>Chưa có sản phẩm nào.</div>";
+  } else {
+    userProductsDiv.innerHTML = `
+      <div class="profile-products-list">
+        ${userProducts
+          .map(
+            (p) => `
+          <div class="profile-product-card">
+            <div class="profile-product-img">
+              <img src="/asset/images/${p.bannerImage || "default.png"}" alt="${
+              p.title
+            }" />
+            </div>
+            <div class="profile-product-info">
+              <div class="profile-product-title">${p.title}</div>
+              <div class="profile-product-meta">
+                <span>${p.categoryName || ""}</span> | 
+                <span>${p.location || ""}</span>
+              </div>
+              <div class="profile-product-price">${
+                p.price === 0
+                  ? "Thỏa thuận"
+                  : p.price.toLocaleString("vi-VN") + " đ"
+              }</div>
+              <div class="profile-product-date">${new Date(
+                p.date
+              ).toLocaleDateString("vi-VN")}</div>
+              <div class="profile-product-status">
+                <b>Trạng thái:</b> ${
+                  p.status === "approved"
+                    ? "<span style='color: green;'>Đã duyệt</span>"
+                    : "<span style='color: orange;'>Đang chờ duyệt</span>"
+                }
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
   }
-
-  closeModal() {
-    const modal = document.getElementById('editModal');
-    modal.style.display = 'none';
-  }
-
-  // Thêm phương thức updateHeaderInfo
-  updateHeaderInfo() {
-    const userInfo = document.getElementById('userInfo');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    if (this.currentUser) {
-      userInfo.textContent = `Xin chào, ${this.currentUser.full_name}`;
-      logoutBtn.style.display = 'inline-block';
-    }
-  }
-}
-
-// Thêm hàm xử lý đăng xuất
-function handleLogout() {
-  if (confirm('Bạn có chắc muốn đăng xuất?')) {
-    sessionStorage.removeItem('currentUser');
-    window.location.href = '/page/login.html';
-  }
-}
-
-// Thêm CSS cho error message
-const style = document.createElement('style');
-style.textContent = `
-  .error-message {
-    text-align: center;
-    padding: 20px;
-    background: #fff3cd;
-    border: 1px solid #ffeeba;
-    border-radius: 5px;
-    margin: 10px 0;
-  }
-  
-  .error-message p {
-    color: #856404;
-    margin-bottom: 10px;
-  }
-`;
-document.head.appendChild(style);
-
-// Chỉ khởi tạo ProfileManager khi document đã sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
-  const profileManager = new ProfileManager();
-  window.profileManager = profileManager;
-  window.openEditModal = () => profileManager.openModal();
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = document.getElementById("add-post-modal");
+  const openModalButton = document.querySelector(".profile-post-btn");
+  const closeModalButton = modal.querySelector(".close-button");
+
+  // Mở modal
+  openModalButton.addEventListener("click", function () {
+    modal.style.display = "block";
+  });
+
+  // Đóng modal
+  closeModalButton.addEventListener("click", function () {
+    modal.style.display = "none";
+  });
+
+  // Đóng modal khi nhấn ra ngoài
+  window.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  });
+
+  // Xử lý gửi form thêm bài đăng
+  document
+    .getElementById("add-post-form")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch("/api/posts", {
+          method: "POST",
+          body: formData,
+          credentials: "include", // Đảm bảo gửi cookie session
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert("Bài đăng đã được thêm thành công và đang chờ duyệt!");
+          document.getElementById("add-post-modal").style.display = "none";
+          window.location.reload(); // Tải lại trang để cập nhật danh sách bài đăng
+        } else {
+          alert(result.message || "Đã xảy ra lỗi khi thêm bài đăng.");
+        }
+      } catch (error) {
+        console.error("Lỗi khi gửi bài đăng:", error);
+        alert("Đã xảy ra lỗi khi thêm bài đăng.");
+      }
+    });
+});
+
+// // nút đăng xuất
+// document.addEventListener("DOMContentLoaded", function () {
+//   const logoutBtn = document.getElementById("logout-button");
+//   if (logoutBtn) {
+//     logoutBtn.addEventListener("click", function () {
+//       localStorage.removeItem("loggedInUser");
+//       sessionStorage.removeItem("loggedInUser");
+//       window.location.href = "/page/login.html";
+//     });
+//   }
+// });

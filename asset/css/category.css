@@ -3,33 +3,40 @@
   flex-wrap: wrap;
   margin: 20px 0;
   gap: 15px;
-  user-select: none; /* Ngăn chọn nội dung .... */
+  justify-content: center; /* Căn giữa các danh mục */
+  user-select: none; /* Ngăn chọn nội dung */
 }
+
 .category {
   background-color: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: calc(20% - 15px);
+  width: calc(25% - 15px); /* Điều chỉnh kích thước danh mục */
   text-align: center;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
+
 .category:hover {
   transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 .category-icon {
   background-color: #f8f9fa;
-  padding: 15px 0;
-  font-size: 24px;
+  padding: 20px 0;
+  font-size: 30px; /* Tăng kích thước icon */
 }
+
 .category-name {
-  padding: 10px;
-  font-weight: 500;
+  padding: 15px;
+  font-weight: 600;
+  font-size: 16px; /* Tăng kích thước chữ */
 }
 
 .category.active {
   background-color: #ff8800;
   color: white;
-  /* transform: none; Không di chuyển khi hover */
+  transform: none; /* Không di chuyển khi hover */
 }

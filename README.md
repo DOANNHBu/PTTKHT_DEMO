@@ -1,7 +1,16 @@
-### json server
-npm install -g json-server  
-json-server --watch db.json --port 3000 
+-tải node.js
+-chạy các lệnh sau:
 
-### Đã xong hoạt động quyên góp/gây quỹ của cả admin/user
-### Xong cập nhật thông tin(User)
-### Xong quản lý người dùng(Admin)
+  +npm init -y
+  
+  +npm install express mysql2 body-parser cors
+  
+  +npm install livereload connect-livereload
+  
+  +npm install express-session --save
+  
+  +npm install multer
+
+ chạy server bằng :nodemon server.js hoặc node server.js    
+localhost:3000
+hocsinh1 - 2

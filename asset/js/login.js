@@ -1,68 +1,54 @@
-let users = [];
-
-fetch("http://localhost:3000/users")
-  .then((response) => response.json())
-  .then((data) => {
-    users = data;
-    showLoginModal(); // chỉ hiển thị modal khi đã load xong dữ liệu
-  })
-  .catch((error) => {
-    console.error("Lỗi khi tải users.json:", error);
-  });
-
 function checkLogin(username, password) {
-  return users.some(
-    (user) => user.username === username && user.password === password
-  );
-}
-
-function showLoginModal() {
-  document.getElementById("login-modal").style.display = "flex";
-}
-
-function hideLoginModal() {
-  document.getElementById("login-modal").style.display = "none";
+  return fetch("http://localhost:3000/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+    credentials: "include", // Quan trọng để cookies hoạt động cho session
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Lưu thông tin đăng nhập vào localStorage để tiện sử dụng ở client
+        localStorage.setItem("loggedInUser", data.user.username);
+        // Chuyển hướng đến trang index.html
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("login-error").textContent = data.message;
+      }
+    })
+    .catch((error) => {
+      console.error("Lỗi khi gọi API đăng nhập:", error);
+      document.getElementById("login-error").textContent =
+        "Lỗi kết nối đến máy chủ";
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  fetch("http://localhost:3000/api/auth/status", {
+    credentials: "include",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.authenticated) {
+        // Nếu đã đăng nhập, chuyển hướng về index.html
+        if (window.location.href.includes("login.html")) {
+          window.location.href = "/page/index.html";
+        }
+      }
+    })
+    .catch((error) =>
+      console.error("Lỗi kiểm tra trạng thái đăng nhập:", error)
+    );
+
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", handleLogin);
-  } else {
-    console.error("Không tìm thấy phần tử #login-form trong DOM.");
+    loginForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      checkLogin(username, password);
+    });
   }
 });
-
-async function handleLogin(event) {
-  event.preventDefault();
-
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const response = await fetch(
-      `http://localhost:3000/users?username=${username}`
-    );
-    const users = await response.json();
-    const user = users[0];
-
-    if (user && user.password === password) {
-      // Lưu thông tin user vào sessionStorage thay vì localStorage
-      sessionStorage.setItem("currentUser", JSON.stringify(user));
-
-      // Chuyển hướng dựa vào role
-      if (user.role_id === 1) {
-        window.location.href = "/page/admin.html";
-      } else {
-        window.location.href = "/page/index.html";
-      }
-    } else {
-      alert("Tên đăng nhập hoặc mật khẩu không đúng!");
-    }
-  } catch (error) {
-    console.error("Login error:", error);
-    alert("Có lỗi xảy ra khi đăng nhập!");
-  }
-}
-
-console.log("Users data loaded:", users); // Kiểm tra xem dữ liệu users có load được hay không

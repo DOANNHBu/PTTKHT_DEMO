@@ -1,84 +1,72 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hồ sơ cá nhân</title>
-  <link rel="stylesheet" href="/asset/css/style.css">
-  <link rel="stylesheet" href="/asset/css/profile.css">
-</head>
-
-<body>
-  <header>
-    <div class="container header-content">
-      <a href="/page/index.html" class="logo">CHỢ ONLINE</a>
-      <div class="header-right">
-        <span id="userInfo"></span>
-        <button id="logoutBtn" onclick="handleLogout()" style="display: none;">Đăng xuất</button>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Thông tin cá nhân</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <link rel="stylesheet" href="/asset/css/profile.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container header-content">
+        <a href="/page/index.html" class="logo">CHỢ LỚN</a>
       </div>
-    </div>
-  </header>
-
-  <div class="container">
-    <div class="profile-container">
-      <div class="profile-card">
-        <div class="avatar-section">
-          <img id="userAvatar" src="/asset/images/default-avatar.png" alt="Avatar">
-        </div>
-        <div class="info-section">
-          <h2>Thông tin cá nhân</h2>
-          <div id="profileInfo">
-            <!-- Thông tin sẽ được load bằng JavaScript -->
+    </header>
+    <div id="add-post-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Thêm bài đăng mới</h2>
+        <form id="add-post-form">
+          <div class="form-group">
+            <label for="title">Tiêu đề:</label>
+            <input type="text" id="title" name="title" required />
           </div>
-          <button class="btn btn-primary" onclick="openEditModal()">
-            Cập nhật thông tin
-          </button>
-        </div>
+          <div class="form-group">
+            <label for="description">Mô tả:</label>
+            <textarea id="description" name="description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="price">Giá:</label>
+            <input type="number" id="price" name="price" min="0" required />
+          </div>
+          <div class="form-group">
+            <label for="category">Danh mục:</label>
+            <select id="category" name="category" required>
+              <option value="">Chọn danh mục</option>
+              <option value="1">Sách</option>
+              <option value="2">Thiết bị điện tử</option>
+              <option value="3">Quần áo</option>
+              <option value="4">Dụng cụ thể thao</option>
+              <option value="5">Đồ dùng học tập</option>
+              <option value="6">Nhạc cụ</option>
+              <option value="7">Khác</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="location">Địa điểm:</label>
+            <input type="text" id="location" name="location" required />
+          </div>
+          <div class="form-group">
+            <label for="images">Hình ảnh:</label>
+            <input type="file" id="images" name="images" multiple />
+          </div>
+          <button type="submit" class="submit-button">Đăng bài</button>
+        </form>
       </div>
     </div>
-  </div>
-
-  <!-- Modal cập nhật thông tin -->
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Cập nhật thông tin</h2>
-      <form id="updateProfileForm">
-        <div class="form-group">
-          <label for="fullName">Họ và tên:</label>
-          <input type="text" id="fullName" name="full_name" required>
+    <div class="profile-main-grid">
+      <div class="profile-left-col">
+        <div id="profile-info"></div>
+        <div class="profile-actions">
+          <button class="post-button profile-post-btn">Đăng bài đăng</button>
         </div>
-        <div class="form-group">
-          <label for="email">Email:</label>
-          <input type="email" id="email" name="email" required>
-        </div>
-        <div class="form-group">
-          <label for="phone">Số điện thoại:</label>
-          <input type="tel" id="phone" name="phone">
-        </div>
-        <div class="form-group">
-          <label for="address">Địa chỉ:</label>
-          <textarea id="address" name="address"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="newPassword">Mật khẩu mới (để trống nếu không đổi):</label>
-          <input type="password" id="newPassword" name="password">
-        </div>
-        <div class="form-group">
-          <label for="confirmPassword">Xác nhận mật khẩu mới:</label>
-          <input type="password" id="confirmPassword">
-        </div>
-        <div class="school-info">
-          <p><strong>Trường:</strong> <span id="schoolName"></span></p>
-          <p><strong>Lớp:</strong> <span id="className"></span></p>
-        </div>
-        <button type="submit" class="btn btn-submit">Lưu thay đổi</button>
-      </form>
+      </div>
+      <div class="profile-right-col">
+        <h2>Sản phẩm đã đăng</h2>
+        <div id="user-products"></div>
+      </div>
     </div>
-  </div>
-
-  <script src="/asset/js/profile.js"></script>
-</body>
-
+    <script src="/asset/js/profile.js"></script>
+    <script src="/asset/js/auth-check.js"></script>
+  </body>
 </html>
