@@ -235,3 +235,9 @@
     margin-bottom: 24px;
   }
 }
+
+.profile-product-status {
+  font-size: 14px;
+  margin-top: 8px;
+  color: #555;
+}

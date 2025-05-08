@@ -151,7 +151,7 @@ app.get("/api/user/products", isAuthenticated, (req, res) => {
       p.status
     FROM posts p
     JOIN categories c ON p.category_id = c.id
-    WHERE p.author_id = ?
+    WHERE p.author_id = ? AND p.status IN ('approved', 'pending') -- Lấy sản phẩm approved hoặc pending
     ORDER BY p.created_at DESC
   `;
 
@@ -216,7 +216,7 @@ app.get("/api/posts", isAuthenticated, (req, res) => {
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     JOIN users u ON p.author_id = u.id
-    WHERE p.status = 'approved' -- Chỉ lấy sản phẩm đã được phê duyệt
+    WHERE p.status = 'approved'
     ORDER BY p.created_at DESC
   `;
 

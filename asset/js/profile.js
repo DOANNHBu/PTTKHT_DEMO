@@ -73,6 +73,13 @@ document.addEventListener("DOMContentLoaded", async function () {
               <div class="profile-product-date">${new Date(
                 p.date
               ).toLocaleDateString("vi-VN")}</div>
+              <div class="profile-product-status">
+                <b>Trạng thái:</b> ${
+                  p.status === "approved"
+                    ? "<span style='color: green;'>Đã duyệt</span>"
+                    : "<span style='color: orange;'>Đang chờ duyệt</span>"
+                }
+              </div>
             </div>
           </div>
         `
