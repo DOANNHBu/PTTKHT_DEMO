@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE TABLE IF NOT EXISTS post_images (
     id INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,
-    image_url VARCHAR(255) NOT NULL,
+    image_data MEDIUMBLOB NOT NULL, -- chứa dữ liệu ảnh
+    image_type VARCHAR(50),       -- ví dụ: 'image/jpeg' hoặc 'image/png'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );

@@ -44,10 +44,11 @@ liveReloadServer.watch(path.join(__dirname, "page"));
 liveReloadServer.watch(path.join(__dirname, "asset"));
 
 // Middleware để thêm CSP header
+// Middleware để thêm CSP header
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729; img-src 'self' data:;"
   );
   next();
 });
@@ -205,7 +206,7 @@ app.get("/api/logout", (req, res) => {
   });
 });
 
-// API: Lấy danh sách bài đăng
+// API: Lấy danh sách bài đăng (có ảnh)
 app.get("/api/posts", isAuthenticated, (req, res) => {
   const query = `
     SELECT 
@@ -217,7 +218,8 @@ app.get("/api/posts", isAuthenticated, (req, res) => {
       p.location, 
       p.status, 
       p.created_at,
-      u.username AS seller
+      u.username AS seller,
+      (SELECT image_data FROM post_images WHERE post_id = p.id LIMIT 1) AS main_image
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     JOIN users u ON p.author_id = u.id
@@ -231,6 +233,16 @@ app.get("/api/posts", isAuthenticated, (req, res) => {
       res.status(500).send("Lỗi server");
       return;
     }
+
+    // Chuyển ảnh từ Buffer sang Base64
+    results.forEach((post) => {
+      if (post.main_image) {
+        post.main_image = `data:image/jpeg;base64,${post.main_image.toString(
+          "base64"
+        )}`;
+      }
+    });
+
     res.json(results);
   });
 });
@@ -259,7 +271,7 @@ app.get("/api/posts/:id", isAuthenticated, (req, res) => {
 
   // Query để lấy hình ảnh của bài đăng
   const imagesQuery = `
-    SELECT image_url
+    SELECT image_data
     FROM post_images
     WHERE post_id = ?
   `;
@@ -284,8 +296,10 @@ app.get("/api/posts/:id", isAuthenticated, (req, res) => {
         return res.status(500).send("Lỗi server");
       }
 
-      // Thêm mảng hình ảnh vào đối tượng bài đăng
-      post.images = imageResults.map((img) => img.image_url);
+      // Chuyển ảnh từ Buffer sang Base64
+      post.images = imageResults.map(
+        (img) => `data:image/jpeg;base64,${img.image_data.toString("base64")}`
+      );
 
       res.json(post);
     });

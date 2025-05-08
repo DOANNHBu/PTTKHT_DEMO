@@ -42,7 +42,11 @@ function renderProducts(products) {
       .padStart(2, "0")}/${createdDate.getFullYear()}`;
 
     productElement.innerHTML = `
-        <div class="product-image">[Hình ảnh sản phẩm]</div>
+        <div class="product-image">
+          <img src="${
+            product.main_image || "/asset/images/default.jpg"
+          }" alt="${product.title}" />
+        </div>
         <div class="product-info">
             <div class="product-title">${product.title}</div>
             <div class="product-price">${formatPrice(product.price)}</div>
@@ -116,27 +120,24 @@ function showProductDetail(productId) {
   );
   document.getElementById("detail-category").textContent = product.categoryName;
 
-  // Đặt các trường có thể không có trong dữ liệu mới
-  document.getElementById("detail-condition").textContent =
-    product.condition || "Không xác định";
-  document.getElementById("detail-location").textContent = product.location;
+  // Hiển thị ảnh chính và ảnh phụ
+  const mainImage = document.getElementById("product-main-image");
+  const thumbnails = document.querySelector(".product-thumbnails");
 
-  // Format ngày từ created_at
-  const createdDate = new Date(product.created_at);
-  const formattedDate = `${createdDate
-    .getDate()
-    .toString()
-    .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}/${createdDate.getFullYear()}`;
-  document.getElementById("detail-date").textContent = formattedDate;
-
-  // Thông tin người bán - thay bằng thông tin mặc định nếu không có
-  document.getElementById("detail-seller").textContent = `Người bán: ${
-    product.seller || "Không xác định"
-  }`;
-  document.getElementById("detail-description").textContent =
-    product.description;
+  if (product.images && product.images.length > 0) {
+    mainImage.innerHTML = `<img src="${product.images[0]}" alt="${product.title}" />`;
+    thumbnails.innerHTML = product.images
+      .map(
+        (img) =>
+          `<div class="product-thumbnail" onclick="document.getElementById('product-main-image').innerHTML='<img src="${img}" alt="${product.title}" />'">
+            <img src="${img}" alt="${product.title}" />
+          </div>`
+      )
+      .join("");
+  } else {
+    mainImage.innerHTML = "[Hình ảnh sản phẩm]";
+    thumbnails.innerHTML = "";
+  }
 
   document.getElementById("products-list").style.display = "none";
   document.getElementById("product-detail").style.display = "block";
