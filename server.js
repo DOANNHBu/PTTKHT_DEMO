@@ -5,12 +5,33 @@ const cors = require("cors");
 const path = require("path");
 const livereload = require("livereload");
 const connectLivereload = require("connect-livereload");
+const session = require("express-session");
 const app = express();
 const PORT = 3000;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 app.use(bodyParser.json());
+app.use(connectLivereload());
+
+// Thêm session middleware
+app.use(
+  session({
+    secret: "school_exchange_secret_key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Đặt true khi dùng HTTPS
+      httpOnly: true, // Bảo mật cookie
+      maxAge: 24 * 60 * 60 * 1000, // 24 giờ
+    },
+  })
+);
 
 // Tạo server Live Reload
 const liveReloadServer = livereload.createServer();
@@ -54,8 +75,33 @@ db.connect((err) => {
   console.log("Kết nối MySQL thành công!");
 });
 
+// Kiểm tra xem người dùng đã đăng nhập chưa
+const isAuthenticated = (req, res, next) => {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  return res
+    .status(401)
+    .json({ authenticated: false, message: "Bạn cần đăng nhập để truy cập" });
+};
+
+// API: Kiểm tra trạng thái xác thực
+app.get("/api/auth/status", (req, res) => {
+  if (req.session && req.session.user) {
+    res.json({
+      authenticated: true,
+      user: {
+        username: req.session.user.username,
+        id: req.session.user.id,
+      },
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
 // API: Lấy danh sách người dùng
-app.get("/api/users", (req, res) => {
+app.get("/api/users", isAuthenticated, (req, res) => {
   db.query("SELECT * FROM users", (err, results) => {
     if (err) {
       console.error("Lỗi khi truy vấn MySQL:", err);
@@ -77,6 +123,8 @@ app.post("/api/login", (req, res) => {
       return;
     }
     if (results.length > 0) {
+      // Lưu thông tin người dùng vào session
+      req.session.user = results[0];
       res.json({ success: true, user: results[0] });
     } else {
       res.json({
@@ -87,8 +135,20 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+app.get("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Lỗi khi đăng xuất" });
+    }
+    res.clearCookie("connect.sid"); // Xóa cookie session
+    res.json({ success: true, message: "Đã đăng xuất thành công" });
+  });
+});
+
 // API: Lấy danh sách bài đăng
-app.get("/api/posts", (req, res) => {
+app.get("/api/posts", isAuthenticated, (req, res) => {
   const query = `
     SELECT 
       p.id, 
@@ -118,7 +178,7 @@ app.get("/api/posts", (req, res) => {
 });
 
 // API: Lấy chi tiết một bài đăng và hình ảnh của nó
-app.get("/api/posts/:id", (req, res) => {
+app.get("/api/posts/:id", isAuthenticated, (req, res) => {
   const postId = req.params.id;
 
   // Query để lấy thông tin bài đăng
@@ -175,7 +235,7 @@ app.get("/api/posts/:id", (req, res) => {
 });
 
 // API: Lấy sản phẩm theo danh mục
-app.get("/api/categories/:category", (req, res) => {
+app.get("/api/categories/:category", isAuthenticated, (req, res) => {
   const category = req.params.category;
 
   const query = `

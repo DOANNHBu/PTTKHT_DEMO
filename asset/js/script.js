@@ -186,12 +186,23 @@ function setupLogoutButton() {
   const logoutButton = document.getElementById("logout-button");
   if (logoutButton) {
     logoutButton.addEventListener("click", function () {
-      // Xóa thông tin đăng nhập
-      localStorage.removeItem("loggedInUser");
-      sessionStorage.removeItem("loggedInUser");
+      fetch("http://localhost:3000/api/logout", {
+        credentials: "include",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Xóa thông tin đăng nhập
+            localStorage.removeItem("loggedInUser");
+            sessionStorage.removeItem("loggedInUser");
 
-      // Chuyển hướng về trang login.html
-      window.location.href = "/page/login.html";
+            // Chuyển hướng về trang login.html
+            window.location.href = "/page/login.html";
+          } else {
+            console.error("Lỗi khi đăng xuất:", data.message);
+          }
+        })
+        .catch((error) => console.error("Lỗi khi đăng xuất:", error));
     });
   }
 }
