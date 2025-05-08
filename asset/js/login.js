@@ -1,27 +1,25 @@
-let users = [];
-
-fetch("/asset/json/users.json")
-  .then((response) => response.json())
-  .then((data) => {
-    users = data;
-    showLoginModal(); // chỉ hiển thị modal khi đã load xong dữ liệu
-  })
-  .catch((error) => {
-    console.error("Lỗi khi tải users.json:", error);
-  });
-
 function checkLogin(username, password) {
-  return users.some(
-    (user) => user.username === username && user.password === password
-  );
-}
-
-function showLoginModal() {
-  document.getElementById("login-modal").style.display = "flex";
-}
-
-function hideLoginModal() {
-  document.getElementById("login-modal").style.display = "none";
+  return fetch("http://localhost:3000/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, password }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Lưu thông tin đăng nhập vào localStorage
+        localStorage.setItem("loggedInUser", data.user.username);
+        // Chuyển hướng đến trang index.html
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("login-error").textContent = data.message;
+      }
+    })
+    .catch((error) => {
+      console.error("Lỗi khi gọi API đăng nhập:", error);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -31,21 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
       e.preventDefault();
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
-
-      if (checkLogin(username, password)) {
-        // Lưu thông tin đăng nhập vào localStorage
-        localStorage.setItem("loggedInUser", username);
-
-        // Chuyển hướng đến trang index.html
-        window.location.href = "/page/index.html";
-      } else {
-        document.getElementById("login-error").textContent =
-          "Tên đăng nhập hoặc mật khẩu không đúng!";
-      }
+      checkLogin(username, password);
     });
-  } else {
-    console.error("Không tìm thấy phần tử #login-form trong DOM.");
   }
 });
-
-console.log("Users data loaded:", users); // Kiểm tra xem dữ liệu users có load được hay không

@@ -1,0 +1,216 @@
+-- Create database
+CREATE DATABASE IF NOT EXISTS school_exchange;
+USE school_exchange;
+
+-- Create roles table
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    address TEXT,
+    school varchar(255),
+    avatar_url VARCHAR(255),
+    role_id INT NOT NULL,
+    status ENUM('active', 'locked', 'deleted') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+
+-- Create categories table
+CREATE TABLE IF NOT EXISTS categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create posts table
+CREATE TABLE IF NOT EXISTS posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    price DECIMAL(15, 2),
+    category_id INT NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    author_id INT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected', 'deleted') DEFAULT 'pending',
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+-- Create post_images table
+CREATE TABLE IF NOT EXISTS post_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    post_id INT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
+
+-- Create activities table
+CREATE TABLE IF NOT EXISTS activities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    organizer_id INT NOT NULL,
+    status ENUM('pending', 'approved', 'deleted') DEFAULT 'approved',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (organizer_id) REFERENCES users(id)
+);
+
+-- Create activity_items table
+CREATE TABLE IF NOT EXISTS activity_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    activity_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    quantity_needed INT NOT NULL,
+    quantity_received INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+);
+
+-- Create activity_participants table
+CREATE TABLE IF NOT EXISTS activity_participants (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    activity_id INT NOT NULL,
+    user_id INT NOT NULL,
+    status ENUM('interested', 'joined') DEFAULT 'interested',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    type ENUM('post_approval', 'activity_update', 'system') NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create audit_logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INT NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Insert default roles
+INSERT INTO roles (name, description) VALUES
+('admin', 'System Administrator'),
+('teacher', 'School Teacher'),
+('student', 'Student');
+
+-- Insert sample admin user (password: admin123)
+-- 1) Wipe out everything in the correct order
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE post_images;
+TRUNCATE TABLE posts;
+TRUNCATE TABLE notifications;
+TRUNCATE TABLE audit_logs;
+TRUNCATE TABLE activity_participants;
+TRUNCATE TABLE activity_items;
+TRUNCATE TABLE activities;
+TRUNCATE TABLE users;
+TRUNCATE TABLE categories;
+TRUNCATE TABLE roles;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- 2) Re‐insert sample data
+
+-- 2.1 Roles
+INSERT INTO roles (name, description) VALUES
+  ('admin',   'System Administrator'),
+  ('teacher', 'School Teacher'),
+  ('student', 'Student');
+
+-- 2.2 Users (passwords should be your bcrypt hashes)
+INSERT INTO users (username, password, email, full_name, role_id, school, phone, address, avatar_url) VALUES
+  ('admin',    '123', 'admin@school.edu',   'System Administrator', 1, 'VNU-UET', NULL,           NULL,              NULL),
+  ('teacher1', '1',       't1@school.edu',      'Teacher One',         2, 'VNU-UET', '0987654321',  '123 Faculty Rd.', NULL),
+  ('teacher2', '2',       't2@school.edu',      'Teacher Two',         2, 'VNU-UET', '0976543210',  '456 Faculty Ave.',NULL),
+  ('student1', '1',       's1@school.edu',      'Student One',         3, 'VNU-UET', '0901234567',  '789 Dorm St.',    NULL),
+  ('student2', '2',       's2@school.edu',      'Student Two',         3, 'VNU-UET', '0907654321',  '321 Dorm Blvd.',  NULL);
+
+-- 2.3 Categories
+INSERT INTO categories (name, description) VALUES
+  ('Books',       'Textbooks and study materials'),
+  ('Electronics', 'Gadgets and devices'),
+  ('Furniture',   'Desks, chairs, shelves'),
+  ('Clothing',    'Uniforms and sportswear');
+
+-- 2.4 Posts
+INSERT INTO posts (title, description, price, category_id, location, author_id, status, rejection_reason) VALUES
+  ('Used Physics Textbook', 'Good condition, second‐year level.', 150.00, 1, 'Hanoi', 4, 'approved', NULL),
+  ('Old Smartphone',        'Galaxy S9, minor scratches.',        200.00, 2, 'Hanoi', 5, 'pending',  NULL),
+  ('Office Chair',          'Ergonomic, adjustable height.',      75.00, 3, 'Hanoi', 4, 'rejected','Missing photos'),
+  ('School Hoodie',         'VNU‐UET hoodie, size M.',            30.00, 4, 'Hanoi', 5, 'approved', NULL);
+
+-- 2.5 Post Images
+INSERT INTO post_images (post_id, image_url) VALUES
+  (1, 'https://example.com/img/textbook1.jpg'),
+  (2, 'https://example.com/img/smartphone1.jpg'),
+  (3, 'https://example.com/img/chair1.jpg'),
+  (4, 'https://example.com/img/hoodie1.jpg');
+
+-- 2.6 Activities
+INSERT INTO activities (title, description, start_date, end_date, location, organizer_id, status) VALUES
+  ('Annual Book Fair',    'Buy/sell/exchange textbooks.',        '2025-05-20 09:00:00','2025-05-20 17:00:00','Main Hall', 2, 'approved'),
+  ('Electronics Workshop','Hands‐on soldering basics.',          '2025-06-05 10:00:00','2025-06-05 12:00:00','Lab 101',   3, 'approved');
+
+-- 2.7 Activity Items
+INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES
+  (1, 'Tables',         'Folding tables for booths',     10,  2),
+  (1, 'Chairs',         'Visitor seating',               20, 15),
+  (2, 'Soldering Irons','Basic soldering irons',          5,  5),
+  (2, 'Kits',           'Starter electronics kits',     10,  9);
+
+-- 2.8 Activity Participants
+INSERT INTO activity_participants (activity_id, user_id, status) VALUES
+  (1, 4, 'joined'),
+  (1, 5, 'interested'),
+  (2, 4, 'interested'),
+  (2, 5, 'joined');
+
+-- 2.9 Notifications
+INSERT INTO notifications (user_id, title, message, type, is_read) VALUES
+  (4, 'Welcome!',       'Your student account is active.',        'system',          FALSE),
+  (5, 'Post Approved',  'Your textbook post has been approved.',  'post_approval',   FALSE),
+  (4, 'Activity Update','Book Fair schedule has changed.',        'activity_update', FALSE);
+
+-- 2.10 Audit Logs
+INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value) VALUES
+  (1, 'create_user',   'users',               2, NULL,                                 '{"username":"teacher1"}'),
+  (2, 'create_post',   'posts',               1, NULL,                                 '{"title":"Used Physics Textbook"}'),
+  (3, 'approve_post',  'posts',               4, '{"status":"pending"}',               '{"status":"approved"}'),
+  (2, 'join_activity', 'activity_participants',3, NULL,                                 NULL);
