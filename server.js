@@ -112,6 +112,59 @@ app.get("/api/users", isAuthenticated, (req, res) => {
   });
 });
 
+// API: Lấy thông tin người dùng hiện tại
+app.get("/api/user/profile", isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+
+  const query = `
+    SELECT id, full_name AS fullname, username, school, phone, avatar_url AS avatar
+    FROM users
+    WHERE id = ?
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Lỗi khi truy vấn thông tin người dùng:", err);
+      return res.status(500).send("Lỗi server");
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.json(results[0]);
+  });
+});
+
+// API: Lấy danh sách sản phẩm đã đăng của người dùng
+app.get("/api/user/products", isAuthenticated, (req, res) => {
+  const userId = req.session.user.id;
+
+  const query = `
+    SELECT 
+      p.id, 
+      p.title, 
+      p.price, 
+      p.created_at AS date, 
+      p.location, 
+      c.name AS categoryName, 
+      p.status
+    FROM posts p
+    JOIN categories c ON p.category_id = c.id
+    WHERE p.author_id = ?
+    ORDER BY p.created_at DESC
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error("Lỗi khi truy vấn danh sách sản phẩm:", err);
+      return res.status(500).send("Lỗi server");
+    }
+
+    res.json(results);
+  });
+});
+
 // API: Kiểm tra đăng nhập
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
@@ -163,7 +216,7 @@ app.get("/api/posts", isAuthenticated, (req, res) => {
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     JOIN users u ON p.author_id = u.id
-    WHERE p.status = 'approved'
+    WHERE p.status = 'approved' -- Chỉ lấy sản phẩm đã được phê duyệt
     ORDER BY p.created_at DESC
   `;
 

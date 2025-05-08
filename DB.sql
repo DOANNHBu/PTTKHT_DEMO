@@ -160,13 +160,13 @@ INSERT INTO users (username, password, email, full_name, phone, address, school,
 ('admin2', '$2y$10$KlHy5iZ7O.C3bdT.tGQ1UuJpJKjL2XmOLwxR.SSjKJpTnJ0iUzjuy', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
 
 -- Người dùng thông thường (giáo viên, học sinh)
-('giaovien1', '$2y$10$Y3MKvW.5kJn9Wd8y0s2C0eXJrEf7VVha57LGxe9Hl4qMxUVL/GUWC', 'giaovien1@truong.edu.vn', 'Phạm Thị Hương', '0901234570', 'Số 101 đường Giáo Viên, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh1', '$2y$10$fmZ6ov3hUlWq0GYrLE/55OEFpKm4j/7oge1kpGLuj.WZVLvyTsI3a', 'hocsinh1@truong.edu.vn', 'Lê Văn Nam', '0901234571', 'Số 201 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh2', '$2y$10$8tJwJ5QcGqYBLnvvHLs.LeKuS/DcDR7Cz5I8VmYq0D.bvGmM36gnm', 'hocsinh2@truong.edu.vn', 'Nguyễn Thị Hà', '0901234572', 'Số 202 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh3', '$2y$10$t1Cj.7./wQoGBL8jgSgfRe3LxMYGxu/gZnQu1YlxvQlT4KlQv3PwG', 'hocsinh3@truong.edu.vn', 'Trần Văn Minh', '0901234573', 'Số 203 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
+('giaovien1', '1', 'giaovien1@truong.edu.vn', 'Phạm Thị Hương', '0901234570', 'Số 101 đường Giáo Viên, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
+('hocsinh1', '2', 'hocsinh1@truong.edu.vn', 'Lê Văn Nam', '0901234571', 'Số 201 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
+('hocsinh2', '3', 'hocsinh2@truong.edu.vn', 'Nguyễn Thị Hà', '0901234572', 'Số 202 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
+('hocsinh3', '4', 'hocsinh3@truong.edu.vn', 'Trần Văn Minh', '0901234573', 'Số 203 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
 ('hocsinh4', '$2y$10$1hGtwNfBJUVYPZnCEuIY6.oMBlOVoxUXFDOkzXKVboGKQqbI.9n2S', 'hocsinh4@truong.edu.vn', 'Phạm Thị Lan', '0901234574', 'Số 204 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
 ('hocsinh5', '$2y$10$kJ.GfGaVRMIzfKfLFYPZTO6gBVtCRkY0V9AgQyaEJapz0I/L.8yMa', 'hocsinh5@truong.edu.vn', 'Đỗ Hoàng Long', '0901234575', 'Số 205 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
-('1', '1', 'hocsinh6@truong.edu.vn', 'Vũ Thị Hồng', '0901234576', 'Số 206 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
+('sad', '1', 'hocsinh6@truong.edu.vn', 'Vũ Thị Hồng', '0901234576', 'Số 206 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
 ('giaovien2', '$2y$10$W3Sjs4VGBn4.j6Ol2iNG8ecEEPwK3QYPB6JYJYl6TXkwxPBI07aeO', 'giaovien2@truong.edu.vn', 'Trần Văn Thắng', '0901234577', 'Số 102 đường Giáo Viên, Hà Nội', 'Trường THPT Phan Đình Phùng', 2, 'active'),
 ('giaovien3', '$2y$10$rVewLiOInrLmrmKhW5Uice9z/IgAfWTQCgj/uB1G31cLUOA0pBlrS', 'giaovien3@truong.edu.vn', 'Nguyễn Thị Thanh', '0901234578', 'Số 103 đường Giáo Viên, Hà Nội', 'Trường THPT Lê Quý Đôn', 2, 'active');
 
@@ -183,7 +183,7 @@ INSERT INTO categories (name, description) VALUES
 -- Chèn bài đăng
 INSERT INTO posts (title, description, price, category_id, location, author_id, status) VALUES
 -- Sách
-('Sách Giải tích', 'Sách Giải tích lớp 12, đã sử dụng nhẹ với một số ghi chú nhỏ', 250000, 1, 'Trường THPT Nguyễn Du', 4, 'approved'),
+('Sách Giải tích', 'Sách Giải tích lớp 12, đã sử dụng nhẹ với một số ghi chú nhỏ', 250000, 1, 'Trường THPT Nguyễn Du', 4, 'pending'),
 ('Sách hướng dẫn thí nghiệm Hóa học', 'Sách hướng dẫn thí nghiệm Hóa học lớp 11, chưa sử dụng', 150000, 1, 'Trường THPT Chu Văn An', 6, 'approved'),
 ('Bộ sách Văn học', 'Bộ 5 cuốn sách văn học kinh điển cần thiết cho lớp Văn', 300000, 1, 'Trường THPT Việt Đức', 8, 'approved'),
 ('Sách Vật lý cho Sinh viên và Kỹ sư', 'Sách Vật lý đại học trong tình trạng tuyệt vời', 350000, 1, 'Trường THPT Phan Đình Phùng', 9, 'approved'),
@@ -299,3 +299,6 @@ INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_
 (1, 'create', 'activity', 1, NULL, '{"title":"Hội chợ trao đổi sách","status":"pending"}'),
 (2, 'update', 'activity', 1, '{"status":"pending"}', '{"status":"approved"}'),
 (1, 'create', 'user', 4, NULL, '{"username":"hocsinh1","status":"active"}');
+
+
+
