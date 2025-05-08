@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 });
 
 // Phục vụ các file tĩnh (HTML, CSS, JS) từ thư mục "page" và "asset"
-app.use("/page", express.static(path.join(__dirname, "page"))); // Sửa ở đây
+app.use("/page", express.static(path.join(__dirname, "page")));
 app.use("/asset", express.static(path.join(__dirname, "asset")));
 
 // Reload trình duyệt khi có thay đổi
@@ -39,10 +39,11 @@ liveReloadServer.server.once("connection", () => {
 
 // MySQL Connection
 const db = mysql.createConnection({
-  host: "127.0.0.1", // Thay bằng host của bạn
-  user: "root", // Thay bằng username của bạn
-  password: "root", // Thay bằng password của bạn
-  database: "school_exchange", // Tên database
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "school_exchange",
+  port: 3306,
 });
 
 db.connect((err) => {
@@ -83,6 +84,125 @@ app.post("/api/login", (req, res) => {
         message: "Tên đăng nhập hoặc mật khẩu không đúng!",
       });
     }
+  });
+});
+
+// API: Lấy danh sách bài đăng
+app.get("/api/posts", (req, res) => {
+  const query = `
+    SELECT 
+      p.id, 
+      p.title, 
+      p.description, 
+      p.price, 
+      c.name AS categoryName, 
+      p.location, 
+      p.status, 
+      p.created_at,
+      u.username AS seller
+    FROM posts p
+    JOIN categories c ON p.category_id = c.id
+    JOIN users u ON p.author_id = u.id
+    WHERE p.status = 'approved'
+    ORDER BY p.created_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Lỗi khi truy vấn danh sách bài đăng:", err);
+      res.status(500).send("Lỗi server");
+      return;
+    }
+    res.json(results);
+  });
+});
+
+// API: Lấy chi tiết một bài đăng và hình ảnh của nó
+app.get("/api/posts/:id", (req, res) => {
+  const postId = req.params.id;
+
+  // Query để lấy thông tin bài đăng
+  const postQuery = `
+    SELECT 
+      p.id, 
+      p.title, 
+      p.description, 
+      p.price, 
+      c.name AS categoryName, 
+      p.location, 
+      p.status, 
+      p.created_at,
+      u.username AS seller
+    FROM posts p
+    JOIN categories c ON p.category_id = c.id
+    JOIN users u ON p.author_id = u.id
+    WHERE p.id = ? AND p.status = 'approved'
+  `;
+
+  // Query để lấy hình ảnh của bài đăng
+  const imagesQuery = `
+    SELECT image_url
+    FROM post_images
+    WHERE post_id = ?
+  `;
+
+  // Thực hiện truy vấn thông tin bài đăng
+  db.query(postQuery, [postId], (err, postResults) => {
+    if (err) {
+      console.error("Lỗi khi truy vấn chi tiết bài đăng:", err);
+      return res.status(500).send("Lỗi server");
+    }
+
+    if (postResults.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+    }
+
+    const post = postResults[0];
+
+    // Thực hiện truy vấn hình ảnh
+    db.query(imagesQuery, [postId], (err, imageResults) => {
+      if (err) {
+        console.error("Lỗi khi truy vấn hình ảnh bài đăng:", err);
+        return res.status(500).send("Lỗi server");
+      }
+
+      // Thêm mảng hình ảnh vào đối tượng bài đăng
+      post.images = imageResults.map((img) => img.image_url);
+
+      res.json(post);
+    });
+  });
+});
+
+// API: Lấy sản phẩm theo danh mục
+app.get("/api/categories/:category", (req, res) => {
+  const category = req.params.category;
+
+  const query = `
+    SELECT 
+      p.id, 
+      p.title, 
+      p.description, 
+      p.price, 
+      c.name AS categoryName, 
+      p.location, 
+      p.status, 
+      p.created_at,
+      u.username AS seller
+    FROM posts p
+    JOIN categories c ON p.category_id = c.id
+    JOIN users u ON p.author_id = u.id
+    WHERE c.name = ? AND p.status = 'approved'
+    ORDER BY p.created_at DESC
+  `;
+
+  db.query(query, [category], (err, results) => {
+    if (err) {
+      console.error("Lỗi khi truy vấn sản phẩm theo danh mục:", err);
+      return res.status(500).send("Lỗi server");
+    }
+
+    res.json(results);
   });
 });
 

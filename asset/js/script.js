@@ -4,15 +4,16 @@ let productsData = [];
 
 // Format giá tiền
 function formatPrice(price) {
-  if (price === 0) return "Thỏa thuận";
-  return price.toLocaleString("vi-VN") + " đ";
+  if (!price || price === 0) return "Thỏa thuận";
+  return parseFloat(price).toLocaleString("vi-VN") + " đ";
 }
 
 async function loadProductsData() {
   try {
-    const response = await fetch("/asset/json/products.json"); // Sửa đường dẫn
+    // Thay đổi: Sử dụng API endpoint từ server thay vì file JSON
+    const response = await fetch("/api/posts");
     if (!response.ok) {
-      throw new Error("Không thể tải file products.json");
+      throw new Error("Không thể tải dữ liệu sản phẩm từ server");
     }
     productsData = await response.json();
     renderProducts(productsData); // Hiển thị sản phẩm sau khi tải xong
@@ -31,6 +32,15 @@ function renderProducts(products) {
     productElement.className = "product";
     productElement.onclick = () => showProductDetail(product.id);
 
+    // Tạo ngày định dạng
+    const createdDate = new Date(product.created_at);
+    const formattedDate = `${createdDate
+      .getDate()
+      .toString()
+      .padStart(2, "0")}/${(createdDate.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}/${createdDate.getFullYear()}`;
+
     productElement.innerHTML = `
         <div class="product-image">[Hình ảnh sản phẩm]</div>
         <div class="product-info">
@@ -38,7 +48,7 @@ function renderProducts(products) {
             <div class="product-price">${formatPrice(product.price)}</div>
             <div class="product-meta">
                 <div>${product.location}</div>
-                <div>${product.date}</div>
+                <div>${formattedDate}</div>
             </div>
         </div>
       `;
@@ -48,21 +58,18 @@ function renderProducts(products) {
 }
 
 //! catagory
-// Lấy tên danh mục từ id
-function getCategoryName(id) {
+// Lấy tên danh mục từ tiếng Việt sang id
+function getCategoryId(vietnameseName) {
   const map = {
-    electronics: "Điện tử",
-    vehicle: "Xe cộ",
-    property: "Bất động sản",
-    job: "Việc làm",
-    service: "Dịch vụ",
-    fashion: "Thời trang",
-    furniture: "Nội thất",
-    pet: "Thú cưng",
-    sport: "Thể thao",
-    book: "Sách",
+    Sách: "Books",
+    "Điện tử": "Electronics",
+    "Quần áo": "Clothing",
+    "Dụng cụ thể thao": "Sports Equipment",
+    "Dụng cụ học tập": "School Supplies",
+    "Nhạc cụ": "Musical Instruments",
+    Khác: "Other",
   };
-  return map[id];
+  return map[vietnameseName];
 }
 
 // Lọc sản phẩm theo danh mục
@@ -84,16 +91,16 @@ function filterByCategory(category) {
   // Đổi trạng thái active
   allCategories.forEach((el) => {
     const categoryName = el.querySelector(".category-name").textContent;
-    if (categoryName === getCategoryName(category)) {
+    if (categoryName === category) {
       el.classList.add("active");
     } else {
       el.classList.remove("active");
     }
   });
 
-  // Lọc và hiển thị sản phẩm
+  // Lọc và hiển thị sản phẩm theo categoryName (tiếng Việt)
   const filteredProducts = productsData.filter(
-    (product) => product.category === category
+    (product) => product.categoryName === category
   );
   renderProducts(filteredProducts);
 }
@@ -108,12 +115,26 @@ function showProductDetail(productId) {
     product.price
   );
   document.getElementById("detail-category").textContent = product.categoryName;
-  document.getElementById("detail-condition").textContent = product.condition;
+
+  // Đặt các trường có thể không có trong dữ liệu mới
+  document.getElementById("detail-condition").textContent =
+    product.condition || "Không xác định";
   document.getElementById("detail-location").textContent = product.location;
-  document.getElementById("detail-date").textContent = product.date;
-  document.getElementById(
-    "detail-seller"
-  ).textContent = `Người bán: ${product.seller}`;
+
+  // Format ngày từ created_at
+  const createdDate = new Date(product.created_at);
+  const formattedDate = `${createdDate
+    .getDate()
+    .toString()
+    .padStart(2, "0")}/${(createdDate.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}/${createdDate.getFullYear()}`;
+  document.getElementById("detail-date").textContent = formattedDate;
+
+  // Thông tin người bán - thay bằng thông tin mặc định nếu không có
+  document.getElementById("detail-seller").textContent = `Người bán: ${
+    product.seller || "Không xác định"
+  }`;
   document.getElementById("detail-description").textContent =
     product.description;
 
@@ -221,8 +242,8 @@ async function loadHTML() {
     // Thiết lập các event listener sau khi tải xong HTML
     setupSearchForm();
 
-    // Gọi hàm renderProducts sau khi tải xong products.html
-    renderProducts(productsData);
+    // Tải dữ liệu sản phẩm từ API
+    await loadProductsData();
   } catch (error) {
     console.error("Error loading HTML files:", error);
   }
@@ -240,24 +261,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Tải HTML components và khởi tạo dữ liệu
   loadHTML();
-  loadProductsData();
 });
 
 async function setHeaderAvatar() {
   const username = localStorage.getItem("loggedInUser");
   if (!username) return;
   try {
-    const res = await fetch("/asset/json/users.json");
+    const res = await fetch("/api/users");
     const users = await res.json();
     const user = users.find((u) => u.username === username);
-    if (user && user.avatar) {
+    if (user && user.avatar_url) {
       const avatarImg = document.getElementById("avatar-img");
-      if (avatarImg) avatarImg.src = "/asset/images/" + user.avatar;
+      if (avatarImg) avatarImg.src = "/asset/images/" + user.avatar_url;
     }
-  } catch {}
+  } catch (error) {
+    console.error("Error loading user avatar:", error);
+  }
 }
-
-// // Khởi tạo trang
-// window.onload = function () {
-//   renderProducts(productsData); // Hiển thị tất cả sản phẩm khi vào trang chính
-// };
