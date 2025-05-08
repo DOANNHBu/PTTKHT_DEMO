@@ -8,6 +8,10 @@ const connectLivereload = require("connect-livereload");
 const session = require("express-session");
 const app = express();
 const PORT = 3000;
+const multer = require("multer");
+
+// Cấu hình multer
+const upload = multer();
 
 // Middleware
 app.use(
@@ -16,6 +20,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(bodyParser.urlencoded({ extended: true })); // Thêm dòng này
 app.use(bodyParser.json());
 app.use(connectLivereload());
 
@@ -319,7 +324,8 @@ app.get("/api/categories/:category", isAuthenticated, (req, res) => {
   });
 });
 
-app.post("/api/posts", isAuthenticated, (req, res) => {
+// API: Thêm bài đăng
+app.post("/api/posts", isAuthenticated, upload.none(), (req, res) => {
   const { title, description, price, category, location } = req.body;
   const authorId = req.session.user.id;
 
