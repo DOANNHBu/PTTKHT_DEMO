@@ -62,3 +62,21 @@ function logout() {
     })
     .catch((error) => console.error("Lỗi khi đăng xuất:", error));
 }
+
+function checkAuthAndRole() {
+  const loggedInUser = localStorage.getItem("loggedInUser");
+  const userRole = localStorage.getItem("userRole");
+
+  // Kiểm tra cả đăng nhập và role
+  if (!loggedInUser || userRole !== "2") {
+    window.location.href = "/page/login.html";
+    return false;
+  }
+  return true;
+}
+
+// Kiểm tra khi tải trang và sau mỗi thao tác yêu cầu xác thực
+document.addEventListener("DOMContentLoaded", checkAuthAndRole);
+
+// Thêm event listener cho các yêu cầu API
+document.addEventListener("fetchstart", checkAuthAndRole);

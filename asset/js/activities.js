@@ -1,80 +1,154 @@
-let events = [];
+let activities = [];
 
-// Tải dữ liệu sự kiện từ file JSON
-async function loadEvents() {
+// Thay đổi hàm tải dữ liệu hoạt động
+async function loadActivities() {
   try {
-    const response = await fetch("/asset/json/events.json");
+    const response = await fetch("/api/public/activities");
+
     if (!response.ok) {
-      throw new Error("Không thể tải dữ liệu sự kiện.");
+      throw new Error("Không thể tải dữ liệu hoạt động.");
     }
-    events = await response.json();
-    renderEventsList(); // Hiển thị danh sách sự kiện sau khi tải xong
+
+    activities = await response.json();
+    renderActivitiesList();
   } catch (error) {
-    console.error("Lỗi khi tải dữ liệu sự kiện:", error);
+    console.error("Lỗi khi tải dữ liệu hoạt động:", error);
   }
 }
 
-// Hiển thị danh sách sự kiện
-function renderEventsList() {
-  const eventsList = document.getElementById("events-list");
-  const eventDetail = document.getElementById("event-detail");
-  eventsList.innerHTML = ""; // Xóa nội dung cũ
+// Cập nhật hàm renderActivitiesList
+function renderActivitiesList() {
+  const activitiesList = document.getElementById("activities-list");
+  const activityDetail = document.getElementById("activity-detail");
+  activitiesList.innerHTML = "";
 
-  events.forEach((event) => {
-    const eventElement = document.createElement("div");
-    eventElement.className = "event-item";
-    eventElement.innerHTML = `
-        <div class="event-content">
-          <div class="event-text">
-            <h3>${event.title}</h3>
-            <p><strong>Ngày:</strong> ${event.date}</p>
-            <p><strong>Địa điểm:</strong> ${event.location}</p>
-            <button onclick="showEventDetail(${event.id})">Xem chi tiết</button>
-          </div>
-          <div class="event-image">
-            <img src="/asset/images/${event.bannerImage}" alt="${event.title}" />
-          </div>
-        </div>
-      `;
-    eventsList.appendChild(eventElement);
+  activities.forEach((activity) => {
+    const startDate = new Date(activity.start_date);
+    const endDate = new Date(activity.end_date);
+
+    const activityElement = document.createElement("div");
+    activityElement.className = "event-item";
+    activityElement.innerHTML = `
+            <div class="event-content">
+                <div class="event-text">
+                    <h3>${activity.title}</h3>
+                    <p><strong>Thời gian:</strong> ${formatDateRange(
+                      startDate,
+                      endDate
+                    )}</p>
+                    <p><strong>Địa điểm:</strong> ${activity.location}</p>
+                    <p><strong>Đơn vị tổ chức:</strong> ${
+                      activity.name_organizer
+                    }</p>
+                    <button onclick="showActivityDetail(${
+                      activity.id
+                    })">Xem chi tiết</button>
+                </div>
+            </div>
+        `;
+    activitiesList.appendChild(activityElement);
   });
 
-  // Ẩn chi tiết sự kiện khi hiển thị danh sách
-  eventDetail.style.display = "none";
-  eventsList.style.display = "block";
+  if (activityDetail) {
+    activityDetail.style.display = "none";
+  }
+  activitiesList.style.display = "block";
 }
 
-// Hiển thị chi tiết sự kiện
-function showEventDetail(eventId) {
-  const event = events.find((e) => e.id === eventId);
-  if (!event) return;
+// Cập nhật hàm showActivityDetail
+async function showActivityDetail(activityId) {
+  try {
+    const response = await fetch(`/api/public/activities/${activityId}`);
 
-  const eventDetail = document.getElementById("event-detail");
-  const eventsList = document.getElementById("events-list");
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
 
-  const detailImagesHTML = event.detailImages
-    .map(
-      (image) =>
-        `<img src="/asset/images/${image}" alt="${event.title}" class="detail-image" />`
-    )
-    .join("");
+    const activity = await response.json();
+    const activityDetail = document.getElementById("activity-detail");
+    const activitiesList = document.getElementById("activities-list");
 
-  eventDetail.innerHTML = `
-        <h2>${event.title}</h2>
-        <img src="/asset/images/${event.bannerImage}" alt="${event.title}" class="event-banner" />
-        <p><strong>Ngày:</strong> ${event.date}</p>
-        <p><strong>Địa điểm:</strong> ${event.location}</p>
-        <p>${event.description}</p>
-        <div class="detail-images">${detailImagesHTML}</div>
-        <button id="back-button" onclick="renderEventsList()">Quay lại</button>
-      `;
+    const startDate = new Date(activity.start_date);
+    const endDate = new Date(activity.end_date);
 
-  // Hiển thị chi tiết sự kiện và ẩn danh sách
-  eventDetail.style.display = "block";
-  eventsList.style.display = "none";
+    activityDetail.innerHTML = `
+            <h2>${activity.title}</h2>
+            <div class="activity-info">
+                <p><strong>Thời gian:</strong> ${formatDateRange(
+                  startDate,
+                  endDate
+                )}</p>
+                <p><strong>Địa điểm:</strong> ${activity.location}</p>
+                <p><strong>Đơn vị tổ chức:</strong> ${
+                  activity.name_organizer
+                }</p>
+                <p><strong>Mô tả:</strong> ${activity.description}</p>
+                ${
+                  activity.guidelines
+                    ? `<p><strong>Hướng dẫn:</strong> ${activity.guidelines}</p>`
+                    : ""
+                }
+            </div>
+
+            <div class="donation-items">
+                <h3>Danh sách vật phẩm cần quyên góp</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tên vật phẩm</th>
+                            <th>Mô tả</th>
+                            <th>Số lượng cần</th>
+                            <th>Đã nhận</th>
+                            <th>Còn thiếu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${activity.items
+                          .map(
+                            (item) => `
+                            <tr>
+                                <td>${item.name}</td>
+                                <td>${item.description || ""}</td>
+                                <td>${item.quantity_needed}</td>
+                                <td>${item.quantity_received}</td>
+                                <td>${
+                                  item.quantity_needed - item.quantity_received
+                                }</td>
+                            </tr>
+                        `
+                          )
+                          .join("")}
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="renderActivitiesList()">Quay lại</button>
+        `;
+
+    activityDetail.style.display = "block";
+    activitiesList.style.display = "none";
+  } catch (error) {
+    console.error("Error viewing activity:", error);
+    alert("Không thể tải thông tin hoạt động");
+  }
+}
+
+// Hàm hỗ trợ format ngày tháng
+function formatDateRange(startDate, endDate) {
+  const options = {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+
+  return `${startDate.toLocaleString(
+    "vi-VN",
+    options
+  )} - ${endDate.toLocaleString("vi-VN", options)}`;
 }
 
 // Khởi tạo trang
 document.addEventListener("DOMContentLoaded", function () {
-  loadEvents(); // Tải dữ liệu sự kiện khi trang được tải
+  loadActivities();
 });

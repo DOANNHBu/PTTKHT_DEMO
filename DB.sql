@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS activities (
     end_date DATETIME NOT NULL,
     location VARCHAR(100) NOT NULL,
     organizer_id INT NOT NULL,
+    name_organizer VARCHAR(255) NOT NULL, -- Thêm trường mới
+    guidelines TEXT,
     status ENUM('pending', 'approved', 'deleted') DEFAULT 'approved',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -105,7 +107,7 @@ CREATE TABLE IF NOT EXISTS activity_items (
     activity_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    quantity_needed INT NOT NULL,
+    quantity_needed INT NOT NULL DEFAULT 0,
     quantity_received INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE

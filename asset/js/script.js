@@ -293,10 +293,11 @@ async function loadHTML() {
 
 document.addEventListener("DOMContentLoaded", function () {
   const loggedInUser = localStorage.getItem("loggedInUser");
+  const userRole = localStorage.getItem("userRole");
 
-  // Kiểm tra trạng thái đăng nhập
-  if (!loggedInUser) {
-    // Nếu chưa đăng nhập, chuyển hướng về trang login.html
+  // Kiểm tra trạng thái đăng nhập và role
+  if (!loggedInUser || userRole !== "2") {
+    // Nếu chưa đăng nhập hoặc không phải user role, chuyển về trang login
     window.location.href = "/page/login.html";
     return;
   }
