@@ -63,11 +63,17 @@ function renderProducts(products) {
     const productImage =
       product.thumbnail || "/asset/images/default-thumbnail.png";
 
+    // Kiểm tra trạng thái "availability" để thêm lớp CSS "sold-out"
+    const productInfoClass =
+      product.availability === "sold"
+        ? "product-info sold-out"
+        : "product-info";
+
     productElement.innerHTML = `
       <div class="product-image">
         <img src="${productImage}" alt="Thumbnail" />
       </div>
-      <div class="product-info">
+      <div class="${productInfoClass}">
         <div class="product-title">${product.title}</div>
         <div class="product-price">${formatPrice(product.price)}</div>
         <div class="product-meta">
@@ -103,8 +109,16 @@ async function filterByCategory(category) {
     if (currentCategory === category) {
       currentCategory = "all";
 
-      // Gọi API để lấy toàn bộ sản phẩm
-      const response = await fetch(`/api/posts`);
+      // Lấy từ khóa tìm kiếm hiện tại
+      const searchTerm = document
+        .querySelector(".search-input")
+        .value.trim()
+        .toLowerCase();
+
+      // Gọi API để lấy toàn bộ sản phẩm (kết hợp với tìm kiếm)
+      const response = await fetch(
+        `/api/posts?search=${encodeURIComponent(searchTerm)}`
+      );
       if (!response.ok) {
         throw new Error("Không thể tải dữ liệu sản phẩm");
       }
@@ -124,8 +138,18 @@ async function filterByCategory(category) {
     // Cập nhật danh mục hiện tại
     currentCategory = category;
 
-    // Gọi API để lấy danh sách bài đăng theo danh mục
-    const response = await fetch(`/api/categories/${category}`);
+    // Lấy từ khóa tìm kiếm hiện tại
+    const searchTerm = document
+      .querySelector(".search-input")
+      .value.trim()
+      .toLowerCase();
+
+    // Gọi API để lấy danh sách bài đăng theo danh mục và từ khóa tìm kiếm
+    const response = await fetch(
+      `/api/posts?search=${encodeURIComponent(
+        searchTerm
+      )}&category=${encodeURIComponent(category)}`
+    );
     if (!response.ok) {
       throw new Error("Không thể tải dữ liệu sản phẩm theo danh mục");
     }
@@ -236,38 +260,31 @@ function showProductList() {
 function setupSearchForm() {
   const searchForm = document.querySelector(".search-form");
   if (searchForm) {
-    searchForm.addEventListener("submit", function (e) {
+    searchForm.addEventListener("submit", async function (e) {
       e.preventDefault();
       const searchTerm = document
         .querySelector(".search-input")
-        .value.toLowerCase();
+        .value.trim()
+        .toLowerCase();
 
-      // Lọc sản phẩm dựa trên tìm kiếm và danh mục
-      const filteredProducts = productsData.filter((product) => {
-        const title = product.title ? product.title.toLowerCase() : "";
-        const description = product.description
-          ? product.description.toLowerCase()
-          : "";
-        const categoryName = product.categoryName
-          ? product.categoryName.toLowerCase()
-          : "";
-        const location = product.location ? product.location.toLowerCase() : "";
+      try {
+        // Gọi API để tìm kiếm sản phẩm (kết hợp với danh mục hiện tại)
+        const response = await fetch(
+          `/api/posts?search=${encodeURIComponent(
+            searchTerm
+          )}&category=${encodeURIComponent(currentCategory)}`
+        );
+        if (!response.ok) {
+          throw new Error("Không thể tải dữ liệu sản phẩm từ server");
+        }
 
-        // Điều kiện tìm kiếm
-        const matchesSearch =
-          title.includes(searchTerm) ||
-          description.includes(searchTerm) ||
-          categoryName.includes(searchTerm) ||
-          location.includes(searchTerm);
+        const products = await response.json();
 
-        // Điều kiện danh mục
-        const matchesCategory =
-          currentCategory === "all" || product.categoryName === currentCategory;
-
-        return matchesSearch && matchesCategory;
-      });
-
-      renderProducts(filteredProducts);
+        // Hiển thị danh sách sản phẩm
+        renderProducts(products);
+      } catch (error) {
+        console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+      }
     });
   }
 }

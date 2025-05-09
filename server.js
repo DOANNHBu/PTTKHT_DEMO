@@ -244,8 +244,13 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
   const limit = parseInt(req.query.limit) || 20; // Số sản phẩm mỗi trang (mặc định là 20)
   const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là trang 1)
   const offset = (page - 1) * limit; // Tính toán offset
+  const search = req.query.search ? `%${req.query.search}%` : null; // Từ khóa tìm kiếm
+  const category =
+    req.query.category && req.query.category !== "all"
+      ? req.query.category
+      : null; // Danh mục
 
-  const query = `
+  let query = `
     SELECT 
       p.id, 
       p.title, 
@@ -259,11 +264,30 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     WHERE p.status = 'approved'
+  `;
+
+  const queryParams = [];
+
+  // Thêm điều kiện tìm kiếm nếu có từ khóa
+  if (search) {
+    query += ` AND p.title LIKE ? `;
+    queryParams.push(search);
+  }
+
+  // Thêm điều kiện lọc danh mục nếu có
+  if (category) {
+    query += ` AND c.name = ? `;
+    queryParams.push(category);
+  }
+
+  query += `
     ORDER BY p.availability ASC, p.created_at DESC
     LIMIT ? OFFSET ?
   `;
 
-  db.query(query, [limit, offset], (err, results) => {
+  queryParams.push(limit, offset);
+
+  db.query(query, queryParams, (err, results) => {
     if (err) {
       console.error("Lỗi khi truy vấn danh sách bài đăng:", err);
       res.status(500).send("Lỗi server");
