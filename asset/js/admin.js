@@ -69,21 +69,12 @@ function loadUserManagement() {
                                 <td>${user.full_name}</td>
                                 <td>${user.email}</td>
                                 <td>${user.role_name}</td>
-                                <td>${user.school || ''}</td>
+                                <td>${user.school || ""}</td>
                                 <td>
-<<<<<<< HEAD
-                                    <button onclick="toggleUserStatus('${
+                                    <button class="btn btn-danger" onclick="deleteUser(${
                                       user.id
-                                    }', '${user.status}')">
-                                        ${
-                                          user.status === "active"
-                                            ? "Khóa"
-                                            : "Mở khóa"
-                                        }
-=======
-                                    <button class="btn btn-danger" onclick="deleteUser(${user.id})">
+                                    })">
                                         Xóa
->>>>>>> hlink
                                     </button>
                                 </td>
                             </tr>
@@ -322,90 +313,81 @@ function handleLogout() {
       // nếu logout thành công, chuyển về login
       window.location.href = "/page/login.html";
     })
-<<<<<<< HEAD
+    .then((res) => res.json())
+    .then((data) => {
+      // nếu logout thành công, chuyển về login
+      window.location.href = "/page/login.html";
+    })
     .catch((err) => {
       console.error("Lỗi khi gọi API logout:", err);
       // Dù lỗi, vẫn redirect để tránh kẹt
       window.location.href = "/page/login.html";
     });
 }
-=======
-        .then(res => res.json())
-        .then(data => {
-            // nếu logout thành công, chuyển về login
-            window.location.href = '/page/login.html';
-        })
-        .catch(err => {
-            console.error('Lỗi khi gọi API logout:', err);
-            // Dù lỗi, vẫn redirect để tránh kẹt
-            window.location.href = '/page/login.html';
-        });
-}
 
 // Thêm các hàm xử lý modal và tạo tài khoản
 function showCreateUserModal() {
-    const modal = document.getElementById('createUserModal');
-    if (modal) {
-        modal.style.display = 'block';
-    }
+  const modal = document.getElementById("createUserModal");
+  if (modal) {
+    modal.style.display = "block";
+  }
 }
 
 function closeCreateUserModal() {
-    const modal = document.getElementById('createUserModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+  const modal = document.getElementById("createUserModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
 }
 
 async function createUser(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
 
-    try {
-        const response = await fetch('/api/admin/users', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-        });
+  try {
+    const response = await fetch("/api/admin/users", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
 
-        const result = await response.json();
+    const result = await response.json();
 
-        if (response.ok) {
-            alert('Tạo tài khoản thành công!');
-            closeCreateUserModal();
-            loadUserManagement(); // Tải lại danh sách người dùng
-        } else {
-            alert(result.message || 'Lỗi khi tạo tài khoản');
-        }
-    } catch (error) {
-        console.error('Lỗi:', error);
-        alert('Đã xảy ra lỗi khi tạo tài khoản');
+    if (response.ok) {
+      alert("Tạo tài khoản thành công!");
+      closeCreateUserModal();
+      loadUserManagement(); // Tải lại danh sách người dùng
+    } else {
+      alert(result.message || "Lỗi khi tạo tài khoản");
     }
+  } catch (error) {
+    console.error("Lỗi:", error);
+    alert("Đã xảy ra lỗi khi tạo tài khoản");
+  }
 }
 
 // Thêm hàm xóa người dùng
 async function deleteUser(userId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
-        return;
+  if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/admin/users/${userId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete user");
     }
 
-    try {
-        const response = await fetch(`/api/admin/users/${userId}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to delete user');
-        }
-
-        // Tải lại danh sách người dùng
-        loadUserManagement();
-        alert('Đã xóa tài khoản thành công');
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Không thể xóa tài khoản');
-    }
+    // Tải lại danh sách người dùng
+    loadUserManagement();
+    alert("Đã xóa tài khoản thành công");
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    alert("Không thể xóa tài khoản");
+  }
 }
->>>>>>> hlink

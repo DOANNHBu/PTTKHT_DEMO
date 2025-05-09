@@ -164,11 +164,7 @@ INSERT INTO roles (name, description) VALUES
 INSERT INTO users (username, password, email, full_name, phone, address, school, role_id, status) VALUES
 -- Quản trị viên
 ('admin1', '1', 'admin1@truong.edu.vn', 'Nguyễn Văn Admin', '0901234567', 'Số 123 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
-<<<<<<< HEAD
-('admin2', '$2y$10$KlHy5iZ7O.C3bdT.tGQ1UuJpJKjL2XmOLwxR.SSjKJpTnJ0iUzjuy', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
-=======
 ('admin2', '2', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
->>>>>>> hlink
 
 -- Người dùng thông thường (giáo viên, học sinh)
 ('giaovien1', '1', 'giaovien1@truong.edu.vn', 'Phạm Thị Hương', '0901234570', 'Số 101 đường Giáo Viên, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
