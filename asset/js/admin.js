@@ -1,34 +1,34 @@
 // Kiểm tra đăng nhập admin
 function checkAdminAuth() {
-    fetch('/api/auth/status')
-        .then(response => response.json())
-        .then(data => {
+    fetch("/api/auth/status")
+        .then((response) => response.json())
+        .then((data) => {
             if (!data.authenticated || data.user.role_id !== 1) {
-                window.location.href = '/page/login.html';
+                window.location.href = "/page/login.html";
                 return false;
             }
         })
-        .catch(error => {
-            console.error('Lỗi kiểm tra auth:', error);
-            window.location.href = '/page/login.html';
+        .catch((error) => {
+            console.error("Lỗi kiểm tra auth:", error);
+            window.location.href = "/page/login.html";
         });
     return true;
 }
 
 // Load nội dung cho từng section
 function loadContent(section) {
-    const contentArea = document.getElementById('content-area');
+    const contentArea = document.getElementById("content-area");
     switch (section) {
-        case 'users':
+        case "users":
             loadUserManagement();
             break;
-        case 'posts':
+        case "posts":
             loadPostApproval();
             break;
-        case 'activities':
+        case "activities":
             loadActivityManagement();
             break;
-        case 'reports':
+        case "reports":
             loadReports();
             break;
         default:
@@ -36,13 +36,13 @@ function loadContent(section) {
     }
 }
 
-// Quản lý tài khoản 
+// Quản lý tài khoản
 function loadUserManagement() {
-    fetch('/api/admin/users', {
-        credentials: 'include'
+    fetch("/api/admin/users", {
+        credentials: "include",
     })
-        .then(response => response.json())
-        .then(users => {
+        .then((response) => response.json())
+        .then((users) => {
             const content = `
             <div class="card">
                 <div class="card-header">
@@ -61,7 +61,9 @@ function loadUserManagement() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${users.map(user => `
+                        ${users
+                    .map(
+                        (user) => `
                             <tr>
                                 <td>${user.username}</td>
                                 <td>${user.full_name}</td>
@@ -74,7 +76,9 @@ function loadUserManagement() {
                                     </button>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `
+                    )
+                    .join("")}
                     </tbody>
                 </table>
             </div>
@@ -129,17 +133,17 @@ function loadUserManagement() {
                 </div>
             </div>
         `;
-            document.getElementById('content-area').innerHTML = content;
+            document.getElementById("content-area").innerHTML = content;
         });
 }
 
 // Duyệt bài đăng
 function loadPostApproval() {
-    fetch('/api/admin/posts', {
-        credentials: 'include'
+    fetch("/api/admin/posts", {
+        credentials: "include",
     })
-        .then(response => response.json())
-        .then(posts => {
+        .then((response) => response.json())
+        .then((posts) => {
             const content = `
             <div class="card">
                 <h2>Duyệt bài đăng</h2>
@@ -155,7 +159,9 @@ function loadPostApproval() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${posts.map(post => `
+                        ${posts
+                    .map(
+                        (post) => `
                             <tr>
                                 <td>${post.title}</td>
                                 <td>${post.author_name}</td>
@@ -163,40 +169,46 @@ function loadPostApproval() {
                                 <td>${formatDate(post.created_at)}</td>
                                 <td>${formatPostStatus(post.status)}</td>
                                 <td>
-                                    <button onclick="viewPost('${post.id}')">Xem</button>
-                                    ${post.status === 'pending' ? `
+                                    <button onclick="viewPost('${post.id
+                            }')">Xem</button>
+                                    ${post.status === "pending"
+                                ? `
                                         <button onclick="approvePost('${post.id}')">Duyệt</button>
                                         <button onclick="rejectPost('${post.id}')">Từ chối</button>
-                                    ` : ''}
+                                    `
+                                : ""
+                            }
                                 </td>
                             </tr>
-                        `).join('')}
+                        `
+                    )
+                    .join("")}
                     </tbody>
                 </table>
             </div>
         `;
-            document.getElementById('content-area').innerHTML = content;
+            document.getElementById("content-area").innerHTML = content;
         });
 }
 
 // Thay đổi hàm loadActivityManagement()
 function loadActivityManagement() {
     // Load nội dung từ file activities.html
-    fetch('/page/activities_ad.html')
-        .then(response => response.text())
-        .then(html => {
-            const contentArea = document.getElementById('content-area');
+    fetch("/page/activities_ad.html")
+        .then((response) => response.text())
+        .then((html) => {
+            const contentArea = document.getElementById("content-area");
             contentArea.innerHTML = html;
 
             // Khởi tạo ActivityManager sau khi load HTML
-            if (typeof activityManager === 'undefined') {
+            if (typeof activityManager === "undefined") {
                 window.activityManager = new ActivityManager();
             }
             activityManager.loadActivities();
         })
-        .catch(error => {
-            console.error('Error loading activities page:', error);
-            document.getElementById('content-area').innerHTML =
+        .catch((error) => {
+            console.error("Error loading activities page:", error);
+            document.getElementById("content-area").innerHTML =
                 '<div class="error">Không thể tải trang quản lý hoạt động</div>';
         });
 }
@@ -230,66 +242,73 @@ function loadReports() {
             </div>
         </div>
     `;
-    document.getElementById('content-area').innerHTML = content;
+    document.getElementById("content-area").innerHTML = content;
 }
 
 // Các hàm hỗ trợ
 function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).toLocaleDateString("vi-VN");
 }
 
 function formatUserStatus(status) {
     const statusMap = {
-        'active': 'Hoạt động',
-        'locked': 'Đã khóa',
-        'deleted': 'Đã xóa'
+        active: "Hoạt động",
+        locked: "Đã khóa",
+        deleted: "Đã xóa",
     };
     return statusMap[status] || status;
 }
 
 function formatPostStatus(status) {
     const statusMap = {
-        'pending': 'Chờ duyệt',
-        'approved': 'Đã duyệt',
-        'rejected': 'Từ chối',
-        'deleted': 'Đã xóa'
+        pending: "Chờ duyệt",
+        approved: "Đã duyệt",
+        rejected: "Từ chối",
+        deleted: "Đã xóa",
     };
     return statusMap[status] || status;
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
     if (!checkAdminAuth()) return;
 
     // Handle navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', function (e) {
+    document.querySelectorAll(".nav-item").forEach((item) => {
+        item.addEventListener("click", function (e) {
             e.preventDefault();
-            if (this.id === 'logout') {
+            if (this.id === "logout") {
                 handleLogout();
                 return;
             }
-            const section = this.getAttribute('href').substring(1);
+            const section = this.getAttribute("href").substring(1);
             loadContent(section);
 
             // Update active state
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            this.classList.add('active');
+            document
+                .querySelectorAll(".nav-item")
+                .forEach((i) => i.classList.remove("active"));
+            this.classList.add("active");
         });
     });
 
     // Load default content
-    loadContent('dashboard');
+    loadContent("dashboard");
 });
 
 // Thêm hàm xử lý đăng xuất
 function handleLogout() {
-    if (!confirm('Bạn có chắc muốn đăng xuất?')) return;
+    if (!confirm("Bạn có chắc muốn đăng xuất?")) return;
 
-    fetch('/api/logout', {
-        method: 'GET',
-        credentials: 'include'
+    fetch("/api/logout", {
+        method: "GET",
+        credentials: "include",
     })
+        .then((res) => res.json())
+        .then((data) => {
+            // nếu logout thành công, chuyển về login
+            window.location.href = "/page/login.html";
+        })
         .then(res => res.json())
         .then(data => {
             // nếu logout thành công, chuyển về login

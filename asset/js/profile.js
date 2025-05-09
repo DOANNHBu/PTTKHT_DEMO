@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 });
 
+// xử lý đăng bài
 document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("add-post-modal");
   const openModalButton = document.querySelector(".profile-post-btn");

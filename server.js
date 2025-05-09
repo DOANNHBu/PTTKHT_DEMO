@@ -47,7 +47,7 @@ liveReloadServer.watch(path.join(__dirname, "asset"));
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:35729/livereload; img-src 'self' data: blob:;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729; img-src 'self' data: blob:; connect-src 'self' ws://localhost:35729/livereload;"
   );
   next();
 });
@@ -65,13 +65,14 @@ liveReloadServer.server.once("connection", () => {
 
 // MySQL Connection
 const db = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: 'root',
-  database: 'school_exchange',
+  host: "127.0.0.1",
+  user: "root",
+  password: "root",
+  database: "school_exchange",
+  port: 3306,
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: 10, // Số lượng kết nối tối đa trong pool
+  queueLimit: 0,
 });
 
 // Remove the db.connect() call since it's not needed with connection pool
@@ -100,12 +101,10 @@ const isUser = (req, res, next) => {
   if (req.session && req.session.user && req.session.user.role_id === 2) {
     return next();
   }
-  return res
-    .status(403)
-    .json({
-      authenticated: false,
-      message: "Bạn không có quyền truy cập trang này"
-    });
+  return res.status(403).json({
+    authenticated: false,
+    message: "Bạn không có quyền truy cập trang này",
+  });
 };
 
 // Thêm middleware kiểm tra admin
@@ -115,7 +114,7 @@ const isAdmin = (req, res, next) => {
   }
   return res.status(403).json({
     authenticated: false,
-    message: "Bạn không có quyền truy cập trang này"
+    message: "Bạn không có quyền truy cập trang này",
   });
 };
 
@@ -127,14 +126,13 @@ app.get("/api/auth/status", (req, res) => {
       user: {
         username: req.session.user.username,
         id: req.session.user.id,
-        role_id: req.session.user.role_id   // ← thêm dòng này
+        role_id: req.session.user.role_id, // ← thêm dòng này
       },
     });
   } else {
     res.json({ authenticated: false });
   }
 });
-
 
 // API: Lấy danh sách người dùng
 app.get("/api/users", isAuthenticated, (req, res) => {
@@ -247,18 +245,17 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
     SELECT 
       p.id, 
       p.title, 
-      p.description, 
       p.price, 
-      c.name AS categoryName, 
       p.location, 
-      p.status, 
-      p.created_at,
-      u.username AS seller
+      p.created_at, 
+      p.availability, 
+      c.name AS categoryName, 
+      (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     JOIN users u ON p.author_id = u.id
     WHERE p.status = 'approved'
-    ORDER BY p.created_at DESC
+    ORDER BY p.availability ASC, p.created_at DESC
   `;
 
   db.query(query, (err, results) => {
@@ -267,6 +264,18 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
       res.status(500).send("Lỗi server");
       return;
     }
+
+    // Kiểm tra và gán ảnh mặc định nếu không có ảnh
+    results.forEach((post) => {
+      if (post.thumbnail) {
+        post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString(
+          "base64"
+        )}`;
+      } else {
+        post.thumbnail = "/asset/images/default-thumbnail.png"; // Ảnh mặc định
+      }
+    });
+
     res.json(results);
   });
 });
@@ -275,13 +284,13 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
 app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
   const postId = req.params.id;
 
-  // Query để lấy thông tin bài đăng
   const postQuery = `
     SELECT 
       p.id, 
       p.title, 
       p.description, 
-      p.price, 
+      p.price,
+      p.availability,
       c.name AS categoryName, 
       p.location, 
       p.status, 
@@ -293,14 +302,12 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
     WHERE p.id = ? AND p.status = 'approved'
   `;
 
-  // Query để lấy hình ảnh của bài đăng
   const imagesQuery = `
-    SELECT image_url
+    SELECT image_data, image_role
     FROM post_images
     WHERE post_id = ?
   `;
 
-  // Thực hiện truy vấn thông tin bài đăng
   db.query(postQuery, [postId], (err, postResults) => {
     if (err) {
       console.error("Lỗi khi truy vấn chi tiết bài đăng:", err);
@@ -313,15 +320,26 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
 
     const post = postResults[0];
 
-    // Thực hiện truy vấn hình ảnh
     db.query(imagesQuery, [postId], (err, imageResults) => {
       if (err) {
         console.error("Lỗi khi truy vấn hình ảnh bài đăng:", err);
         return res.status(500).send("Lỗi server");
       }
 
-      // Thêm mảng hình ảnh vào đối tượng bài đăng
-      post.images = imageResults.map((img) => img.image_url);
+      // Kiểm tra và gán ảnh mặc định nếu không có ảnh
+      if (imageResults.length > 0) {
+        post.images = imageResults.map((img) => ({
+          role: img.image_role,
+          data: `data:image/jpeg;base64,${img.image_data.toString("base64")}`,
+        }));
+      } else {
+        post.images = [
+          {
+            role: "thumbnail",
+            data: "/asset/images/default-thumbnail.png", // Ảnh mặc định
+          },
+        ];
+      }
 
       res.json(post);
     });
@@ -427,7 +445,7 @@ app.get("/api/admin/posts", isAuthenticated, isAdmin, (req, res) => {
 });
 
 // 3. Quản lý hoạt động
-app.get('/api/admin/activities', isAuthenticated, isAdmin, async (req, res) => {
+app.get("/api/admin/activities", isAuthenticated, isAdmin, async (req, res) => {
   try {
     const [activities] = await db.promise().query(`
       SELECT 
@@ -454,8 +472,8 @@ app.get('/api/admin/activities', isAuthenticated, isAdmin, async (req, res) => {
     `);
 
     // Chỉ parse items nếu nó là string JSON
-    activities.forEach(activity => {
-      if (typeof activity.items === 'string') {
+    activities.forEach((activity) => {
+      if (typeof activity.items === "string") {
         try {
           activity.items = JSON.parse(activity.items);
         } catch (e) {
@@ -468,8 +486,8 @@ app.get('/api/admin/activities', isAuthenticated, isAdmin, async (req, res) => {
 
     res.json(activities);
   } catch (error) {
-    console.error('Error fetching activities:', error);
-    res.status(500).json({ message: 'Lỗi khi lấy danh sách hoạt động' });
+    console.error("Error fetching activities:", error);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách hoạt động" });
   }
 });
 
@@ -514,103 +532,118 @@ app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
 });
 
 // API để tạo hoạt động mới
-app.post('/api/admin/activities', isAuthenticated, isAdmin, async (req, res) => {
-  const connection = await db.promise().getConnection();
-  try {
-    await connection.beginTransaction();
+app.post(
+  "/api/admin/activities",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
 
-    const activity = req.body;
-    const items = activity.items;
-    delete activity.items;
+      const activity = req.body;
+      const items = activity.items;
+      delete activity.items;
 
-    // Thêm hoạt động
-    const [result] = await connection.query(
-      'INSERT INTO activities SET ?',
-      { ...activity, organizer_id: req.session.user.id }
-    );
+      // Thêm hoạt động
+      const [result] = await connection.query("INSERT INTO activities SET ?", {
+        ...activity,
+        organizer_id: req.session.user.id,
+      });
 
-    const activityId = result.insertId;
+      const activityId = result.insertId;
 
-    // Thêm các items
-    for (const item of items) {
-      await connection.query(
-        'INSERT INTO activity_items SET ?',
-        { ...item, activity_id: activityId }
-      );
+      // Thêm các items
+      for (const item of items) {
+        await connection.query("INSERT INTO activity_items SET ?", {
+          ...item,
+          activity_id: activityId,
+        });
+      }
+
+      await connection.commit();
+      res.json({ id: activityId, ...activity });
+    } catch (error) {
+      await connection.rollback();
+      console.error("Error creating activity:", error);
+      res.status(500).json({ message: "Lỗi khi tạo hoạt động" });
+    } finally {
+      connection.release();
     }
-
-    await connection.commit();
-    res.json({ id: activityId, ...activity });
-
-  } catch (error) {
-    await connection.rollback();
-    console.error('Error creating activity:', error);
-    res.status(500).json({ message: 'Lỗi khi tạo hoạt động' });
-  } finally {
-    connection.release();
   }
-});
+);
 
 // API để lấy chi tiết hoạt động
-app.get('/api/admin/activities/:id', isAuthenticated, isAdmin, async (req, res) => {
-  try {
-    const [activity] = await db.promise().query(
-      'SELECT * FROM activities WHERE id = ?',
-      [req.params.id]
-    );
+app.get(
+  "/api/admin/activities/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const [activity] = await db
+        .promise()
+        .query("SELECT * FROM activities WHERE id = ?", [req.params.id]);
 
-    if (activity.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy hoạt động' });
+      if (activity.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy hoạt động" });
+      }
+
+      const [items] = await db
+        .promise()
+        .query("SELECT * FROM activity_items WHERE activity_id = ?", [
+          req.params.id,
+        ]);
+
+      res.json({ ...activity[0], items });
+    } catch (error) {
+      console.error("Error fetching activity:", error);
+      res.status(500).json({ message: "Lỗi khi lấy thông tin hoạt động" });
     }
-
-    const [items] = await db.promise().query(
-      'SELECT * FROM activity_items WHERE activity_id = ?',
-      [req.params.id]
-    );
-
-    res.json({ ...activity[0], items });
-
-  } catch (error) {
-    console.error('Error fetching activity:', error);
-    res.status(500).json({ message: 'Lỗi khi lấy thông tin hoạt động' });
   }
-});
+);
 
 // API để cập nhật số lượng đã nhận của vật phẩm
-app.put('/api/admin/activity-items/:id', isAuthenticated, isAdmin, async (req, res) => {
-  const itemId = req.params.id;
-  const { quantity_received } = req.body;
+app.put(
+  "/api/admin/activity-items/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const itemId = req.params.id;
+    const { quantity_received } = req.body;
 
-  try {
-    // Kiểm tra và cập nhật số lượng
-    const [item] = await db.promise().query(
-      'SELECT quantity_needed FROM activity_items WHERE id = ?',
-      [itemId]
-    );
+    try {
+      // Kiểm tra và cập nhật số lượng
+      const [item] = await db
+        .promise()
+        .query("SELECT quantity_needed FROM activity_items WHERE id = ?", [
+          itemId,
+        ]);
 
-    if (item.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy vật phẩm' });
+      if (item.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy vật phẩm" });
+      }
+
+      if (quantity_received < 0) {
+        return res.status(400).json({ message: "Số lượng không hợp lệ" });
+      }
+
+      await db
+        .promise()
+        .query("UPDATE activity_items SET quantity_received = ? WHERE id = ?", [
+          quantity_received,
+          itemId,
+        ]);
+
+      res.json({ message: "Cập nhật thành công" });
+    } catch (error) {
+      console.error("Error updating item quantity:", error);
+      res.status(500).json({ message: "Lỗi khi cập nhật số lượng" });
     }
-
-    if (quantity_received < 0) {
-      return res.status(400).json({ message: 'Số lượng không hợp lệ' });
-    }
-
-    await db.promise().query(
-      'UPDATE activity_items SET quantity_received = ? WHERE id = ?',
-      [quantity_received, itemId]
-    );
-
-    res.json({ message: 'Cập nhật thành công' });
-
-  } catch (error) {
-    console.error('Error updating item quantity:', error);
-    res.status(500).json({ message: 'Lỗi khi cập nhật số lượng' });
   }
-});
+);
 
 // API để cập nhật hoạt động
-app.put('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
+app.put("/api/admin/activities/:id", isAuthenticated, isAdmin, (req, res) => {
   const activityId = req.params.id;
   const activity = { ...req.body };
   const items = activity.items || [];
@@ -625,92 +658,93 @@ app.put('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
 
   db.getConnection((err, connection) => {
     if (err) {
-      console.error('Error getting connection:', err);
+      console.error("Error getting connection:", err);
       return res.status(500).json({
         success: false,
-        message: 'Lỗi kết nối database',
-        error: err.message
+        message: "Lỗi kết nối database",
+        error: err.message,
       });
     }
 
-    connection.beginTransaction(err => {
+    connection.beginTransaction((err) => {
       if (err) {
         connection.release();
-        console.error('Error starting transaction:', err);
+        console.error("Error starting transaction:", err);
         return res.status(500).json({
           success: false,
-          message: 'Lỗi khi bắt đầu transaction',
-          error: err.message
+          message: "Lỗi khi bắt đầu transaction",
+          error: err.message,
         });
       }
 
       // Update activity
       connection.query(
-        'UPDATE activities SET ? WHERE id = ?',
+        "UPDATE activities SET ? WHERE id = ?",
         [activity, activityId],
         (error) => {
           if (error) {
             return connection.rollback(() => {
               connection.release();
-              console.error('Error updating activity:', error);
+              console.error("Error updating activity:", error);
               res.status(500).json({
                 success: false,
-                message: 'Lỗi khi cập nhật hoạt động',
-                error: error.message
+                message: "Lỗi khi cập nhật hoạt động",
+                error: error.message,
               });
             });
           }
 
           // Delete old items
           connection.query(
-            'DELETE FROM activity_items WHERE activity_id = ?',
+            "DELETE FROM activity_items WHERE activity_id = ?",
             [activityId],
             (error) => {
               if (error) {
                 return connection.rollback(() => {
                   connection.release();
-                  console.error('Error deleting old items:', error);
+                  console.error("Error deleting old items:", error);
                   res.status(500).json({
                     success: false,
-                    message: 'Lỗi khi xóa vật phẩm cũ',
-                    error: error.message
+                    message: "Lỗi khi xóa vật phẩm cũ",
+                    error: error.message,
                   });
                 });
               }
 
               // Insert new items if any exist
               if (items.length > 0) {
-                const values = items.map(item => [
+                const values = items.map((item) => [
                   activityId,
                   item.name,
-                  item.description || '',
+                  item.description || "",
                   parseInt(item.quantity_needed) || 0,
-                  parseInt(item.quantity_received) || 0
+                  parseInt(item.quantity_received) || 0,
                 ]);
 
-                const itemQuery = 'INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?';
+                const itemQuery =
+                  "INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?";
 
                 connection.query(itemQuery, [values], (error) => {
                   if (error) {
                     return connection.rollback(() => {
                       connection.release();
-                      console.error('Error inserting new items:', error);
+                      console.error("Error inserting new items:", error);
                       res.status(500).json({
                         success: false,
-                        message: 'Lỗi khi thêm vật phẩm mới',
-                        error: error.message
+                        message: "Lỗi khi thêm vật phẩm mới",
+                        error: error.message,
                       });
                     });
                   }
 
-                  connection.commit(err => {
+                  connection.commit((err) => {
                     if (err) {
                       return connection.rollback(() => {
                         connection.release();
                         res.status(500).json({
                           success: false,
-                          message: 'Lỗi khi commit transaction',
-                          error: err.message
+                          message: "Lỗi khi commit transaction",
+                          error: err.message,
                         });
                       });
                     }
@@ -718,21 +752,21 @@ app.put('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
                     connection.release();
                     res.json({
                       success: true,
-                      message: 'Cập nhật hoạt động thành công',
-                      id: activityId
+                      message: "Cập nhật hoạt động thành công",
+                      id: activityId,
                     });
                   });
                 });
               } else {
                 // If no items to insert, commit directly
-                connection.commit(err => {
+                connection.commit((err) => {
                   if (err) {
                     return connection.rollback(() => {
                       connection.release();
                       res.status(500).json({
                         success: false,
-                        message: 'Lỗi khi commit transaction',
-                        error: err.message
+                        message: "Lỗi khi commit transaction",
+                        error: err.message,
                       });
                     });
                   }
@@ -740,8 +774,8 @@ app.put('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
                   connection.release();
                   res.json({
                     success: true,
-                    message: 'Cập nhật hoạt động thành công',
-                    id: activityId
+                    message: "Cập nhật hoạt động thành công",
+                    id: activityId,
                   });
                 });
               }
@@ -754,92 +788,97 @@ app.put('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
 });
 
 // API để xóa hoạt động
-app.delete('/api/admin/activities/:id', isAuthenticated, isAdmin, (req, res) => {
-  const activityId = req.params.id;
+app.delete(
+  "/api/admin/activities/:id",
+  isAuthenticated,
+  isAdmin,
+  (req, res) => {
+    const activityId = req.params.id;
 
-  // Get connection from pool
-  db.getConnection((err, connection) => {
-    if (err) {
-      console.error('Error getting connection:', err);
-      return res.status(500).json({
-        success: false,
-        message: 'Lỗi kết nối database',
-        error: err.message
-      });
-    }
-
-    // Begin transaction
-    connection.beginTransaction(err => {
+    // Get connection from pool
+    db.getConnection((err, connection) => {
       if (err) {
-        connection.release();
-        console.error('Error starting transaction:', err);
+        console.error("Error getting connection:", err);
         return res.status(500).json({
           success: false,
-          message: 'Lỗi khi bắt đầu transaction',
-          error: err.message
+          message: "Lỗi kết nối database",
+          error: err.message,
         });
       }
 
-      // Delete activity items first
-      connection.query(
-        'DELETE FROM activity_items WHERE activity_id = ?',
-        [activityId],
-        (error) => {
-          if (error) {
-            return connection.rollback(() => {
-              connection.release();
-              console.error('Error deleting activity items:', error);
-              res.status(500).json({
-                success: false,
-                message: 'Lỗi khi xóa vật phẩm của hoạt động',
-                error: error.message
-              });
-            });
-          }
+      // Begin transaction
+      connection.beginTransaction((err) => {
+        if (err) {
+          connection.release();
+          console.error("Error starting transaction:", err);
+          return res.status(500).json({
+            success: false,
+            message: "Lỗi khi bắt đầu transaction",
+            error: err.message,
+          });
+        }
 
-          // Then delete the activity
-          connection.query(
-            'DELETE FROM activities WHERE id = ?',
-            [activityId],
-            (error) => {
-              if (error) {
-                return connection.rollback(() => {
-                  connection.release();
-                  console.error('Error deleting activity:', error);
-                  res.status(500).json({
-                    success: false,
-                    message: 'Lỗi khi xóa hoạt động',
-                    error: error.message
-                  });
+        // Delete activity items first
+        connection.query(
+          "DELETE FROM activity_items WHERE activity_id = ?",
+          [activityId],
+          (error) => {
+            if (error) {
+              return connection.rollback(() => {
+                connection.release();
+                console.error("Error deleting activity items:", error);
+                res.status(500).json({
+                  success: false,
+                  message: "Lỗi khi xóa vật phẩm của hoạt động",
+                  error: error.message,
                 });
-              }
+              });
+            }
 
-              // Commit transaction
-              connection.commit(err => {
-                if (err) {
+            // Then delete the activity
+            connection.query(
+              "DELETE FROM activities WHERE id = ?",
+              [activityId],
+              (error) => {
+                if (error) {
                   return connection.rollback(() => {
                     connection.release();
+                    console.error("Error deleting activity:", error);
                     res.status(500).json({
                       success: false,
-                      message: 'Lỗi khi commit transaction',
-                      error: err.message
+                      message: "Lỗi khi xóa hoạt động",
+                      error: error.message,
                     });
                   });
                 }
 
-                connection.release();
-                res.json({
-                  success: true,
-                  message: 'Xóa hoạt động thành công'
+                // Commit transaction
+                connection.commit((err) => {
+                  if (err) {
+                    return connection.rollback(() => {
+                      connection.release();
+                      res.status(500).json({
+                        success: false,
+                        message: "Lỗi khi commit transaction",
+                        error: err.message,
+                      });
+                    });
+                  }
+
+                  connection.release();
+                  res.json({
+                    success: true,
+                    message: "Xóa hoạt động thành công",
+                  });
                 });
-              });
-            }
-          );
-        }
-      );
+              }
+            );
+          }
+        );
+      });
     });
-  });
-});
+  }
+);
 
 // API lấy danh sách hoạt động cho user - cập nhật lại route
 app.get("/api/public/activities", async (req, res) => {
@@ -854,8 +893,8 @@ app.get("/api/public/activities", async (req, res) => {
 
     res.json(activities);
   } catch (error) {
-    console.error('Error fetching activities:', error);
-    res.status(500).json({ message: 'Lỗi khi lấy danh sách hoạt động' });
+    console.error("Error fetching activities:", error);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách hoạt động" });
   }
 });
 
@@ -863,32 +902,38 @@ app.get("/api/public/activities", async (req, res) => {
 app.get("/api/public/activities/:id", async (req, res) => {
   try {
     // Lấy thông tin hoạt động
-    const [activities] = await db.promise().query(`
+    const [activities] = await db.promise().query(
+      `
             SELECT 
                 a.*
             FROM activities a
             WHERE a.id = ? AND a.status = 'approved'
-        `, [req.params.id]);
+        `,
+      [req.params.id]
+    );
 
     if (activities.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy hoạt động' });
+      return res.status(404).json({ message: "Không tìm thấy hoạt động" });
     }
 
     const activity = activities[0];
 
     // Lấy danh sách items
-    const [items] = await db.promise().query(`
+    const [items] = await db.promise().query(
+      `
             SELECT * 
             FROM activity_items 
             WHERE activity_id = ?
-        `, [req.params.id]);
+        `,
+      [req.params.id]
+    );
 
     activity.items = items;
 
     res.json(activity);
   } catch (error) {
-    console.error('Error fetching activity:', error);
-    res.status(500).json({ message: 'Lỗi khi lấy thông tin hoạt động' });
+    console.error("Error fetching activity:", error);
+    res.status(500).json({ message: "Lỗi khi lấy thông tin hoạt động" });
   }
 });
 

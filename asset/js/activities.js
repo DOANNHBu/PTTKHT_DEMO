@@ -32,10 +32,17 @@ function renderActivitiesList() {
             <div class="event-content">
                 <div class="event-text">
                     <h3>${activity.title}</h3>
-                    <p><strong>Thời gian:</strong> ${formatDateRange(startDate, endDate)}</p>
+                    <p><strong>Thời gian:</strong> ${formatDateRange(
+                      startDate,
+                      endDate
+                    )}</p>
                     <p><strong>Địa điểm:</strong> ${activity.location}</p>
-                    <p><strong>Đơn vị tổ chức:</strong> ${activity.name_organizer}</p>
-                    <button onclick="showActivityDetail(${activity.id})">Xem chi tiết</button>
+                    <p><strong>Đơn vị tổ chức:</strong> ${
+                      activity.name_organizer
+                    }</p>
+                    <button onclick="showActivityDetail(${
+                      activity.id
+                    })">Xem chi tiết</button>
                 </div>
             </div>
         `;
@@ -54,7 +61,7 @@ async function showActivityDetail(activityId) {
     const response = await fetch(`/api/public/activities/${activityId}`);
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      throw new Error("Network response was not ok");
     }
 
     const activity = await response.json();
@@ -67,11 +74,20 @@ async function showActivityDetail(activityId) {
     activityDetail.innerHTML = `
             <h2>${activity.title}</h2>
             <div class="activity-info">
-                <p><strong>Thời gian:</strong> ${formatDateRange(startDate, endDate)}</p>
+                <p><strong>Thời gian:</strong> ${formatDateRange(
+                  startDate,
+                  endDate
+                )}</p>
                 <p><strong>Địa điểm:</strong> ${activity.location}</p>
-                <p><strong>Đơn vị tổ chức:</strong> ${activity.name_organizer}</p>
+                <p><strong>Đơn vị tổ chức:</strong> ${
+                  activity.name_organizer
+                }</p>
                 <p><strong>Mô tả:</strong> ${activity.description}</p>
-                ${activity.guidelines ? `<p><strong>Hướng dẫn:</strong> ${activity.guidelines}</p>` : ''}
+                ${
+                  activity.guidelines
+                    ? `<p><strong>Hướng dẫn:</strong> ${activity.guidelines}</p>`
+                    : ""
+                }
             </div>
 
             <div class="donation-items">
@@ -87,15 +103,21 @@ async function showActivityDetail(activityId) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${activity.items.map(item => `
+                        ${activity.items
+                          .map(
+                            (item) => `
                             <tr>
                                 <td>${item.name}</td>
-                                <td>${item.description || ''}</td>
+                                <td>${item.description || ""}</td>
                                 <td>${item.quantity_needed}</td>
                                 <td>${item.quantity_received}</td>
-                                <td>${item.quantity_needed - item.quantity_received}</td>
+                                <td>${
+                                  item.quantity_needed - item.quantity_received
+                                }</td>
                             </tr>
-                        `).join('')}
+                        `
+                          )
+                          .join("")}
                     </tbody>
                 </table>
             </div>
@@ -104,24 +126,26 @@ async function showActivityDetail(activityId) {
 
     activityDetail.style.display = "block";
     activitiesList.style.display = "none";
-
   } catch (error) {
-    console.error('Error viewing activity:', error);
-    alert('Không thể tải thông tin hoạt động');
+    console.error("Error viewing activity:", error);
+    alert("Không thể tải thông tin hoạt động");
   }
 }
 
 // Hàm hỗ trợ format ngày tháng
 function formatDateRange(startDate, endDate) {
   const options = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   };
 
-  return `${startDate.toLocaleString('vi-VN', options)} - ${endDate.toLocaleString('vi-VN', options)}`;
+  return `${startDate.toLocaleString(
+    "vi-VN",
+    options
+  )} - ${endDate.toLocaleString("vi-VN", options)}`;
 }
 
 // Khởi tạo trang
