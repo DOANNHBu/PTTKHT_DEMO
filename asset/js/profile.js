@@ -89,6 +89,69 @@ document.addEventListener("DOMContentLoaded", async function () {
       </div>
     `;
   }
+
+  // Xử lý chỉnh sửa thông tin cá nhân
+  const editProfileBtn = document.querySelector('.profile-edit-btn');
+  const editProfileModal = document.getElementById('edit-profile-modal');
+  const closeEditModal = editProfileModal.querySelector('.close-button');
+  const editProfileForm = document.getElementById('edit-profile-form');
+
+  // Điền thông tin hiện tại vào form
+  document.getElementById('edit-username').value = userProfile.username || '';
+  document.getElementById('edit-email').value = userProfile.email || '';
+  document.getElementById('edit-phone').value = userProfile.phone || '';
+  document.getElementById('edit-address').value = userProfile.address || '';
+
+  // Hiển thị thông tin chỉ đọc
+  document.getElementById('display-fullname').textContent = userProfile.fullname || '';
+  document.getElementById('display-school').textContent = userProfile.school || '';
+
+  // Mở modal chỉnh sửa
+  editProfileBtn.addEventListener('click', () => {
+    editProfileModal.style.display = 'block';
+  });
+
+  // Đóng modal
+  closeEditModal.addEventListener('click', () => {
+    editProfileModal.style.display = 'none';
+  });
+
+  // Đóng modal khi click bên ngoài
+  window.addEventListener('click', (e) => {
+    if (e.target === editProfileModal) {
+      editProfileModal.style.display = 'none';
+    }
+  });
+
+  // Xử lý submit form chỉnh sửa
+  editProfileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(editProfileForm);
+
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Lỗi khi cập nhật thông tin');
+      }
+
+      const result = await response.json();
+      alert('Cập nhật thông tin thành công!');
+      editProfileModal.style.display = 'none';
+
+      // Reload trang để hiển thị thông tin mới
+      window.location.reload();
+    } catch (error) {
+      console.error('Lỗi:', error);
+      alert(error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    }
+  });
 });
 
 // xử lý đăng bài

@@ -202,13 +202,12 @@ function showProductDetail(productId) {
         .getDate()
         .toString()
         .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${createdDate.getFullYear()}`;
+          .toString()
+          .padStart(2, "0")}/${createdDate.getFullYear()}`;
       document.getElementById("detail-date").textContent = formattedDate;
 
-      document.getElementById("detail-seller").textContent = `Người bán: ${
-        product.seller || "Không xác định"
-      }`;
+      document.getElementById("detail-seller").textContent = `Người bán: ${product.seller || "Không xác định"
+        }`;
       document.getElementById("detail-description").textContent =
         product.description;
 

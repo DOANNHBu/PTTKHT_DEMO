@@ -175,6 +175,51 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
   });
 });
 
+// API: Cập nhật thông tin người dùng
+app.put("/api/user/profile", isAuthenticated, isUser, upload.single("avatar"), async (req, res) => {
+  const userId = req.session.user.id;
+  const { username, password, email, phone, address } = req.body;
+  let avatar = null;
+
+  if (req.file) {
+    avatar = req.file.buffer;
+  }
+
+  try {
+    // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
+    const [existing] = await db.promise().query(
+      "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
+      [username, email, userId]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+    }
+
+    // Xây dựng câu truy vấn động
+    let updateFields = [];
+    let updateValues = [];
+    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
+    if (password) { updateFields.push("password = ?"); updateValues.push(password); }
+    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
+    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
+    if (address) { updateFields.push("address = ?"); updateValues.push(address); }
+    if (avatar) { updateFields.push("avatar = ?"); updateValues.push(avatar); }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: "Không có thông tin nào để cập nhật" });
+    }
+
+    updateValues.push(userId);
+    const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+    await db.promise().query(sql, updateValues);
+
+    res.json({ message: "Cập nhật thông tin thành công" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+    res.status(500).json({ message: "Lỗi server khi cập nhật thông tin" });
+  }
+});
+
 // API: Lấy danh sách sản phẩm đã đăng của người dùng
 app.get("/api/user/products", isAuthenticated, isUser, (req, res) => {
   const userId = req.session.user.id;
