@@ -20,12 +20,12 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     address TEXT,
     school varchar(255),
-    avatar_url VARCHAR(255),
+    avatar LONGBLOB,
     role_id INT NOT NULL,
     status ENUM('active', 'locked', 'deleted') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_id) REFERENCES roles(id)
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- Create categories table
@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS posts (
     availability ENUM('available', 'sold') DEFAULT 'available', -- ✅ thêm trạng thái còn/hết hàng
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (author_id) REFERENCES users(id)
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 
@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS activities (
     end_date DATETIME NOT NULL,
     location VARCHAR(100) NOT NULL,
     organizer_id INT NOT NULL,
-    name_organizer VARCHAR(255) NOT NULL, -- Thêm trường mới
-    guidelines TEXT,
+	name_organizer VARCHAR(255) NOT NULL, -- Thêm trường mới
+    guidelines TEXT,  -- Thêm trường guidelines
     status ENUM('pending', 'approved', 'deleted') DEFAULT 'approved',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (organizer_id) REFERENCES users(id)
+    FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Create activity_items table
@@ -164,7 +164,11 @@ INSERT INTO roles (name, description) VALUES
 INSERT INTO users (username, password, email, full_name, phone, address, school, role_id, status) VALUES
 -- Quản trị viên
 ('admin1', '1', 'admin1@truong.edu.vn', 'Nguyễn Văn Admin', '0901234567', 'Số 123 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
+<<<<<<< HEAD
 ('admin2', '$2y$10$KlHy5iZ7O.C3bdT.tGQ1UuJpJKjL2XmOLwxR.SSjKJpTnJ0iUzjuy', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
+=======
+('admin2', '2', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
+>>>>>>> hlink
 
 -- Người dùng thông thường (giáo viên, học sinh)
 ('giaovien1', '1', 'giaovien1@truong.edu.vn', 'Phạm Thị Hương', '0901234570', 'Số 101 đường Giáo Viên, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
@@ -230,9 +234,9 @@ INSERT INTO posts (title, description, price, category_id, location, author_id, 
 
 
 INSERT INTO activities (title, description, start_date, end_date, location, organizer_id, name_organizer, guidelines, status) VALUES
-('Hội chợ trao đổi sách', 'Sự kiện trao đổi sách thường niên tại thư viện trung tâm', '2025-06-15 09:00:00', '2025-06-15 16:00:00', 'Thư viện Trung tâm', 3, 'Đoàn Thanh niên', 'Mang theo sách cần trao đổi và thẻ học sinh', 'approved'),
-('Chiến dịch tái chế thiết bị điện tử', 'Mang thiết bị điện tử cũ của bạn để tái chế đúng cách', '2025-07-10 10:00:00', '2025-07-10 15:00:00', 'Nhà thi đấu trường học', 9, 'Câu lạc bộ Môi trường', 'Đảm bảo thiết bị còn hoạt động tốt', 'approved'),
-('Giao lưu trao đổi dụng cụ thể thao', 'Trao đổi dụng cụ thể thao với các bạn học sinh khác', '2025-08-05 13:00:00', '2025-08-05 17:00:00', 'Sân trường', 10, 'Câu lạc bộ Thể thao', 'Mang theo dụng cụ thể thao cần trao đổi', 'approved');
+('Hội chợ trao đổi sách', 'Sự kiện trao đổi sách thường niên tại thư viện trung tâm', '2025-06-15 09:00:00', '2025-06-15 16:00:00', 'Thư viện Trung tâm', 1, 'Đoàn Thanh niên', 'Mang theo sách cần trao đổi và thẻ học sinh', 'approved'),
+('Chiến dịch tái chế thiết bị điện tử', 'Mang thiết bị điện tử cũ của bạn để tái chế đúng cách', '2025-07-10 10:00:00', '2025-07-10 15:00:00', 'Nhà thi đấu trường học', 1, 'Câu lạc bộ Môi trường', 'Đảm bảo thiết bị còn hoạt động tốt', 'approved'),
+('Giao lưu trao đổi dụng cụ thể thao', 'Trao đổi dụng cụ thể thao với các bạn học sinh khác', '2025-08-05 13:00:00', '2025-08-05 17:00:00', 'Sân trường', 1, 'Câu lạc bộ Thể thao', 'Mang theo dụng cụ thể thao cần trao đổi', 'approved');
 
 -- Chèn các mục hoạt động
 INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES
