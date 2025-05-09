@@ -143,12 +143,6 @@ header {
   font-size: 14px;
 }
 
-.section-title {
-  font-size: 24px;
-  margin: 30px 0 20px;
-  font-weight: 500;
-}
-
 .post-button {
   position: fixed;
   bottom: 30px;
@@ -234,17 +228,42 @@ header {
   background-color: #e65c00;
 }
 
-/* trang 1,2,3,4, */
+/* Căn chỉnh section-title và pagination */
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24px;
+  margin: 30px 0 20px;
+  font-weight: 500;
+}
+
+/* Căn chỉnh phần bên trái của section-title */
+.section-left {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Khoảng cách giữa tiêu đề và nút */
+}
+
+.section-title-text {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Căn chỉnh phần bên phải của section-title */
+.section-right {
+  display: flex;
+  align-items: center;
+}
+/* Căn chỉnh phần pagination bên phải */
 .pagination {
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin-top: 20px;
   gap: 10px;
 }
 
 .pagination button {
-  padding: 10px 15px;
+  padding: 5px 10px;
   background-color: #ff6600;
   color: white;
   border: none;

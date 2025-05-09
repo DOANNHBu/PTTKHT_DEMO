@@ -241,7 +241,7 @@ app.get("/api/logout", (req, res) => {
 
 // API: Lấy danh sách bài đăng
 app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
-  const limit = parseInt(req.query.limit) || 20; // Số sản phẩm mỗi trang (mặc định là 20)
+  const limit = parseInt(req.query.limit) || 16; // Số sản phẩm mỗi trang (mặc định là 20)
   const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là trang 1)
   const offset = (page - 1) * limit; // Tính toán offset
   const search = req.query.search ? `%${req.query.search}%` : null; // Từ khóa tìm kiếm
