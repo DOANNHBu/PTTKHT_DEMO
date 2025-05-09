@@ -47,7 +47,7 @@ liveReloadServer.watch(path.join(__dirname, "asset"));
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:35729/livereload; img-src 'self' data: blob:;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729; connect-src 'self' ws://localhost:35729/livereload; img-src 'self' data: blob:;"
   );
   next();
 });
@@ -249,6 +249,7 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
     SELECT 
       p.id, 
       p.title, 
+      p.description, 
       p.price, 
       p.location, 
       p.created_at, 
@@ -257,7 +258,6 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
       (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
-    JOIN users u ON p.author_id = u.id
     WHERE p.status = 'approved'
     ORDER BY p.availability ASC, p.created_at DESC
     LIMIT ? OFFSET ?
@@ -352,7 +352,7 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
 });
 
 // API: Lấy sản phẩm theo danh mục
-app.get("/api/categories/:category", isAuthenticated, (req, res) => {
+app.get("/api/categories/:category", isAuthenticated, isUser, (req, res) => {
   const category = req.params.category;
 
   const query = `
@@ -361,14 +361,13 @@ app.get("/api/categories/:category", isAuthenticated, (req, res) => {
       p.title, 
       p.description, 
       p.price, 
-      c.name AS categoryName, 
       p.location, 
-      p.status, 
-      p.created_at,
-      u.username AS seller
+      p.created_at, 
+      p.availability, 
+      c.name AS categoryName, 
+      (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
-    JOIN users u ON p.author_id = u.id
     WHERE c.name = ? AND p.status = 'approved'
     ORDER BY p.created_at DESC
   `;
@@ -378,6 +377,17 @@ app.get("/api/categories/:category", isAuthenticated, (req, res) => {
       console.error("Lỗi khi truy vấn sản phẩm theo danh mục:", err);
       return res.status(500).send("Lỗi server");
     }
+
+    // Kiểm tra và gán ảnh mặc định nếu không có ảnh
+    results.forEach((post) => {
+      if (post.thumbnail) {
+        post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString(
+          "base64"
+        )}`;
+      } else {
+        post.thumbnail = "/asset/images/default-thumbnail.png"; // Ảnh mặc định
+      }
+    });
 
     res.json(results);
   });

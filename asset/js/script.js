@@ -50,41 +50,32 @@ function renderProducts(products) {
   const productsList = document.getElementById("products-list");
   productsList.innerHTML = "";
 
+  if (products.length === 0) {
+    productsList.innerHTML = "<p>Không tìm thấy sản phẩm nào.</p>";
+    return;
+  }
+
   products.forEach((product) => {
     const productElement = document.createElement("div");
     productElement.className = "product";
     productElement.onclick = () => showProductDetail(product.id);
 
-    const createdDate = new Date(product.created_at);
-    const formattedDate = `${createdDate
-      .getDate()
-      .toString()
-      .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}/${createdDate.getFullYear()}`;
-
     const productImage =
-      product.thumbnail || "/asset/images/default-thumbnail.png"; // Ảnh mặc định
-
-    // Thêm lớp `sold-out` nếu sản phẩm đã hết hàng
-    const productInfoClass =
-      product.availability === "sold"
-        ? "product-info sold-out"
-        : "product-info";
+      product.thumbnail || "/asset/images/default-thumbnail.png";
 
     productElement.innerHTML = `
-        <div class="product-image">
-          <img src="${productImage}" alt="Thumbnail" />
+      <div class="product-image">
+        <img src="${productImage}" alt="Thumbnail" />
+      </div>
+      <div class="product-info">
+        <div class="product-title">${product.title}</div>
+        <div class="product-price">${formatPrice(product.price)}</div>
+        <div class="product-meta">
+          <div>${product.location}</div>
+          <div>${product.categoryName}</div>
         </div>
-        <div class="${productInfoClass}">
-            <div class="product-title">${product.title}</div>
-            <div class="product-price">${formatPrice(product.price)}</div>
-            <div class="product-meta">
-                <div>${product.location}</div>
-                <div>${formattedDate}</div>
-            </div>
-        </div>
-      `;
+      </div>
+    `;
 
     productsList.appendChild(productElement);
   });
@@ -106,101 +97,57 @@ function getCategoryId(vietnameseName) {
 }
 
 // Lọc sản phẩm theo danh mục
-function filterByCategory(category) {
-  const allCategories = document.querySelectorAll(".category");
+async function filterByCategory(category) {
+  try {
+    // Nếu danh mục hiện tại trùng với danh mục được bấm, đặt lại về "all"
+    if (currentCategory === category) {
+      currentCategory = "all";
 
-  if (currentCategory === category) {
-    // Bấm lại -> bỏ chọn danh mục
-    currentCategory = "all";
+      // Gọi API để lấy toàn bộ sản phẩm
+      const response = await fetch(`/api/posts`);
+      if (!response.ok) {
+        throw new Error("Không thể tải dữ liệu sản phẩm");
+      }
 
-    // Lấy từ khóa tìm kiếm hiện tại
-    const searchTerm = document
-      .querySelector(".search-input")
-      .value.toLowerCase();
+      const products = await response.json();
 
-    // Lọc sản phẩm chỉ dựa trên từ khóa tìm kiếm
-    const filteredProducts = productsData.filter((product) => {
-      const title = product.title ? product.title.toLowerCase() : "";
-      const description = product.description
-        ? product.description.toLowerCase()
-        : "";
-      const categoryName = product.categoryName
-        ? product.categoryName.toLowerCase()
-        : "";
-      const location = product.location ? product.location.toLowerCase() : "";
+      // Hiển thị toàn bộ sản phẩm
+      renderProducts(products);
 
-      // Điều kiện tìm kiếm
-      return (
-        title.includes(searchTerm) ||
-        description.includes(searchTerm) ||
-        categoryName.includes(searchTerm) ||
-        location.includes(searchTerm)
-      );
-    });
+      // Xóa trạng thái active của tất cả danh mục
+      const allCategories = document.querySelectorAll(".category");
+      allCategories.forEach((el) => el.classList.remove("active"));
 
-    // Sắp xếp sản phẩm: Còn hàng trước, hết hàng sau
-    const sortedProducts = filteredProducts.sort((a, b) => {
-      if (a.availability === b.availability) return 0;
-      return a.availability === "available" ? -1 : 1;
-    });
-
-    renderProducts(sortedProducts);
-
-    // Xóa trạng thái active của danh mục
-    allCategories.forEach((el) => el.classList.remove("active"));
-    return;
-  }
-
-  // Cập nhật danh mục hiện tại
-  currentCategory = category;
-
-  // Đổi trạng thái active
-  allCategories.forEach((el) => {
-    const categoryName = el.querySelector(".category-name").textContent;
-    if (categoryName === category) {
-      el.classList.add("active");
-    } else {
-      el.classList.remove("active");
+      return;
     }
-  });
 
-  // Lấy từ khóa tìm kiếm hiện tại
-  const searchTerm = document
-    .querySelector(".search-input")
-    .value.toLowerCase();
+    // Cập nhật danh mục hiện tại
+    currentCategory = category;
 
-  // Lọc sản phẩm dựa trên tìm kiếm và danh mục
-  const filteredProducts = productsData.filter((product) => {
-    const title = product.title ? product.title.toLowerCase() : "";
-    const description = product.description
-      ? product.description.toLowerCase()
-      : "";
-    const categoryName = product.categoryName
-      ? product.categoryName.toLowerCase()
-      : "";
-    const location = product.location ? product.location.toLowerCase() : "";
+    // Gọi API để lấy danh sách bài đăng theo danh mục
+    const response = await fetch(`/api/categories/${category}`);
+    if (!response.ok) {
+      throw new Error("Không thể tải dữ liệu sản phẩm theo danh mục");
+    }
 
-    // Điều kiện tìm kiếm
-    const matchesSearch =
-      title.includes(searchTerm) ||
-      description.includes(searchTerm) ||
-      categoryName.includes(searchTerm) ||
-      location.includes(searchTerm);
+    const products = await response.json();
 
-    // Điều kiện danh mục
-    const matchesCategory =
-      currentCategory === "all" || product.categoryName === currentCategory;
+    // Hiển thị danh sách sản phẩm
+    renderProducts(products);
 
-    return matchesSearch && matchesCategory;
-  });
-
-  // Sắp xếp sản phẩm: Còn hàng trước, hết hàng sau
-  const sortedProducts = filteredProducts.sort((a, b) => {
-    if (a.availability === b.availability) return 0;
-    return a.availability === "available" ? -1 : 1;
-  });
-
-  renderProducts(sortedProducts);
+    // Cập nhật trạng thái active cho danh mục
+    const allCategories = document.querySelectorAll(".category");
+    allCategories.forEach((el) => {
+      const categoryName = el.querySelector(".category-name").textContent;
+      if (categoryName === category) {
+        el.classList.add("active");
+      } else {
+        el.classList.remove("active");
+      }
+    });
+  } catch (error) {
+    console.error("Lỗi khi lọc sản phẩm theo danh mục:", error);
+  }
 }
 
 // Hiển thị chi tiết sản phẩm
@@ -320,13 +267,7 @@ function setupSearchForm() {
         return matchesSearch && matchesCategory;
       });
 
-      // Sắp xếp sản phẩm: Còn hàng trước, hết hàng sau
-      const sortedResults = filteredProducts.sort((a, b) => {
-        if (a.availability === b.availability) return 0;
-        return a.availability === "available" ? -1 : 1;
-      });
-
-      renderProducts(sortedResults);
+      renderProducts(filteredProducts);
     });
   }
 }
