@@ -36,61 +36,51 @@ function loadContent(section) {
   }
 }
 
-// Quản lý tài khoản
+// Cập nhật hàm loadUserManagement()
 function loadUserManagement() {
-  fetch("/api/admin/users", {
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((users) => {
-      const content = `
+  const content = `
+        <div class="user-management">
             <div class="card">
                 <div class="card-header">
                     <h2>Quản lý tài khoản</h2>
-                    <button class="btn btn-primary" onclick="showCreateUserModal()">Tạo tài khoản</button>
+                    <button class="btn btn-primary" onclick="userManager.showCreateModal()">Tạo tài khoản</button>
                 </div>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Tên đăng nhập</th>
-                            <th>Họ tên</th>
-                            <th>Email</th>
-                            <th>Vai trò</th>
-                            <th>Trường</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${users
-                          .map(
-                            (user) => `
+                
+                <div class="tabs">
+                    <button class="tab active" data-role="2">Người dùng</button>
+                    <button class="tab" data-role="1">Admin</button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="searchUsername" placeholder="Tìm kiếm theo tên đăng nhập hoặc họ tên...">
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <td>${user.username}</td>
-                                <td>${user.full_name}</td>
-                                <td>${user.email}</td>
-                                <td>${user.role_name}</td>
-                                <td>${user.school || ""}</td>
-                                <td>
-                                    <button class="btn btn-danger" onclick="deleteUser(${
-                                      user.id
-                                    })">
-                                        Xóa
-                                    </button>
-                                </td>
+                                <th>ID</th>
+                                <th>Tên đăng nhập</th>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>Trường</th>
+                                <th>Vai trò</th>
+                                <th>Thao tác</th>
                             </tr>
-                        `
-                          )
-                          .join("")}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody id="users-table">
+                            <!-- Dữ liệu người dùng sẽ được thêm vào đây bởi JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Thêm modal vào đây -->
+            <!-- Modal tạo tài khoản mới -->
             <div id="createUserModal" class="modal">
                 <div class="modal-content">
-                    <span class="close" onclick="closeCreateUserModal()">&times;</span>
+                    <span class="close" onclick="userManager.closeCreateModal()">&times;</span>
                     <h2>Tạo tài khoản mới</h2>
-                    <form id="createUserForm" onsubmit="createUser(event)">
+                    <form id="createUserForm" onsubmit="userManager.handleCreate(event)">
                         <div class="form-group">
                             <label>Tên đăng nhập:</label>
                             <input type="text" name="username" required>
@@ -127,16 +117,33 @@ function loadUserManagement() {
                             <label>Vai trò:</label>
                             <select name="role_id" required>
                                 <option value="1">Admin</option>
-                                <option value="2">User</option>
+                                <option value="2" selected>User</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
                     </form>
                 </div>
             </div>
-        `;
-      document.getElementById("content-area").innerHTML = content;
-    });
+        </div>
+    `;
+
+  document.getElementById("content-area").innerHTML = content;
+
+  // Khởi tạo UserManager nếu chưa tồn tại
+  if (typeof window.userManager === "undefined") {
+    window.userManager = new UserManager();
+  } else {
+    // Nếu đã tồn tại, tải lại danh sách người dùng
+    window.userManager.loadUsers();
+  }
+
+  // Thêm event listener cho việc click bên ngoài modal
+  const createModal = document.getElementById("createUserModal");
+  window.onclick = function (event) {
+    if (event.target == createModal) {
+      userManager.closeCreateModal();
+    }
+  };
 }
 
 // Duyệt bài đăng

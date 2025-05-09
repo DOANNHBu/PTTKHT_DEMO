@@ -18,9 +18,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   document.getElementById("profile-info").innerHTML = `
     <div class="profile-card-horizontal">
       <div class="profile-avatar-large-wrap">
-        <img src="${userProfile.avatar ?
-      `data:image/jpeg;base64,${userProfile.avatar}` :
-      '/asset/images/default-avatar.png'}" 
+        <img src="${
+          userProfile.avatar
+            ? `data:image/jpeg;base64,${userProfile.avatar}`
+            : "/asset/images/default-avatar.png"
+        }" 
           class="profile-avatar-large" 
           alt="Avatar"
         />
@@ -55,11 +57,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     userProductsDiv.innerHTML = `
       <div class="profile-products-list">
         ${userProducts
-        .map(
-          (p) => `
+          .map(
+            (p) => `
           <div class="profile-product-card">
             <div class="profile-product-img">
-              <img src="/asset/images/${p.bannerImage || "default.png"}" alt="${p.title
+              <img src="/asset/images/${p.bannerImage || "default.png"}" alt="${
+              p.title
             }" />
             </div>
             <div class="profile-product-info">
@@ -68,27 +71,94 @@ document.addEventListener("DOMContentLoaded", async function () {
                 <span>${p.categoryName || ""}</span> | 
                 <span>${p.location || ""}</span>
               </div>
-              <div class="profile-product-price">${p.price === 0
-              ? "Thỏa thuận"
-              : p.price.toLocaleString("vi-VN") + " đ"
-            }</div>
+              <div class="profile-product-price">${
+                p.price === 0
+                  ? "Thỏa thuận"
+                  : p.price.toLocaleString("vi-VN") + " đ"
+              }</div>
               <div class="profile-product-date">${new Date(
-              p.date
-            ).toLocaleDateString("vi-VN")}</div>
+                p.date
+              ).toLocaleDateString("vi-VN")}</div>
               <div class="profile-product-status">
-                <b>Trạng thái:</b> ${p.status === "approved"
-              ? "<span style='color: green;'>Đã duyệt</span>"
-              : "<span style='color: orange;'>Đang chờ duyệt</span>"
-            }
+                <b>Trạng thái:</b> ${
+                  p.status === "approved"
+                    ? "<span style='color: green;'>Đã duyệt</span>"
+                    : "<span style='color: orange;'>Đang chờ duyệt</span>"
+                }
               </div>
             </div>
           </div>
         `
-        )
-        .join("")}
+          )
+          .join("")}
       </div>
     `;
   }
+
+  // Xử lý chỉnh sửa thông tin cá nhân
+  const editProfileBtn = document.querySelector(".profile-edit-btn");
+  const editProfileModal = document.getElementById("edit-profile-modal");
+  const closeEditModal = editProfileModal.querySelector(".close-button");
+  const editProfileForm = document.getElementById("edit-profile-form");
+
+  // Điền thông tin hiện tại vào form
+  document.getElementById("edit-username").value = userProfile.username || "";
+  document.getElementById("edit-email").value = userProfile.email || "";
+  document.getElementById("edit-phone").value = userProfile.phone || "";
+  document.getElementById("edit-address").value = userProfile.address || "";
+
+  // Hiển thị thông tin chỉ đọc
+  document.getElementById("display-fullname").textContent =
+    userProfile.fullname || "";
+  document.getElementById("display-school").textContent =
+    userProfile.school || "";
+
+  // Mở modal chỉnh sửa
+  editProfileBtn.addEventListener("click", () => {
+    editProfileModal.style.display = "block";
+  });
+
+  // Đóng modal
+  closeEditModal.addEventListener("click", () => {
+    editProfileModal.style.display = "none";
+  });
+
+  // Đóng modal khi click bên ngoài
+  window.addEventListener("click", (e) => {
+    if (e.target === editProfileModal) {
+      editProfileModal.style.display = "none";
+    }
+  });
+
+  // Xử lý submit form chỉnh sửa
+  editProfileForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(editProfileForm);
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Lỗi khi cập nhật thông tin");
+      }
+
+      const result = await response.json();
+      alert("Cập nhật thông tin thành công!");
+      editProfileModal.style.display = "none";
+
+      // Reload trang để hiển thị thông tin mới
+      window.location.reload();
+    } catch (error) {
+      console.error("Lỗi:", error);
+      alert(error.message || "Có lỗi xảy ra khi cập nhật thông tin");
+    }
+  });
 });
 
 // xử lý đăng bài

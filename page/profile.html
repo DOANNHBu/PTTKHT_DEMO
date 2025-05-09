@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/asset/css/style.css" />
     <link rel="stylesheet" href="/asset/css/profile.css" />
   </head>
+
   <body>
     <header>
       <div class="container header-content">
@@ -59,6 +60,9 @@
         <div id="profile-info"></div>
         <div class="profile-actions">
           <button class="post-button profile-post-btn">Đăng bài đăng</button>
+          <button class="edit-button profile-edit-btn">
+            Chỉnh sửa thông tin
+          </button>
         </div>
       </div>
       <div class="profile-right-col">
@@ -68,5 +72,61 @@
     </div>
     <script src="/asset/js/profile.js"></script>
     <script src="/asset/js/auth-check.js"></script>
+
+    <!-- Modal chỉnh sửa thông tin -->
+    <div id="edit-profile-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Chỉnh sửa thông tin cá nhân</h2>
+        <form id="edit-profile-form">
+          <div class="form-group">
+            <label for="edit-username">Tên đăng nhập:</label>
+            <input type="text" id="edit-username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-password">Mật khẩu:</label>
+            <input
+              type="password"
+              id="edit-password"
+              name="password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit-email">Email:</label>
+            <input type="email" id="edit-email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-phone">Số điện thoại:</label>
+            <input type="tel" id="edit-phone" name="phone" />
+          </div>
+          <div class="form-group">
+            <label for="edit-address">Địa chỉ:</label>
+            <input type="text" id="edit-address" name="address" />
+          </div>
+          <div class="form-group">
+            <label for="edit-avatar">Ảnh đại diện:</label>
+            <input
+              type="file"
+              id="edit-avatar"
+              name="avatar"
+              accept="image/*"
+            />
+          </div>
+
+          <!-- Thông tin chỉ hiển thị -->
+          <div class="form-group display-only">
+            <label>Họ tên:</label>
+            <div class="display-value" id="display-fullname"></div>
+          </div>
+          <div class="form-group display-only">
+            <label>Trường:</label>
+            <div class="display-value" id="display-school"></div>
+          </div>
+
+          <button type="submit" class="submit-button">Lưu thay đổi</button>
+        </form>
+      </div>
+    </div>
   </body>
 </html>

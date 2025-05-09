@@ -175,6 +175,51 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
   });
 });
 
+// API: Cập nhật thông tin người dùng
+app.put("/api/user/profile", isAuthenticated, isUser, upload.single("avatar"), async (req, res) => {
+  const userId = req.session.user.id;
+  const { username, password, email, phone, address } = req.body;
+  let avatar = null;
+
+  if (req.file) {
+    avatar = req.file.buffer;
+  }
+
+  try {
+    // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
+    const [existing] = await db.promise().query(
+      "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
+      [username, email, userId]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+    }
+
+    // Xây dựng câu truy vấn động
+    let updateFields = [];
+    let updateValues = [];
+    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
+    if (password) { updateFields.push("password = ?"); updateValues.push(password); }
+    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
+    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
+    if (address) { updateFields.push("address = ?"); updateValues.push(address); }
+    if (avatar) { updateFields.push("avatar = ?"); updateValues.push(avatar); }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: "Không có thông tin nào để cập nhật" });
+    }
+
+    updateValues.push(userId);
+    const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+    await db.promise().query(sql, updateValues);
+
+    res.json({ message: "Cập nhật thông tin thành công" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+    res.status(500).json({ message: "Lỗi server khi cập nhật thông tin" });
+  }
+});
+
 // API: Lấy danh sách sản phẩm đã đăng của người dùng
 app.get("/api/user/products", isAuthenticated, isUser, (req, res) => {
   const userId = req.session.user.id;
@@ -462,6 +507,100 @@ app.get("/api/admin/users", isAuthenticated, isAdmin, (req, res) => {
     }
     res.json(results);
   });
+});
+
+// API: Lấy chi tiết người dùng (cho admin)
+app.get("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const [users] = await db.promise().query(
+      `
+      SELECT u.*, r.name as role_name 
+      FROM users u 
+      JOIN roles r ON u.role_id = r.id 
+      WHERE u.id = ?
+    `,
+      [req.params.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const user = users[0];
+    // Chuyển đổi avatar sang base64 nếu có
+    if (user.avatar) {
+      user.avatar = user.avatar.toString("base64");
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Lỗi khi lấy thông tin người dùng" });
+  }
+});
+
+// API: Cập nhật thông tin người dùng (cho admin)
+app.put("/api/admin/users/:id", isAuthenticated, isAdmin, upload.single("avatar"), async (req, res) => {
+  const userId = req.params.id;
+  const {
+    username,
+    password,
+    email,
+    full_name,
+    phone,
+    address,
+    school,
+    role_id,
+    status
+  } = req.body;
+
+  try {
+    // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
+    const [existing] = await db.promise().query(
+      "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
+      [username, email, userId]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+    }
+
+    // Xây dựng câu truy vấn động
+    let updateFields = [];
+    let updateValues = [];
+
+    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
+    if (password) { updateFields.push("password = ?"); updateValues.push(password); }
+    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
+    if (full_name) { updateFields.push("full_name = ?"); updateValues.push(full_name); }
+    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
+    if (address) { updateFields.push("address = ?"); updateValues.push(address); }
+    if (school) { updateFields.push("school = ?"); updateValues.push(school); }
+    if (role_id) { updateFields.push("role_id = ?"); updateValues.push(role_id); }
+    if (status) { updateFields.push("status = ?"); updateValues.push(status); }
+
+    // Thêm avatar nếu có
+    if (req.file) {
+      updateFields.push("avatar = ?");
+      updateValues.push(req.file.buffer);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: "Không có thông tin nào để cập nhật" });
+    }
+
+    // Thêm userId vào cuối mảng values
+    updateValues.push(userId);
+
+    // Thực hiện câu truy vấn cập nhật
+    const query = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+    await db.promise().query(query, updateValues);
+
+    res.json({ message: "Cập nhật thông tin người dùng thành công" });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Lỗi khi cập nhật thông tin người dùng" });
+  }
 });
 
 // 2. Quản lý bài đăng
