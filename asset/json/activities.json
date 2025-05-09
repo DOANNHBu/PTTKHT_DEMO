@@ -1,0 +1,30 @@
+{
+    "activities": [
+        {
+            "id": 1,
+            "title": "Quyên góp sách vở cho trẻ em vùng cao",
+            "description": "Chương trình quyên góp sách vở, đồ dùng học tập cho các em học sinh vùng cao",
+            "start_date": "2025-05-15T08:00:00",
+            "end_date": "2025-06-15T17:00:00",
+            "location": "Trường THPT ABC, Hà Nội",
+            "organizer_id": 1,
+            "status": "approved",
+            "items": [
+                {
+                    "id": 1,
+                    "name": "Sách giáo khoa cũ",
+                    "description": "Sách giáo khoa các khối lớp, còn sử dụng được",
+                    "quantity_needed": 100,
+                    "quantity_received": 45
+                },
+                {
+                    "id": 2,
+                    "name": "Vở viết",
+                    "description": "Vở mới hoặc cũ còn trang trống",
+                    "quantity_needed": 200,
+                    "quantity_received": 80
+                }
+            ]
+        }
+    ]
+}
