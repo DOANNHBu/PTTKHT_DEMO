@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Thông tin cá nhân</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <link rel="stylesheet" href="/asset/css/profile.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container header-content">
+        <a href="/page/index.html" class="logo">CHỢ LỚN</a>
+      </div>
+    </header>
+    <div id="add-post-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Thêm bài đăng mới</h2>
+        <form id="add-post-form">
+          <div class="form-group">
+            <label for="title">Tiêu đề:</label>
+            <input type="text" id="title" name="title" required />
+          </div>
+          <div class="form-group">
+            <label for="description">Mô tả:</label>
+            <textarea id="description" name="description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="price">Giá:</label>
+            <input type="number" id="price" name="price" min="0" required />
+          </div>
+          <div class="form-group">
+            <label for="category">Danh mục:</label>
+            <select id="category" name="category" required>
+              <option value="">Chọn danh mục</option>
+              <option value="1">Sách</option>
+              <option value="2">Thiết bị điện tử</option>
+              <option value="3">Quần áo</option>
+              <option value="4">Dụng cụ thể thao</option>
+              <option value="5">Đồ dùng học tập</option>
+              <option value="6">Nhạc cụ</option>
+              <option value="7">Khác</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="location">Địa điểm:</label>
+            <input type="text" id="location" name="location" required />
+          </div>
+          <div class="form-group">
+            <label for="images">Hình ảnh:</label>
+            <input type="file" id="images" name="images" multiple />
+          </div>
+          <button type="submit" class="submit-button">Đăng bài</button>
+        </form>
+      </div>
+    </div>
+    <div class="profile-main-grid">
+      <div class="profile-left-col">
+        <div id="profile-info"></div>
+        <div class="profile-actions">
+          <button class="post-button profile-post-btn">Đăng bài đăng</button>
+        </div>
+      </div>
+      <div class="profile-right-col">
+        <h2>Sản phẩm đã đăng</h2>
+        <div id="user-products"></div>
+      </div>
+    </div>
+    <script src="/asset/js/profile.js"></script>
+    <script src="/asset/js/auth-check.js"></script>
+  </body>
+</html>
