@@ -1,0 +1,108 @@
+{
+    "posts": [
+        {
+            "id": 1,
+            "title": "Bán sách giáo khoa lớp 10",
+            "description": "Bộ sách giáo khoa lớp 10 đầy đủ các môn, còn mới 90%. Bao gồm: Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, GDCD",
+            "price": 150000,
+            "category_id": 1,
+            "location": "Hà Nội",
+            "author_id": 5,
+            "author_name": "Nguyễn Văn A",
+            "status": "pending",
+            "created_at": "2025-05-06T08:30:00",
+            "updated_at": "2025-05-06T08:30:00",
+            "images": [
+                {
+                    "id": 1,
+                    "image_url": "/assets/images/books1.jpg"
+                },
+                {
+                    "id": 2,
+                    "image_url": "/assets/images/books2.jpg"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "title": "Tặng đồng phục cũ",
+            "description": "Tặng lại đồng phục cũ còn tốt cho các bạn khó khăn. Size L, đã giặt sạch sẽ.",
+            "price": 0,
+            "category_id": 2,
+            "location": "TP.HCM",
+            "author_id": 8,
+            "author_name": "Trần Thị B",
+            "status": "pending",
+            "created_at": "2025-05-06T09:15:00",
+            "updated_at": "2025-05-06T09:15:00",
+            "images": [
+                {
+                    "id": 3,
+                    "image_url": "/assets/images/uniform1.jpg"
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "title": "Dụng cụ thí nghiệm hóa học",
+            "description": "Cần bán bộ dụng cụ thí nghiệm hóa học cá nhân, bao gồm: ống nghiệm, đèn cồn, kẹp ống nghiệm...",
+            "price": 300000,
+            "category_id": 3,
+            "location": "Đà Nẵng",
+            "author_id": 12,
+            "author_name": "Phạm Văn C",
+            "status": "pending",
+            "created_at": "2025-05-06T10:00:00",
+            "updated_at": "2025-05-06T10:00:00",
+            "images": [
+                {
+                    "id": 4,
+                    "image_url": "/assets/images/lab1.jpg"
+                },
+                {
+                    "id": 5,
+                    "image_url": "/assets/images/lab2.jpg"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "title": "Chia sẻ tài liệu ôn thi THPT",
+            "description": "Tổng hợp tài liệu ôn thi THPT các môn tự nhiên, đã được sắp xếp và phân loại theo chuyên đề",
+            "price": 50000,
+            "category_id": 4,
+            "location": "Hải Phòng",
+            "author_id": 15,
+            "author_name": "Lê Thị D",
+            "status": "approved",
+            "created_at": "2025-05-05T14:20:00",
+            "updated_at": "2025-05-06T08:00:00",
+            "images": [
+                {
+                    "id": 6,
+                    "image_url": "/assets/images/docs1.jpg"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "title": "Thanh lý bàn học sinh",
+            "description": "Bàn học sinh gỗ tự nhiên, kích thước 80x60cm, có ngăn kéo, tình trạng còn tốt",
+            "price": 400000,
+            "category_id": 5,
+            "location": "Cần Thơ",
+            "author_id": 18,
+            "author_name": "Hoàng Văn E",
+            "status": "rejected",
+            "rejection_reason": "Hình ảnh không rõ nét, thiếu thông tin kích thước chi tiết",
+            "created_at": "2025-05-05T16:45:00",
+            "updated_at": "2025-05-06T09:30:00",
+            "images": [
+                {
+                    "id": 7,
+                    "image_url": "/assets/images/desk1.jpg"
+                }
+            ]
+        }
+    ]
+}

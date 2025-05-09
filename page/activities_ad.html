@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý hoạt động</title>
+    <link rel="stylesheet" href="/asset/css/admin.css" />
+    <link rel="stylesheet" href="/asset/css/activities_ad.css" />
+  </head>
+
+  <body>
+    <div class="activities-container">
+      <!-- Thêm div content-area -->
+      <div id="content-area">
+        <div class="card">
+          <div class="activity-controls">
+            <h2>Quản lý hoạt động</h2>
+            <button
+              class="btn btn-primary"
+              onclick="activityManager.showCreateForm()"
+            >
+              + Tạo hoạt động mới
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tên hoạt động</th>
+                  <th>Thời gian</th>
+                  <th>Địa điểm</th>
+                  <th>Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="activities-table">
+                <!-- Data will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal View Details -->
+      <div id="detailModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div id="modalContent"></div>
+        </div>
+      </div>
+
+      <!-- Loading Spinner - Đảm bảo phần tử này luôn tồn tại -->
+      <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Toast Notification -->
+      <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="/asset/js/activities_ad.js"></script>
+  </body>
+</html>
