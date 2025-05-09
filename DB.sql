@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     address TEXT,
     school varchar(255),
-    avatar LONGBLOB,
+    avatar MEDIUMBLOB,
     role_id INT NOT NULL,
     status ENUM('active', 'locked', 'deleted') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
