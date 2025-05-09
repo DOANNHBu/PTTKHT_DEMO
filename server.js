@@ -43,11 +43,11 @@ const liveReloadServer = livereload.createServer();
 liveReloadServer.watch(path.join(__dirname, "page"));
 liveReloadServer.watch(path.join(__dirname, "asset"));
 
-// Middleware để thêm CSP header
+// Thay đổi middleware CSP
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:35729/livereload;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:35729/livereload; img-src 'self' data: blob:;"
   );
   next();
 });
@@ -153,7 +153,7 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
   const userId = req.session.user.id;
 
   const query = `
-    SELECT id, full_name AS fullname, username, school, phone, avatar_url AS avatar
+    SELECT id, full_name AS fullname, username, school, phone, avatar
     FROM users
     WHERE id = ?
   `;
@@ -166,6 +166,11 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
 
     if (results.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Chuyển đổi avatar LONGBLOB thành base64 string nếu có
+    if (results[0].avatar) {
+      results[0].avatar = results[0].avatar.toString('base64');
     }
 
     res.json(results[0]);
@@ -884,6 +889,121 @@ app.get("/api/public/activities/:id", async (req, res) => {
   } catch (error) {
     console.error('Error fetching activity:', error);
     res.status(500).json({ message: 'Lỗi khi lấy thông tin hoạt động' });
+  }
+});
+
+// API tạo tài khoản mới (chỉ admin)
+app.post('/api/admin/users', isAuthenticated, isAdmin, upload.single('avatar'), async (req, res) => {
+  const { username, password, email, full_name, phone, address, school, role_id } = req.body;
+
+  // Kiểm tra dữ liệu đầu vào
+  if (!username || !password || !email || !full_name || !role_id) {
+    return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin bắt buộc' });
+  }
+
+  try {
+    // Kiểm tra username và email đã tồn tại chưa
+    const [existingUser] = await db.promise().query(
+      'SELECT id FROM users WHERE username = ? OR email = ?',
+      [username, email]
+    );
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({ message: 'Tên đăng nhập hoặc email đã tồn tại' });
+    }
+
+    let avatar = null;
+    if (req.file) {
+      avatar = req.file.buffer;
+    }
+
+    // Thêm người dùng mới
+    const [result] = await db.promise().query(
+      'INSERT INTO users (username, password, email, full_name, phone, address, school, avatar, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [username, password, email, full_name, phone || null, address || null, school || null, avatar, role_id]
+    );
+
+    res.status(201).json({
+      message: 'Tạo tài khoản thành công',
+      userId: result.insertId
+    });
+  } catch (error) {
+    console.error('Lỗi khi tạo tài khoản:', error);
+    res.status(500).json({ message: 'Lỗi server khi tạo tài khoản' });
+  }
+});
+
+// API xóa người dùng (chỉ admin)
+app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Kiểm tra xem user có tồn tại không
+    const [user] = await db.promise().query(
+      'SELECT role_id FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (user.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    // Không cho phép xóa admin khác
+    if (user[0].role_id === 1 && req.session.user.id !== parseInt(userId)) {
+      return res.status(403).json({ message: 'Không thể xóa tài khoản admin khác' });
+    }
+
+    // Bắt đầu transaction
+    const connection = await db.promise().getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // 1. Xóa tất cả hình ảnh của bài đăng của user
+      await connection.query(
+        'DELETE pi FROM post_images pi INNER JOIN posts p ON pi.post_id = p.id WHERE p.author_id = ?',
+        [userId]
+      );
+
+      // 2. Xóa tất cả bài đăng của user
+      await connection.query(
+        'DELETE FROM posts WHERE author_id = ?',
+        [userId]
+      );
+
+      // 3. Xóa tất cả thông báo của user
+      await connection.query(
+        'DELETE FROM notifications WHERE user_id = ?',
+        [userId]
+      );
+
+      // 6. Cuối cùng xóa user
+      await connection.query(
+        'DELETE FROM users WHERE id = ?',
+        [userId]
+      );
+
+      // Commit transaction
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        message: 'Đã xóa người dùng và tất cả thông tin liên quan thành công',
+        deletedUserId: userId
+      });
+
+    } catch (error) {
+      // Rollback nếu có lỗi
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
+
+  } catch (error) {
+    console.error('Lỗi khi xóa người dùng:', error);
+    res.status(500).json({
+      message: 'Lỗi server khi xóa người dùng',
+      error: error.message
+    });
   }
 });
 

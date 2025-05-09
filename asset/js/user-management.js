@@ -1,14 +1,16 @@
 class UserManager {
     constructor() {
         this.users = [];
-        this.currentRole = '2'; // Default to student
+        this.currentRole = '2'; // Default to user role
         this.initializeEventListeners();
         this.loadUsers();
     }
 
     async loadUsers() {
         try {
-            const response = await fetch('http://localhost:3000/users');
+            const response = await fetch('/api/admin/users', {
+                credentials: 'include'
+            });
             this.users = await response.json();
             this.filterAndRenderUsers();
         } catch (error) {
@@ -32,12 +34,8 @@ class UserManager {
                 <td>${user.username}</td>
                 <td>${user.full_name}</td>
                 <td>${user.email}</td>
-                <td>${user.class_name || '-'}</td>
-                <td>
-                    <span class="status-badge status-${user.status}">
-                        ${this.formatStatus(user.status)}
-                    </span>
-                </td>
+                <td>${user.school || '-'}</td>
+                <td>${user.role_name}</td>
                 <td>
                     <button class="btn btn-danger" onclick="userManager.deleteUser('${user.id}')">
                         Xóa
@@ -53,8 +51,9 @@ class UserManager {
         }
 
         try {
-            const response = await fetch(`http://localhost:3000/users/${userId}`, {
-                method: 'DELETE'
+            const response = await fetch(`/api/admin/users/${userId}`, {
+                method: 'DELETE',
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -73,7 +72,8 @@ class UserManager {
         const searchTerm = document.getElementById('searchUsername').value.toLowerCase();
         const filteredUsers = this.users.filter(user =>
             user.role_id.toString() === this.currentRole &&
-            user.username.toLowerCase().includes(searchTerm)
+            (user.username.toLowerCase().includes(searchTerm) ||
+                user.full_name.toLowerCase().includes(searchTerm))
         );
         this.renderUsers(filteredUsers);
     }
@@ -89,26 +89,15 @@ class UserManager {
         const formData = new FormData(form);
 
         try {
-            const response = await fetch('http://localhost:3000/users', {
+            const response = await fetch('/api/admin/users', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: formData.get('username'),
-                    password: formData.get('password'),
-                    full_name: formData.get('full_name'),
-                    email: formData.get('email'),
-                    class_name: formData.get('class_name'),
-                    school_name: formData.get('school_name'),
-                    role_id: formData.get('role_id'),
-                    status: 'active',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                })
+                credentials: 'include',
+                body: formData // Gửi trực tiếp FormData để hỗ trợ upload file
             });
 
-            if (!response.ok) throw new Error('Failed to create user');
+            if (!response.ok) {
+                throw new Error('Failed to create user');
+            }
 
             await this.loadUsers();
             this.closeModal();
@@ -143,28 +132,19 @@ class UserManager {
         const createForm = document.getElementById('createUserForm');
         createForm.onsubmit = (e) => this.handleCreate(e);
 
-        // Role selection for class field visibility
-        const roleSelect = createForm.querySelector('[name="role_id"]');
-        roleSelect.onchange = (e) => {
-            const studentOnly = document.querySelector('.student-only');
-            studentOnly.style.display = e.target.value === '2' ? 'block' : 'none';
-        };
+        // Search functionality
+        const searchInput = document.getElementById('searchUsername');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => this.searchUsers());
+        }
     }
 
     closeModal() {
         document.getElementById('createUserModal').style.display = 'none';
     }
-
-    formatStatus(status) {
-        return {
-            'active': 'Hoạt động',
-            'deleted': 'Đã xóa'
-        }[status] || status;
-    }
 }
 
 // Initialize
-// const userManager = new UserManager();
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.user-management') && !window.userManager) {
         window.userManager = new UserManager();
