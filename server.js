@@ -236,6 +236,10 @@ app.get("/api/logout", (req, res) => {
 
 // API: Lấy danh sách bài đăng
 app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
+  const limit = parseInt(req.query.limit) || 20; // Số sản phẩm mỗi trang (mặc định là 20)
+  const page = parseInt(req.query.page) || 1; // Trang hiện tại (mặc định là trang 1)
+  const offset = (page - 1) * limit; // Tính toán offset
+
   const query = `
     SELECT 
       p.id, 
@@ -251,9 +255,10 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
     JOIN users u ON p.author_id = u.id
     WHERE p.status = 'approved'
     ORDER BY p.availability ASC, p.created_at DESC
+    LIMIT ? OFFSET ?
   `;
 
-  db.query(query, (err, results) => {
+  db.query(query, [limit, offset], (err, results) => {
     if (err) {
       console.error("Lỗi khi truy vấn danh sách bài đăng:", err);
       res.status(500).send("Lỗi server");

@@ -8,18 +8,40 @@ function formatPrice(price) {
   return parseFloat(price).toLocaleString("vi-VN") + " đ";
 }
 
-async function loadProductsData() {
+// thay đổi trang
+let currentPage = 1; // Trang hiện tại
+const productsPerPage = 16; // Số sản phẩm mỗi trang
+
+async function loadProductsData(page = 1) {
   try {
-    // Thay đổi: Sử dụng API endpoint từ server thay vì file JSON
-    const response = await fetch("/api/posts");
+    const response = await fetch(
+      `/api/posts?page=${page}&limit=${productsPerPage}`
+    );
     if (!response.ok) {
       throw new Error("Không thể tải dữ liệu sản phẩm từ server");
     }
-    productsData = await response.json();
-    renderProducts(productsData); // Hiển thị sản phẩm sau khi tải xong
+    const products = await response.json();
+    renderProducts(products); // Hiển thị sản phẩm sau khi tải xong
   } catch (error) {
     console.error("Lỗi khi tải dữ liệu sản phẩm:", error);
   }
+}
+
+function changePage(direction) {
+  currentPage += direction;
+  if (currentPage < 1) currentPage = 1; // Không cho phép trang nhỏ hơn 1
+
+  // Cập nhật số trang hiện tại
+  document.getElementById("current-page").textContent = currentPage;
+
+  // Tải dữ liệu sản phẩm cho trang mới
+  loadProductsData(currentPage).then(() => {
+    // Cuộn đến phần nút phân trang sau khi danh sách sản phẩm đã được hiển thị
+    const pagination = document.querySelector(".pagination");
+    if (pagination) {
+      pagination.scrollIntoView({ behavior: "auto", block: "center" });
+    }
+  });
 }
 
 // Hiển thị sản phẩm
