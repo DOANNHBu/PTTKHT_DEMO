@@ -64,20 +64,26 @@ liveReloadServer.server.once("connection", () => {
 });
 
 // MySQL Connection
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: "127.0.0.1",
   user: "root",
   password: "root",
   database: "school_exchange",
   port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10, // Số lượng kết nối tối đa trong pool
+  queueLimit: 0,
 });
 
-db.connect((err) => {
+// Remove the db.connect() call since it's not needed with connection pool
+// Instead, we can test the connection like this:
+db.getConnection((err, connection) => {
   if (err) {
     console.error("Không thể kết nối tới MySQL:", err);
     return;
   }
   console.log("Kết nối MySQL thành công!");
+  connection.release(); // Don't forget to release the connection
 });
 
 // Kiểm tra xem người dùng đã đăng nhập chưa
