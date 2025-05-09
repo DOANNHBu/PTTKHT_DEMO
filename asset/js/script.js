@@ -41,13 +41,20 @@ function renderProducts(products) {
       .toString()
       .padStart(2, "0")}/${createdDate.getFullYear()}`;
 
+    const productImage =
+      product.thumbnail || "/asset/images/default-thumbnail.png"; // Ảnh mặc định
+
+    // Thêm lớp `sold-out` nếu sản phẩm đã hết hàng
+    const productInfoClass =
+      product.availability === "sold"
+        ? "product-info sold-out"
+        : "product-info";
+
     productElement.innerHTML = `
         <div class="product-image">
-          <img src="${
-            product.thumbnail || "/asset/images/default-thumbnail.jpg"
-          }" alt="Thumbnail" />
+          <img src="${productImage}" alt="Thumbnail" />
         </div>
-        <div class="product-info">
+        <div class="${productInfoClass}">
             <div class="product-title">${product.title}</div>
             <div class="product-price">${formatPrice(product.price)}</div>
             <div class="product-meta">
@@ -106,7 +113,14 @@ function filterByCategory(category) {
   const filteredProducts = productsData.filter(
     (product) => product.categoryName === category
   );
-  renderProducts(filteredProducts);
+
+  // Sắp xếp sản phẩm: Còn hàng trước, hết hàng sau
+  const sortedProducts = filteredProducts.sort((a, b) => {
+    if (a.availability === b.availability) return 0;
+    return a.availability === "available" ? -1 : 1;
+  });
+
+  renderProducts(sortedProducts);
 }
 
 // Hiển thị chi tiết sản phẩm
@@ -147,12 +161,19 @@ function showProductDetail(productId) {
       document.getElementById("detail-description").textContent =
         product.description;
 
+      // Hiển thị tình trạng (Còn hàng hoặc Hết hàng)
+      const conditionElement = document.getElementById("detail-condition");
+      conditionElement.textContent =
+        product.availability === "available" ? "Còn hàng" : "Hết hàng";
+
       // Hiển thị ảnh
       const mainImage = document.getElementById("product-main-image");
       const thumbnailsContainer = document.querySelector(".product-thumbnails");
 
       // Lấy tất cả ảnh (bao gồm cả ảnh chính)
-      const allImages = product.images.map((img) => img.data);
+      const allImages = product.images.length
+        ? product.images.map((img) => img.data)
+        : ["/asset/images/default-thumbnail.png"]; // Ảnh mặc định
 
       // Hiển thị ảnh chính
       mainImage.innerHTML = `<img src="${allImages[0]}" alt="Main Image" />`;
@@ -206,7 +227,13 @@ function setupSearchForm() {
           product.location.toLowerCase().includes(searchTerm)
       );
 
-      renderProducts(searchResults);
+      // Sắp xếp sản phẩm: Còn hàng trước, hết hàng sau
+      const sortedResults = searchResults.sort((a, b) => {
+        if (a.availability === b.availability) return 0;
+        return a.availability === "available" ? -1 : 1;
+      });
+
+      renderProducts(sortedResults);
     });
   }
 }

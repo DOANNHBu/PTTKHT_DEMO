@@ -243,13 +243,14 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
       p.price, 
       p.location, 
       p.created_at, 
+      p.availability, 
       c.name AS categoryName, 
       (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
     JOIN users u ON p.author_id = u.id
     WHERE p.status = 'approved'
-    ORDER BY p.created_at DESC
+    ORDER BY p.availability ASC, p.created_at DESC
   `;
 
   db.query(query, (err, results) => {
@@ -259,12 +260,14 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
       return;
     }
 
-    // Chuyển đổi ảnh từ buffer sang base64
+    // Kiểm tra và gán ảnh mặc định nếu không có ảnh
     results.forEach((post) => {
       if (post.thumbnail) {
         post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString(
           "base64"
         )}`;
+      } else {
+        post.thumbnail = "/asset/images/default-thumbnail.png"; // Ảnh mặc định
       }
     });
 
@@ -276,13 +279,13 @@ app.get("/api/posts", isAuthenticated, isUser, (req, res) => {
 app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
   const postId = req.params.id;
 
-  // Query để lấy thông tin bài đăng
   const postQuery = `
     SELECT 
       p.id, 
       p.title, 
       p.description, 
-      p.price, 
+      p.price,
+      p.availability,
       c.name AS categoryName, 
       p.location, 
       p.status, 
@@ -300,7 +303,6 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
     WHERE post_id = ?
   `;
 
-  // Thực hiện truy vấn thông tin bài đăng
   db.query(postQuery, [postId], (err, postResults) => {
     if (err) {
       console.error("Lỗi khi truy vấn chi tiết bài đăng:", err);
@@ -313,18 +315,26 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
 
     const post = postResults[0];
 
-    // Thực hiện truy vấn hình ảnh
     db.query(imagesQuery, [postId], (err, imageResults) => {
       if (err) {
         console.error("Lỗi khi truy vấn hình ảnh bài đăng:", err);
         return res.status(500).send("Lỗi server");
       }
 
-      // Chuyển đổi ảnh từ buffer sang base64
-      post.images = imageResults.map((img) => ({
-        role: img.image_role,
-        data: `data:image/jpeg;base64,${img.image_data.toString("base64")}`,
-      }));
+      // Kiểm tra và gán ảnh mặc định nếu không có ảnh
+      if (imageResults.length > 0) {
+        post.images = imageResults.map((img) => ({
+          role: img.image_role,
+          data: `data:image/jpeg;base64,${img.image_data.toString("base64")}`,
+        }));
+      } else {
+        post.images = [
+          {
+            role: "thumbnail",
+            data: "/asset/images/default-thumbnail.png", // Ảnh mặc định
+          },
+        ];
+      }
 
       res.json(post);
     });

@@ -36,23 +36,6 @@ CREATE TABLE IF NOT EXISTS categories (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create posts table
-CREATE TABLE IF NOT EXISTS posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    price DECIMAL(15, 2),
-    category_id INT NOT NULL,
-    location VARCHAR(100) NOT NULL,
-    author_id INT NOT NULL,
-    status ENUM('pending', 'approved', 'rejected', 'deleted') DEFAULT 'pending',
-    rejection_reason TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (author_id) REFERENCES users(id)
-);
-
 
 -- Create posts table
 CREATE TABLE IF NOT EXISTS posts (
@@ -180,7 +163,7 @@ INSERT INTO roles (name, description) VALUES
 -- Chèn người dùng (mật khẩu được băm bằng MD5 cho mục đích minh họa, nên sử dụng băm mạnh hơn trong môi trường thực tế)
 INSERT INTO users (username, password, email, full_name, phone, address, school, role_id, status) VALUES
 -- Quản trị viên
-('admin1', '$2y$10$GjB.3hHn.eUZzJzF7HVE3OQy0GFk2vohKlXVl2VtSgiYJITBIlEcK', 'admin1@truong.edu.vn', 'Nguyễn Văn Admin', '0901234567', 'Số 123 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
+('admin1', '1', 'admin1@truong.edu.vn', 'Nguyễn Văn Admin', '0901234567', 'Số 123 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
 ('admin2', '$2y$10$KlHy5iZ7O.C3bdT.tGQ1UuJpJKjL2XmOLwxR.SSjKJpTnJ0iUzjuy', 'admin2@truong.edu.vn', 'Trần Thị Quản Lý', '0901234568', 'Số 124 đường Quản Trị, Hà Nội', 'Trường THPT Quản Trị', 1, 'active'),
 
 -- Người dùng thông thường (giáo viên, học sinh)
@@ -205,44 +188,45 @@ INSERT INTO categories (name, description) VALUES
 ('Khác', 'Các vật dụng không thuộc các danh mục khác');
 
 -- Chèn bài đăng
-INSERT INTO posts (title, description, price, category_id, location, author_id, status) VALUES
+-- Chèn bài đăng
+INSERT INTO posts (title, description, price, category_id, location, author_id, status, availability) VALUES
 -- Sách
-('Sách Giải tích', 'Sách Giải tích lớp 12, đã sử dụng nhẹ với một số ghi chú nhỏ', 250000, 1, 'Trường THPT Nguyễn Du', 4, 'pending'),
-('Sách hướng dẫn thí nghiệm Hóa học', 'Sách hướng dẫn thí nghiệm Hóa học lớp 11, chưa sử dụng', 150000, 1, 'Trường THPT Chu Văn An', 6, 'approved'),
-('Bộ sách Văn học', 'Bộ 5 cuốn sách văn học kinh điển cần thiết cho lớp Văn', 300000, 1, 'Trường THPT Việt Đức', 8, 'approved'),
-('Sách Vật lý cho Sinh viên và Kỹ sư', 'Sách Vật lý đại học trong tình trạng tuyệt vời', 350000, 1, 'Trường THPT Phan Đình Phùng', 9, 'approved'),
+('Sách Giải tích', 'Sách Giải tích lớp 12, đã sử dụng nhẹ với một số ghi chú nhỏ', 250000, 1, 'Trường THPT Nguyễn Du', 4, 'pending', 'available'),
+('Sách hướng dẫn thí nghiệm Hóa học', 'Sách hướng dẫn thí nghiệm Hóa học lớp 11, chưa sử dụng', 150000, 1, 'Trường THPT Chu Văn An', 6, 'approved', 'available'),
+('Bộ sách Văn học', 'Bộ 5 cuốn sách văn học kinh điển cần thiết cho lớp Văn', 300000, 1, 'Trường THPT Việt Đức', 8, 'approved', 'available'),
+('Sách Vật lý cho Sinh viên và Kỹ sư', 'Sách Vật lý đại học trong tình trạng tuyệt vời', 350000, 1, 'Trường THPT Phan Đình Phùng', 9, 'approved', 'available'),
 
 -- Thiết bị điện tử
-('Máy tính bỏ túi đồ họa', 'Máy tính Casio fx-580 hoạt động hoàn hảo', 450000, 2, 'Trường THPT Nguyễn Du', 5, 'approved'),
-('USB 64GB', 'USB mới chưa sử dụng', 120000, 2, 'Trường THPT Chu Văn An', 7, 'approved'),
-('Chuột không dây', 'Chuột không dây Logitech, đã sử dụng nhẹ', 100000, 2, 'Trường THPT Lê Quý Đôn', 10, 'approved'),
-('Đế tản nhiệt laptop', 'Đế tản nhiệt cho laptop đến 17 inch', 150000, 2, 'Trường THPT Việt Đức', 8, 'pending'),
+('Máy tính bỏ túi đồ họa', 'Máy tính Casio fx-580 hoạt động hoàn hảo', 450000, 2, 'Trường THPT Nguyễn Du', 5, 'approved', 'sold'),
+('USB 64GB', 'USB mới chưa sử dụng', 120000, 2, 'Trường THPT Chu Văn An', 7, 'approved', 'available'),
+('Chuột không dây', 'Chuột không dây Logitech, đã sử dụng nhẹ', 100000, 2, 'Trường THPT Lê Quý Đôn', 10, 'approved', 'sold'),
+('Đế tản nhiệt laptop', 'Đế tản nhiệt cho laptop đến 17 inch', 150000, 2, 'Trường THPT Việt Đức', 8, 'pending', 'available'),
 
 -- Quần áo
-('Áo đồng phục size M', 'Áo đồng phục màu xanh size M, mặc một lần', 80000, 3, 'Trường THPT Nguyễn Du', 4, 'approved'),
-('Áo đội tuyển thể thao size L', 'Áo đội tuyển trường size L, tình trạng tốt', 120000, 3, 'Trường THPT Chu Văn An', 6, 'approved'),
-('Áo khoác đồng phục mùa đông', 'Áo khoác đồng phục mùa đông size S, như mới', 250000, 3, 'Trường THPT Nguyễn Du', 4, 'approved'),
+('Áo đồng phục size M', 'Áo đồng phục màu xanh size M, mặc một lần', 80000, 3, 'Trường THPT Nguyễn Du', 4, 'approved', 'available'),
+('Áo đội tuyển thể thao size L', 'Áo đội tuyển trường size L, tình trạng tốt', 120000, 3, 'Trường THPT Chu Văn An', 6, 'approved', 'available'),
+('Áo khoác đồng phục mùa đông', 'Áo khoác đồng phục mùa đông size S, như mới', 250000, 3, 'Trường THPT Nguyễn Du', 4, 'approved', 'available'),
 
 -- Dụng cụ thể thao
-('Bóng rổ', 'Bóng rổ kích thước tiêu chuẩn, đã sử dụng nhẹ', 150000, 4, 'Trường THPT Phan Đình Phùng', 9, 'approved'),
-('Vợt tennis', 'Vợt tennis Wilson kèm bao đựng', 300000, 4, 'Trường THPT Lê Quý Đôn', 10, 'approved'),
-('Giày đá bóng size 42', 'Giày đá bóng Adidas size 42, sử dụng một mùa', 200000, 4, 'Trường THPT Nguyễn Du', 5, 'approved'),
+('Bóng rổ', 'Bóng rổ kích thước tiêu chuẩn, đã sử dụng nhẹ', 150000, 4, 'Trường THPT Phan Đình Phùng', 9, 'approved', 'available'),
+('Vợt tennis', 'Vợt tennis Wilson kèm bao đựng', 300000, 4, 'Trường THPT Lê Quý Đôn', 10, 'approved', 'available'),
+('Giày đá bóng size 42', 'Giày đá bóng Adidas size 42, sử dụng một mùa', 200000, 4, 'Trường THPT Nguyễn Du', 5, 'approved', 'sold'),
 
 -- Đồ dùng học tập
-('Máy tính khoa học', 'Máy tính khoa học cơ bản, hoạt động tốt', 50000, 5, 'Trường THPT Chu Văn An', 7, 'approved'),
-('Bộ dụng cụ vẽ', 'Bộ dụng cụ vẽ đầy đủ với bút chì, than và tẩy', 180000, 5, 'Trường THPT Việt Đức', 8, 'approved'),
-('Bộ vở', '5 quyển vở mới, kiểu ô ly', 70000, 5, 'Trường THPT Phan Đình Phùng', 9, 'approved'),
-('Bộ văn phòng phẩm', 'Bộ văn phòng phẩm đầy đủ với bút, bút dạ quang và giấy note', 100000, 5, 'Trường THPT Lê Quý Đôn', 10, 'pending'),
+('Máy tính khoa học', 'Máy tính khoa học cơ bản, hoạt động tốt', 50000, 5, 'Trường THPT Chu Văn An', 7, 'approved', 'available'),
+('Bộ dụng cụ vẽ', 'Bộ dụng cụ vẽ đầy đủ với bút chì, than và tẩy', 180000, 5, 'Trường THPT Việt Đức', 8, 'approved', 'available'),
+('Bộ vở', '5 quyển vở mới, kiểu ô ly', 70000, 5, 'Trường THPT Phan Đình Phùng', 9, 'approved', 'available'),
+('Bộ văn phòng phẩm', 'Bộ văn phòng phẩm đầy đủ với bút, bút dạ quang và giấy note', 100000, 5, 'Trường THPT Lê Quý Đôn', 10, 'pending', 'available'),
 
 -- Nhạc cụ
-('Đàn guitar acoustic', 'Đàn guitar cho người mới bắt đầu kèm hộp đựng và pick', 650000, 6, 'Trường THPT Nguyễn Du', 5, 'approved'),
-('Sáo', 'Sáo trúc dành cho học sinh, tình trạng tốt', 500000, 6, 'Trường THPT Chu Văn An', 6, 'approved'),
-('Đàn organ điện tử', 'Đàn organ 61 phím với chân đế', 750000, 6, 'Trường THPT Việt Đức', 8, 'approved'),
+('Đàn guitar acoustic', 'Đàn guitar cho người mới bắt đầu kèm hộp đựng và pick', 650000, 6, 'Trường THPT Nguyễn Du', 5, 'approved', 'available'),
+('Sáo', 'Sáo trúc dành cho học sinh, tình trạng tốt', 500000, 6, 'Trường THPT Chu Văn An', 6, 'approved', 'available'),
+('Đàn organ điện tử', 'Đàn organ 61 phím với chân đế', 750000, 6, 'Trường THPT Việt Đức', 8, 'approved', 'available'),
 
 -- Khác
-('Balo', 'Balo màu đen hiệu Sakos, đã sử dụng nhẹ', 200000, 7, 'Trường THPT Phan Đình Phùng', 9, 'approved'),
-('Hộp cơm giữ nhiệt', 'Hộp cơm giữ nhiệt, như mới', 80000, 7, 'Trường THPT Lê Quý Đôn', 10, 'approved'),
-('Dụng cụ sắp xếp tủ đựng đồ', 'Dụng cụ sắp xếp tủ đựng đồ có gương', 120000, 7, 'Trường THPT Nguyễn Du', 4, 'approved');
+('Balo', 'Balo màu đen hiệu Sakos, đã sử dụng nhẹ', 200000, 7, 'Trường THPT Phan Đình Phùng', 9, 'approved', 'available'),
+('Hộp cơm giữ nhiệt', 'Hộp cơm giữ nhiệt, như mới', 80000, 7, 'Trường THPT Lê Quý Đôn', 10, 'approved', 'available'),
+('Dụng cụ sắp xếp tủ đựng đồ', 'Dụng cụ sắp xếp tủ đựng đồ có gương', 120000, 7, 'Trường THPT Nguyễn Du', 4, 'approved', 'available');
 
 
 INSERT INTO activities (title, description, start_date, end_date, location, organizer_id, name_organizer, guidelines, status) VALUES
