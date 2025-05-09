@@ -53,11 +53,33 @@ CREATE TABLE IF NOT EXISTS posts (
     FOREIGN KEY (author_id) REFERENCES users(id)
 );
 
+
+-- Create posts table
+CREATE TABLE IF NOT EXISTS posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    price DECIMAL(15, 2),
+    category_id INT NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    author_id INT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected', 'deleted') DEFAULT 'pending',
+    rejection_reason TEXT,
+    availability ENUM('available', 'sold') DEFAULT 'available', -- ✅ thêm trạng thái còn/hết hàng
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+
 -- Create post_images table
 CREATE TABLE IF NOT EXISTS post_images (
     id INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,
-    image_url VARCHAR(255) NOT NULL,
+    image_data MEDIUMBLOB NOT NULL, -- chứa dữ liệu ảnh
+    image_type VARCHAR(50),        -- ví dụ: 'image/jpeg' hoặc 'image/png'
+    image_role ENUM('thumbnail', 'image') NOT NULL DEFAULT 'thumbnail', -- phân loại ảnh
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
@@ -220,40 +242,6 @@ INSERT INTO posts (title, description, price, category_id, location, author_id, 
 ('Hộp cơm giữ nhiệt', 'Hộp cơm giữ nhiệt, như mới', 80000, 7, 'Trường THPT Lê Quý Đôn', 10, 'approved'),
 ('Dụng cụ sắp xếp tủ đựng đồ', 'Dụng cụ sắp xếp tủ đựng đồ có gương', 120000, 7, 'Trường THPT Nguyễn Du', 4, 'approved');
 
--- Chèn hình ảnh bài đăng
-INSERT INTO post_images (post_id, image_url) VALUES
-(1, 'images/posts/sach_giai_tich_1.jpg'),
-(1, 'images/posts/sach_giai_tich_2.jpg'),
-(2, 'images/posts/sach_hoa_hoc_1.jpg'),
-(3, 'images/posts/sach_van_hoc_1.jpg'),
-(3, 'images/posts/sach_van_hoc_2.jpg'),
-(3, 'images/posts/sach_van_hoc_3.jpg'),
-(4, 'images/posts/sach_vat_ly_1.jpg'),
-(5, 'images/posts/may_tinh_bo_tui_1.jpg'),
-(5, 'images/posts/may_tinh_bo_tui_2.jpg'),
-(6, 'images/posts/usb_1.jpg'),
-(7, 'images/posts/chuot_khong_day_1.jpg'),
-(8, 'images/posts/de_tan_nhiet_1.jpg'),
-(9, 'images/posts/ao_dong_phuc_1.jpg'),
-(10, 'images/posts/ao_the_thao_1.jpg'),
-(11, 'images/posts/ao_khoac_dong_phuc_1.jpg'),
-(12, 'images/posts/bong_ro_1.jpg'),
-(13, 'images/posts/vot_tennis_1.jpg'),
-(13, 'images/posts/vot_tennis_2.jpg'),
-(14, 'images/posts/giay_da_bong_1.jpg'),
-(15, 'images/posts/may_tinh_khoa_hoc_1.jpg'),
-(16, 'images/posts/bo_dung_cu_ve_1.jpg'),
-(16, 'images/posts/bo_dung_cu_ve_2.jpg'),
-(17, 'images/posts/bo_vo_1.jpg'),
-(18, 'images/posts/bo_van_phong_pham_1.jpg'),
-(19, 'images/posts/dan_guitar_1.jpg'),
-(19, 'images/posts/dan_guitar_2.jpg'),
-(20, 'images/posts/sao_1.jpg'),
-(21, 'images/posts/dan_organ_1.jpg'),
-(21, 'images/posts/dan_organ_2.jpg'),
-(22, 'images/posts/balo_1.jpg'),
-(23, 'images/posts/hop_com_1.jpg'),
-(24, 'images/posts/dung_cu_tu_1.jpg');
 
 -- Chèn hoạt động mẫu
 INSERT INTO activities (title, description, start_date, end_date, location, organizer_id, status) VALUES

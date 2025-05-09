@@ -23,6 +23,7 @@ async function loadProductsData() {
 }
 
 // Hiển thị sản phẩm
+// Hiển thị sản phẩm
 function renderProducts(products) {
   const productsList = document.getElementById("products-list");
   productsList.innerHTML = "";
@@ -32,7 +33,6 @@ function renderProducts(products) {
     productElement.className = "product";
     productElement.onclick = () => showProductDetail(product.id);
 
-    // Tạo ngày định dạng
     const createdDate = new Date(product.created_at);
     const formattedDate = `${createdDate
       .getDate()
@@ -42,7 +42,11 @@ function renderProducts(products) {
       .padStart(2, "0")}/${createdDate.getFullYear()}`;
 
     productElement.innerHTML = `
-        <div class="product-image">[Hình ảnh sản phẩm]</div>
+        <div class="product-image">
+          <img src="${
+            product.thumbnail || "/asset/images/default-thumbnail.jpg"
+          }" alt="Thumbnail" />
+        </div>
         <div class="product-info">
             <div class="product-title">${product.title}</div>
             <div class="product-price">${formatPrice(product.price)}</div>
@@ -106,42 +110,69 @@ function filterByCategory(category) {
 }
 
 // Hiển thị chi tiết sản phẩm
+// Thay đổi ảnh chính khi click vào thumbnail
+function changeMainImage(imageUrl) {
+  const mainImageElement = document.getElementById("product-main-image");
+  mainImageElement.innerHTML = `<img src="${imageUrl}" alt="Main Image" />`;
+}
+
+// Hiển thị chi tiết sản phẩm (cập nhật để thêm ảnh chính vào thumbnails)
+// Hiển thị chi tiết sản phẩm (cập nhật để thêm ảnh chính vào thumbnails)
 function showProductDetail(productId) {
-  const product = productsData.find((p) => p.id === productId);
-  if (!product) return;
+  fetch(`/api/posts/${productId}`, { credentials: "include" })
+    .then((response) => response.json())
+    .then((product) => {
+      if (!product) return;
 
-  document.getElementById("detail-title").textContent = product.title;
-  document.getElementById("detail-price").textContent = formatPrice(
-    product.price
-  );
-  document.getElementById("detail-category").textContent = product.categoryName;
+      document.getElementById("detail-title").textContent = product.title;
+      document.getElementById("detail-price").textContent = formatPrice(
+        product.price
+      );
+      document.getElementById("detail-category").textContent =
+        product.categoryName;
+      document.getElementById("detail-location").textContent = product.location;
 
-  // Đặt các trường có thể không có trong dữ liệu mới
-  document.getElementById("detail-condition").textContent =
-    product.condition || "Không xác định";
-  document.getElementById("detail-location").textContent = product.location;
+      const createdDate = new Date(product.created_at);
+      const formattedDate = `${createdDate
+        .getDate()
+        .toString()
+        .padStart(2, "0")}/${(createdDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${createdDate.getFullYear()}`;
+      document.getElementById("detail-date").textContent = formattedDate;
 
-  // Format ngày từ created_at
-  const createdDate = new Date(product.created_at);
-  const formattedDate = `${createdDate
-    .getDate()
-    .toString()
-    .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}/${createdDate.getFullYear()}`;
-  document.getElementById("detail-date").textContent = formattedDate;
+      document.getElementById("detail-seller").textContent = `Người bán: ${
+        product.seller || "Không xác định"
+      }`;
+      document.getElementById("detail-description").textContent =
+        product.description;
 
-  // Thông tin người bán - thay bằng thông tin mặc định nếu không có
-  document.getElementById("detail-seller").textContent = `Người bán: ${
-    product.seller || "Không xác định"
-  }`;
-  document.getElementById("detail-description").textContent =
-    product.description;
+      // Hiển thị ảnh
+      const mainImage = document.getElementById("product-main-image");
+      const thumbnailsContainer = document.querySelector(".product-thumbnails");
 
-  document.getElementById("products-list").style.display = "none";
-  document.getElementById("product-detail").style.display = "block";
-  document.querySelector(".section-title").style.display = "none";
-  document.querySelector(".categories").style.display = "none";
+      // Lấy tất cả ảnh (bao gồm cả ảnh chính)
+      const allImages = product.images.map((img) => img.data);
+
+      // Hiển thị ảnh chính
+      mainImage.innerHTML = `<img src="${allImages[0]}" alt="Main Image" />`;
+
+      // Hiển thị thumbnails (bao gồm cả ảnh chính)
+      thumbnailsContainer.innerHTML = allImages
+        .map(
+          (img) =>
+            `<div class="product-thumbnail" onclick="changeMainImage('${img}')">
+              <img src="${img}" alt="Thumbnail" />
+            </div>`
+        )
+        .join("");
+
+      document.getElementById("products-list").style.display = "none";
+      document.getElementById("product-detail").style.display = "block";
+      document.querySelector(".section-title").style.display = "none";
+      document.querySelector(".categories").style.display = "none";
+    })
+    .catch((error) => console.error("Lỗi khi tải chi tiết sản phẩm:", error));
 }
 
 // Quay lại danh sách sản phẩm

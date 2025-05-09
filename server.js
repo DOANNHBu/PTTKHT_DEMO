@@ -47,7 +47,7 @@ liveReloadServer.watch(path.join(__dirname, "asset"));
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:35729; img-src 'self' data:;"
   );
   next();
 });
@@ -205,22 +205,19 @@ app.get("/api/logout", (req, res) => {
   });
 });
 
-// API: Lấy danh sách bài đăng
+// API: Lấy danh sách bài đăng kèm ảnh thumbnail
 app.get("/api/posts", isAuthenticated, (req, res) => {
   const query = `
     SELECT 
       p.id, 
       p.title, 
-      p.description, 
       p.price, 
-      c.name AS categoryName, 
       p.location, 
-      p.status, 
-      p.created_at,
-      u.username AS seller
+      p.created_at, 
+      c.name AS categoryName, 
+      (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
-    JOIN users u ON p.author_id = u.id
     WHERE p.status = 'approved'
     ORDER BY p.created_at DESC
   `;
@@ -231,15 +228,24 @@ app.get("/api/posts", isAuthenticated, (req, res) => {
       res.status(500).send("Lỗi server");
       return;
     }
+
+    // Chuyển đổi ảnh từ buffer sang base64
+    results.forEach((post) => {
+      if (post.thumbnail) {
+        post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString(
+          "base64"
+        )}`;
+      }
+    });
+
     res.json(results);
   });
 });
 
-// API: Lấy chi tiết một bài đăng và hình ảnh của nó
+// API: Lấy chi tiết bài đăng kèm ảnh
 app.get("/api/posts/:id", isAuthenticated, (req, res) => {
   const postId = req.params.id;
 
-  // Query để lấy thông tin bài đăng
   const postQuery = `
     SELECT 
       p.id, 
@@ -248,8 +254,7 @@ app.get("/api/posts/:id", isAuthenticated, (req, res) => {
       p.price, 
       c.name AS categoryName, 
       p.location, 
-      p.status, 
-      p.created_at,
+      p.created_at, 
       u.username AS seller
     FROM posts p
     JOIN categories c ON p.category_id = c.id
@@ -257,14 +262,12 @@ app.get("/api/posts/:id", isAuthenticated, (req, res) => {
     WHERE p.id = ? AND p.status = 'approved'
   `;
 
-  // Query để lấy hình ảnh của bài đăng
   const imagesQuery = `
-    SELECT image_url
+    SELECT image_data, image_role
     FROM post_images
     WHERE post_id = ?
   `;
 
-  // Thực hiện truy vấn thông tin bài đăng
   db.query(postQuery, [postId], (err, postResults) => {
     if (err) {
       console.error("Lỗi khi truy vấn chi tiết bài đăng:", err);
@@ -277,15 +280,17 @@ app.get("/api/posts/:id", isAuthenticated, (req, res) => {
 
     const post = postResults[0];
 
-    // Thực hiện truy vấn hình ảnh
     db.query(imagesQuery, [postId], (err, imageResults) => {
       if (err) {
         console.error("Lỗi khi truy vấn hình ảnh bài đăng:", err);
         return res.status(500).send("Lỗi server");
       }
 
-      // Thêm mảng hình ảnh vào đối tượng bài đăng
-      post.images = imageResults.map((img) => img.image_url);
+      // Chuyển đổi ảnh từ buffer sang base64
+      post.images = imageResults.map((img) => ({
+        role: img.image_role,
+        data: `data:image/jpeg;base64,${img.image_data.toString("base64")}`,
+      }));
 
       res.json(post);
     });
