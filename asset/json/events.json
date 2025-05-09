@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "title": "Quyên góp sách giáo khoa cho trẻ em vùng cao",
+    "date": "10/05/2025",
+    "location": "Trường Tiểu học A, Hà Giang",
+    "description": "Chương trình quyên góp sách giáo khoa và đồ dùng học tập cho trẻ em vùng cao. Hãy cùng chung tay mang tri thức đến với các em nhỏ.",
+    "bannerImage": "banner-books.jpg",
+    "detailImages": ["detail-books-1.jpg", "detail-books-2.jpg"]
+  },
+  {
+    "id": 2,
+    "title": "Hiến máu nhân đạo tại TP. Hồ Chí Minh",
+    "date": "15/05/2025",
+    "location": "Nhà Văn hóa Thanh Niên, TP. Hồ Chí Minh",
+    "description": "Sự kiện hiến máu nhân đạo nhằm hỗ trợ các bệnh nhân cần máu. Tham gia ngay để cứu sống nhiều người hơn.",
+    "bannerImage": "banner-blood.jpg",
+    "detailImages": ["detail-blood-1.jpg", "detail-blood-2.jpg"]
+  },
+  {
+    "id": 3,
+    "title": "Chương trình gây quỹ xây dựng nhà tình thương",
+    "date": "20/05/2025",
+    "location": "Quận 1, TP. Hồ Chí Minh",
+    "description": "Chương trình gây quỹ xây dựng nhà tình thương cho các gia đình khó khăn. Mọi đóng góp đều rất quý giá.",
+    "bannerImage": "banner-charity.jpg",
+    "detailImages": ["detail-charity-1.jpg", "detail-charity-2.jpg"]
+  }
+]

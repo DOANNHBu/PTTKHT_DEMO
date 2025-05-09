@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duyệt bài đăng</title>
+    <link rel="stylesheet" href="/asset/css/admin.css">
+    <link rel="stylesheet" href="/asset/css/post-approval.css">
+</head>
+
+<body>
+    <div class="post-approval">
+        <h2>Duyệt bài đăng</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tiêu đề</th>
+                    <th>Người đăng</th>
+                    <th>Ngày đăng</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="posts-table">
+                <!-- Dữ liệu sẽ được load động -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal xem chi tiết bài đăng -->
+    <div id="postDetailModal" class="post-detail-modal">
+        <!-- Nội dung modal sẽ được thêm động -->
+    </div>
+
+    <script src="/asset/js/post-approval.js"></script>
+</body>
+
+</html>

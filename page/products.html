@@ -1,0 +1,18 @@
+<h2 class="section-title">
+  Tin đăng mới nhất
+  <button
+    id="clear-filters-button"
+    class="clear-filters-button"
+    onclick="clearAllFilters()"
+  >
+    Xóa tất cả lọc
+  </button>
+</h2>
+<div class="products" id="products-list">
+  <!-- Products will be loaded here -->
+</div>
+<div class="pagination">
+  <button id="prev-page" onclick="changePage(-1)">Trang trước</button>
+  <span id="current-page">1</span>
+  <button id="next-page" onclick="changePage(1)">Trang sau</button>
+</div>
