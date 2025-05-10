@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Nếu đang ở trang admin, kiểm tra flag admin auth
+  if (window.location.pathname.includes("admin.html") && !sessionStorage.getItem('isAdminAuthenticated')) {
+    window.location.replace("/page/login.html");
+    return;
+  }
+
   // Kiểm tra xác thực khi tải trang
   checkAuthentication();
 
@@ -44,6 +50,12 @@ function addLogoutButton() {
   }
 }
 
+function clearAuthData() {
+  localStorage.removeItem("loggedInUser");
+  localStorage.removeItem("userRole");
+  sessionStorage.removeItem('isAdminAuthenticated');
+}
+
 function logout() {
   fetch("http://localhost:3000/api/logout", {
     credentials: "include",
@@ -51,16 +63,18 @@ function logout() {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Xóa thông tin trong localStorage
-        localStorage.removeItem("loggedInUser");
-        sessionStorage.removeItem("loggedInUser");
-        // Chuyển hướng về trang đăng nhập
-        window.location.href = "/page/login.html";
+        clearAuthData();
+        window.location.replace("/page/login.html");
       } else {
         console.error("Lỗi khi đăng xuất:", data.message);
       }
     })
-    .catch((error) => console.error("Lỗi khi đăng xuất:", error));
+    .catch((error) => {
+      console.error("Lỗi khi đăng xuất:", error);
+      // Vẫn xóa dữ liệu auth và chuyển về trang login trong trường hợp lỗi
+      clearAuthData();
+      window.location.replace("/page/login.html");
+    });
 }
 
 function checkAuthAndRole() {

@@ -12,9 +12,11 @@ function checkLogin(username, password) {
       if (data.success) {
         // Kiểm tra role_id và chuyển hướng
         if (data.user.role_id === 1) {
-          window.location.href = "/page/admin.html";
+          // Thêm flag vào sessionStorage để đánh dấu đã đăng nhập admin
+          sessionStorage.setItem('isAdminAuthenticated', 'true');
+          window.location.replace("/page/admin.html");
         } else if (data.user.role_id === 2) {
-          window.location.href = "/page/index.html";
+          window.location.replace("/page/index.html");
         } else {
           document.getElementById("login-error").textContent =
             "Bạn không có quyền truy cập";
@@ -33,15 +35,27 @@ function checkLogin(username, password) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  // Kiểm tra nếu đang ở trang login và đã có phiên đăng nhập admin
+  if (window.location.pathname.includes("login.html") && sessionStorage.getItem('isAdminAuthenticated')) {
+    window.location.replace("/page/admin.html");
+    return;
+  }
+
   fetch("http://localhost:3000/api/auth/status", {
     credentials: "include",
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.authenticated) {
-        // Nếu đã đăng nhập, chuyển hướng về index.html
-        if (window.location.href.includes("login.html")) {
-          window.location.href = "/page/index.html";
+        // Nếu đã đăng nhập và là admin
+        if (data.user.role_id === 1) {
+          sessionStorage.setItem('isAdminAuthenticated', 'true');
+          if (window.location.pathname.includes("login.html")) {
+            window.location.replace("/page/admin.html");
+          }
+        } else if (window.location.pathname.includes("login.html")) {
+          // Nếu là user thường
+          window.location.replace("/page/index.html");
         }
       }
     })

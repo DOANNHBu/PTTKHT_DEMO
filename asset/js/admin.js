@@ -148,14 +148,27 @@ function loadUserManagement() {
 
 // Duyệt bài đăng
 function loadPostApproval() {
-  fetch("/api/admin/posts", {
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((posts) => {
-      const content = `
+  const content = `
+        <div class="post-approval">
             <div class="card">
-                <h2>Duyệt bài đăng</h2>
+                <h2>Quản lý bài đăng</h2>
+                
+                <!-- Thêm phần controls -->
+                <div class="post-controls">
+                    <div class="filter-group">
+                        <select id="statusFilter" class="form-control">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="pending">Chờ duyệt</option>
+                            <option value="approved">Đã duyệt</option>
+                            <option value="rejected">Đã từ chối</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <input type="text" id="searchPost" class="form-control" 
+                            placeholder="Tìm kiếm theo tiêu đề hoặc người đăng...">
+                    </div>
+                </div>
+
                 <table class="table">
                     <thead>
                         <tr>
@@ -167,37 +180,25 @@ function loadPostApproval() {
                             <th>Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${posts
-          .map(
-            (post) => `
-                            <tr>
-                                <td>${post.title}</td>
-                                <td>${post.author_name}</td>
-                                <td>${post.category_name}</td>
-                                <td>${formatDate(post.created_at)}</td>
-                                <td>${formatPostStatus(post.status)}</td>
-                                <td>
-                                    <button onclick="viewPost('${post.id
-              }')">Xem</button>
-                                    ${post.status === "pending"
-                ? `
-                                        <button onclick="approvePost('${post.id}')">Duyệt</button>
-                                        <button onclick="rejectPost('${post.id}')">Từ chối</button>
-                                    `
-                : ""
-              }
-                                </td>
-                            </tr>
-                        `
-          )
-          .join("")}
+                    <tbody id="posts-table">
+                        <!-- Dữ liệu sẽ được thêm vào đây -->
                     </tbody>
                 </table>
             </div>
-        `;
-      document.getElementById("content-area").innerHTML = content;
-    });
+            
+            <!-- Modal xem chi tiết bài đăng -->
+            <div id="postDetailModal" class="post-detail-modal">
+                <!-- Nội dung modal sẽ được thêm động -->
+            </div>
+        </div>
+    `;
+  document.getElementById('content-area').innerHTML = content;
+
+  // Khởi tạo PostApproval nếu chưa tồn tại
+  if (typeof window.postApproval === 'undefined') {
+    window.postApproval = new PostApproval();
+  }
+  postApproval.loadPendingPosts();
 }
 
 // Thay đổi hàm loadActivityManagement()
@@ -305,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadContent("dashboard");
 });
 
-// Thêm hàm xử lý đăng xuất
+// Thay thế hàm handleLogout hiện tại bằng hàm này
 function handleLogout() {
   if (!confirm("Bạn có chắc muốn đăng xuất?")) return;
 
@@ -315,18 +316,31 @@ function handleLogout() {
   })
     .then((res) => res.json())
     .then((data) => {
-      // nếu logout thành công, chuyển về login
-      window.location.href = "/page/login.html";
-    })
-    .then((res) => res.json())
-    .then((data) => {
-      // nếu logout thành công, chuyển về login
-      window.location.href = "/page/login.html";
+      // Xóa các interval và timeout đang chạy
+      for (let i = 1; i < 99999; i++) {
+        window.clearInterval(i);
+        window.clearTimeout(i);
+      }
+
+      // Xóa các dữ liệu lưu trữ
+      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("userRole");
+      sessionStorage.removeItem('isAdminAuthenticated');
+
+      // Chuyển hướng về trang login
+      window.location.replace("/page/login.html");
     })
     .catch((err) => {
       console.error("Lỗi khi gọi API logout:", err);
-      // Dù lỗi, vẫn redirect để tránh kẹt
-      window.location.href = "/page/login.html";
+      // Trong trường hợp lỗi, vẫn thực hiện cleanup và chuyển hướng
+      for (let i = 1; i < 99999; i++) {
+        window.clearInterval(i);
+        window.clearTimeout(i);
+      }
+      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("userRole");
+      sessionStorage.removeItem('isAdminAuthenticated');
+      window.location.replace("/page/login.html");
     });
 }
 
