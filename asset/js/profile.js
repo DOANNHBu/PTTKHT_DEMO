@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       <div class="profile-info-box">
         <div class="profile-details">
           <div><b>Họ tên:</b> ${userProfile.fullname || ""}</div>
-          <div><b>ID học sinh:</b> ${userProfile.student_id || ""}</div>
           <div><b>Trường:</b> ${userProfile.school || ""}</div>
           <div><b>Địa chỉ:</b> ${userProfile.address || ""}</div>
           <div><b>Email:</b> ${userProfile.email || ""}</div>
