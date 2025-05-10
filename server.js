@@ -87,16 +87,16 @@ db.getConnection((err, connection) => {
 });
 
 // Xử lý lỗi kết nối
-db.on('error', (err) => {
-  console.error('Database error:', err);
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('Kết nối database bị mất. Đang thử kết nối lại...');
-  } else if (err.code === 'ER_CON_COUNT_ERROR') {
-    console.log('Database có quá nhiều kết nối.');
-  } else if (err.code === 'ECONNREFUSED') {
-    console.log('Database từ chối kết nối.');
+db.on("error", (err) => {
+  console.error("Database error:", err);
+  if (err.code === "PROTOCOL_CONNECTION_LOST") {
+    console.log("Kết nối database bị mất. Đang thử kết nối lại...");
+  } else if (err.code === "ER_CON_COUNT_ERROR") {
+    console.log("Database có quá nhiều kết nối.");
+  } else if (err.code === "ECONNREFUSED") {
+    console.log("Database từ chối kết nối.");
   } else {
-    console.log('Lỗi database không xác định:', err);
+    console.log("Lỗi database không xác định:", err);
   }
 });
 
@@ -190,49 +190,79 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
 });
 
 // API: Cập nhật thông tin người dùng
-app.put("/api/user/profile", isAuthenticated, isUser, upload.single("avatar"), async (req, res) => {
-  const userId = req.session.user.id;
-  const { username, password, email, phone, address } = req.body;
-  let avatar = null;
+app.put(
+  "/api/user/profile",
+  isAuthenticated,
+  isUser,
+  upload.single("avatar"),
+  async (req, res) => {
+    const userId = req.session.user.id;
+    const { username, password, email, phone, address } = req.body;
+    let avatar = null;
 
-  if (req.file) {
-    avatar = req.file.buffer;
-  }
-
-  try {
-    // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
-    const [existing] = await db.promise().query(
-      "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
-      [username, email, userId]
-    );
-    if (existing.length > 0) {
-      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+    if (req.file) {
+      avatar = req.file.buffer;
     }
 
-    // Xây dựng câu truy vấn động
-    let updateFields = [];
-    let updateValues = [];
-    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
-    if (password) { updateFields.push("password = ?"); updateValues.push(password); }
-    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
-    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
-    if (address) { updateFields.push("address = ?"); updateValues.push(address); }
-    if (avatar) { updateFields.push("avatar = ?"); updateValues.push(avatar); }
+    try {
+      // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
+      const [existing] = await db
+        .promise()
+        .query(
+          "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
+          [username, email, userId]
+        );
+      if (existing.length > 0) {
+        return res
+          .status(400)
+          .json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+      }
 
-    if (updateFields.length === 0) {
-      return res.status(400).json({ message: "Không có thông tin nào để cập nhật" });
+      // Xây dựng câu truy vấn động
+      let updateFields = [];
+      let updateValues = [];
+      if (username) {
+        updateFields.push("username = ?");
+        updateValues.push(username);
+      }
+      if (password) {
+        updateFields.push("password = ?");
+        updateValues.push(password);
+      }
+      if (email) {
+        updateFields.push("email = ?");
+        updateValues.push(email);
+      }
+      if (phone) {
+        updateFields.push("phone = ?");
+        updateValues.push(phone);
+      }
+      if (address) {
+        updateFields.push("address = ?");
+        updateValues.push(address);
+      }
+      if (avatar) {
+        updateFields.push("avatar = ?");
+        updateValues.push(avatar);
+      }
+
+      if (updateFields.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Không có thông tin nào để cập nhật" });
+      }
+
+      updateValues.push(userId);
+      const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+      await db.promise().query(sql, updateValues);
+
+      res.json({ message: "Cập nhật thông tin thành công" });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật thông tin người dùng:", error);
+      res.status(500).json({ message: "Lỗi server khi cập nhật thông tin" });
     }
-
-    updateValues.push(userId);
-    const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
-    await db.promise().query(sql, updateValues);
-
-    res.json({ message: "Cập nhật thông tin thành công" });
-  } catch (error) {
-    console.error("Lỗi khi cập nhật thông tin người dùng:", error);
-    res.status(500).json({ message: "Lỗi server khi cập nhật thông tin" });
   }
-});
+);
 
 // API: Lấy danh sách sản phẩm đã đăng của người dùng
 app.get("/api/user/products", isAuthenticated, isUser, (req, res) => {
@@ -263,7 +293,9 @@ app.get("/api/user/products", isAuthenticated, isUser, (req, res) => {
 
     results.forEach((post) => {
       if (post.thumbnail) {
-        post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString("base64")}`;
+        post.thumbnail = `data:image/jpeg;base64,${post.thumbnail.toString(
+          "base64"
+        )}`;
       } else {
         post.thumbnail = "/asset/images/default-thumbnail.png";
       }
@@ -410,16 +442,18 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
     // Xử lý kết quả
     const post = {
       ...results[0],
-      images: []
+      images: [],
     };
 
     // Xử lý ảnh
-    results.forEach(row => {
+    results.forEach((row) => {
       if (row.image_data) {
         post.images.push({
-          data: `data:${row.image_type};base64,${row.image_data.toString('base64')}`,
+          data: `data:${row.image_type};base64,${row.image_data.toString(
+            "base64"
+          )}`,
           type: row.image_type,
-          role: row.image_role
+          role: row.image_role,
         });
       }
     });
@@ -434,23 +468,26 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
       post.images.push({
         data: "/asset/images/default-thumbnail.png",
         type: "image/png",
-        role: "thumbnail"
+        role: "thumbnail",
       });
     }
 
     // Format lại một số trường dữ liệu
-    post.created_at = new Date(post.created_at).toLocaleString('vi-VN');
-    post.status_update_date = post.status_update_date ? new Date(post.status_update_date).toLocaleString('vi-VN') : '';
-    post.updated_at = new Date(post.updated_at).toLocaleString('vi-VN');
+    post.created_at = new Date(post.created_at).toLocaleString("vi-VN");
+    post.status_update_date = post.status_update_date
+      ? new Date(post.status_update_date).toLocaleString("vi-VN")
+      : "";
+    post.updated_at = new Date(post.updated_at).toLocaleString("vi-VN");
     post.price = parseFloat(post.price);
 
     // Thêm trạng thái được format
-    post.status_text = {
-      'pending': 'Chờ duyệt',
-      'approved': 'Đã duyệt',
-      'rejected': 'Đã từ chối',
-      'deleted': 'Đã xóa'
-    }[post.status] || post.status;
+    post.status_text =
+      {
+        pending: "Chờ duyệt",
+        approved: "Đã duyệt",
+        rejected: "Đã từ chối",
+        deleted: "Đã xóa",
+      }[post.status] || post.status;
 
     res.json(post);
   });
@@ -499,77 +536,95 @@ app.get("/api/categories/:category", isAuthenticated, isUser, (req, res) => {
 });
 
 // API: Thêm bài đăng
-app.post("/api/posts", isAuthenticated, isUser, upload.array('images', 5), async (req, res) => {
-  const { title, description, price, category, location, condition } = req.body;
-  const authorId = req.session.user.id;
+app.post(
+  "/api/posts",
+  isAuthenticated,
+  isUser,
+  upload.array("images", 5),
+  async (req, res) => {
+    const { title, description, price, category, location, condition } =
+      req.body;
+    const authorId = req.session.user.id;
 
-  // Kiểm tra dữ liệu đầu vào
-  if (!title || !description || !price || !category || !location || !condition) {
-    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
-  }
-
-  // Kiểm tra số lượng ảnh
-  if (req.files && req.files.length > 5) {
-    return res.status(400).json({ message: "Chỉ được tải lên tối đa 5 ảnh." });
-  }
-
-  const connection = await db.promise().getConnection();
-
-  try {
-    // Bắt đầu transaction
-    await connection.beginTransaction();
-
-    // Thêm bài đăng
-    const [postResult] = await connection.query(
-      `INSERT INTO posts (title, description, price, category_id, location, author_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [title, description, price, category, location, authorId]
-    );
-
-    const postId = postResult.insertId;
-
-    // Nếu có hình ảnh, thêm vào bảng post_images
-    if (req.files && req.files.length > 0) {
-      try {
-        const imagePromises = req.files.map((file, index) => {
-          // Kiểm tra loại file
-          if (!file.mimetype.startsWith('image/')) {
-            throw new Error('File không phải là hình ảnh');
-          }
-
-          const imageRole = index === 0 ? 'thumbnail' : 'image';
-          return connection.query(
-            'INSERT INTO post_images (post_id, image_data, image_type, image_role) VALUES (?, ?, ?, ?)',
-            [postId, file.buffer, file.mimetype, imageRole]
-          );
-        });
-
-        await Promise.all(imagePromises);
-      } catch (error) {
-        throw new Error('Lỗi khi lưu hình ảnh: ' + error.message);
-      }
+    // Kiểm tra dữ liệu đầu vào
+    if (
+      !title ||
+      !description ||
+      !price ||
+      !category ||
+      !location ||
+      !condition
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng điền đầy đủ thông tin." });
     }
 
-    // Commit transaction
-    await connection.commit();
+    // Kiểm tra số lượng ảnh
+    if (req.files && req.files.length > 5) {
+      return res
+        .status(400)
+        .json({ message: "Chỉ được tải lên tối đa 5 ảnh." });
+    }
 
-    res.status(201).json({
-      message: "Bài đăng đã được thêm thành công!",
-      postId: postId
-    });
-  } catch (error) {
-    // Rollback nếu có lỗi
-    await connection.rollback();
-    console.error("Lỗi khi thêm bài đăng:", error);
-    res.status(500).json({
-      message: "Lỗi server.",
-      error: error.message
-    });
-  } finally {
-    // Giải phóng connection
-    connection.release();
+    const connection = await db.promise().getConnection();
+
+    try {
+      // Bắt đầu transaction
+      await connection.beginTransaction();
+
+      // Thêm bài đăng
+      const [postResult] = await connection.query(
+        `INSERT INTO posts (title, description, price, category_id, location, author_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+        [title, description, price, category, location, authorId]
+      );
+
+      const postId = postResult.insertId;
+
+      // Nếu có hình ảnh, thêm vào bảng post_images
+      if (req.files && req.files.length > 0) {
+        try {
+          const imagePromises = req.files.map((file, index) => {
+            // Kiểm tra loại file
+            if (!file.mimetype.startsWith("image/")) {
+              throw new Error("File không phải là hình ảnh");
+            }
+
+            const imageRole = index === 0 ? "thumbnail" : "image";
+            return connection.query(
+              "INSERT INTO post_images (post_id, image_data, image_type, image_role) VALUES (?, ?, ?, ?)",
+              [postId, file.buffer, file.mimetype, imageRole]
+            );
+          });
+
+          await Promise.all(imagePromises);
+        } catch (error) {
+          throw new Error("Lỗi khi lưu hình ảnh: " + error.message);
+        }
+      }
+
+      // Commit transaction
+      await connection.commit();
+
+      res.status(201).json({
+        message: "Bài đăng đã được thêm thành công!",
+        postId: postId,
+      });
+    } catch (error) {
+      // Rollback nếu có lỗi
+      await connection.rollback();
+      console.error("Lỗi khi thêm bài đăng:", error);
+      res.status(500).json({
+        message: "Lỗi server.",
+        error: error.message,
+      });
+    } finally {
+      // Giải phóng connection
+      connection.release();
+    }
   }
-});
+);
 
 // API endpoints cho admin panel
 // 1. Quản lý người dùng
@@ -621,68 +676,109 @@ app.get("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // API: Cập nhật thông tin người dùng (cho admin)
-app.put("/api/admin/users/:id", isAuthenticated, isAdmin, upload.single("avatar"), async (req, res) => {
-  const userId = req.params.id;
-  const {
-    username,
-    password,
-    email,
-    full_name,
-    phone,
-    address,
-    school,
-    role_id,
-    status
-  } = req.body;
+app.put(
+  "/api/admin/users/:id",
+  isAuthenticated,
+  isAdmin,
+  upload.single("avatar"),
+  async (req, res) => {
+    const userId = req.params.id;
+    const {
+      username,
+      password,
+      email,
+      full_name,
+      phone,
+      address,
+      school,
+      role_id,
+      status,
+    } = req.body;
 
-  try {
-    // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
-    const [existing] = await db.promise().query(
-      "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
-      [username, email, userId]
-    );
+    try {
+      // Kiểm tra username hoặc email đã tồn tại cho user khác chưa
+      const [existing] = await db
+        .promise()
+        .query(
+          "SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?",
+          [username, email, userId]
+        );
 
-    if (existing.length > 0) {
-      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+      if (existing.length > 0) {
+        return res
+          .status(400)
+          .json({ message: "Tên đăng nhập hoặc email đã tồn tại!" });
+      }
+
+      // Xây dựng câu truy vấn động
+      let updateFields = [];
+      let updateValues = [];
+
+      if (username) {
+        updateFields.push("username = ?");
+        updateValues.push(username);
+      }
+      if (password) {
+        updateFields.push("password = ?");
+        updateValues.push(password);
+      }
+      if (email) {
+        updateFields.push("email = ?");
+        updateValues.push(email);
+      }
+      if (full_name) {
+        updateFields.push("full_name = ?");
+        updateValues.push(full_name);
+      }
+      if (phone) {
+        updateFields.push("phone = ?");
+        updateValues.push(phone);
+      }
+      if (address) {
+        updateFields.push("address = ?");
+        updateValues.push(address);
+      }
+      if (school) {
+        updateFields.push("school = ?");
+        updateValues.push(school);
+      }
+      if (role_id) {
+        updateFields.push("role_id = ?");
+        updateValues.push(role_id);
+      }
+      if (status) {
+        updateFields.push("status = ?");
+        updateValues.push(status);
+      }
+
+      // Thêm avatar nếu có
+      if (req.file) {
+        updateFields.push("avatar = ?");
+        updateValues.push(req.file.buffer);
+      }
+
+      if (updateFields.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Không có thông tin nào để cập nhật" });
+      }
+
+      // Thêm userId vào cuối mảng values
+      updateValues.push(userId);
+
+      // Thực hiện câu truy vấn cập nhật
+      const query = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
+      await db.promise().query(query, updateValues);
+
+      res.json({ message: "Cập nhật thông tin người dùng thành công" });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res
+        .status(500)
+        .json({ message: "Lỗi khi cập nhật thông tin người dùng" });
     }
-
-    // Xây dựng câu truy vấn động
-    let updateFields = [];
-    let updateValues = [];
-
-    if (username) { updateFields.push("username = ?"); updateValues.push(username); }
-    if (password) { updateFields.push("password = ?"); updateValues.push(password); }
-    if (email) { updateFields.push("email = ?"); updateValues.push(email); }
-    if (full_name) { updateFields.push("full_name = ?"); updateValues.push(full_name); }
-    if (phone) { updateFields.push("phone = ?"); updateValues.push(phone); }
-    if (address) { updateFields.push("address = ?"); updateValues.push(address); }
-    if (school) { updateFields.push("school = ?"); updateValues.push(school); }
-    if (role_id) { updateFields.push("role_id = ?"); updateValues.push(role_id); }
-    if (status) { updateFields.push("status = ?"); updateValues.push(status); }
-
-    // Thêm avatar nếu có
-    if (req.file) {
-      updateFields.push("avatar = ?");
-      updateValues.push(req.file.buffer);
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({ message: "Không có thông tin nào để cập nhật" });
-    }
-
-    // Thêm userId vào cuối mảng values
-    updateValues.push(userId);
-
-    // Thực hiện câu truy vấn cập nhật
-    const query = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
-    await db.promise().query(query, updateValues);
-
-    res.json({ message: "Cập nhật thông tin người dùng thành công" });
-  } catch (error) {
-    console.error("Error updating user:", error);
-    res.status(500).json({ message: "Lỗi khi cập nhật thông tin người dùng" });
   }
-});
+);
 
 // 2. Quản lý bài đăng
 app.get("/api/admin/posts", isAuthenticated, isAdmin, (req, res) => {
@@ -751,58 +847,70 @@ app.get("/api/admin/activities", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // API cập nhật trạng thái bài đăng
-app.put("/api/admin/posts/:id/status", isAuthenticated, isAdmin, async (req, res) => {
-  const { status, rejection_reason } = req.body;
-  const postId = req.params.id;
+app.put(
+  "/api/admin/posts/:id/status",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const { status, rejection_reason } = req.body;
+    const postId = req.params.id;
 
-  try {
-    // Lấy thông tin bài đăng và người đăng
-    const [post] = await db.promise().query(
-      'SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
-      [postId]
-    );
+    try {
+      // Lấy thông tin bài đăng và người đăng
+      const [post] = await db
+        .promise()
+        .query(
+          "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
+          [postId]
+        );
 
-    if (post.length === 0) {
-      return res.status(404).json({ message: "Không tìm thấy bài đăng" });
-    }
+      if (post.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+      }
 
-    // Cập nhật trạng thái bài đăng
-    await db.promise().query(
-      `UPDATE posts 
+      // Cập nhật trạng thái bài đăng
+      await db.promise().query(
+        `UPDATE posts 
             SET status = ?, 
                 rejection_reason = ?,
                 status_update_date = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
-      [status, rejection_reason || null, postId]
-    );
+        [status, rejection_reason || null, postId]
+      );
 
-    // Tạo thông báo cho người đăng
-    const notificationTitle = status === 'approved'
-      ? 'Bài đăng được duyệt'
-      : status === 'rejected'
-        ? 'Bài đăng bị từ chối'
-        : 'Bài đăng được cập nhật';
+      // Tạo thông báo cho người đăng
+      const notificationTitle =
+        status === "approved"
+          ? "Bài đăng được duyệt"
+          : status === "rejected"
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
-    const notificationMessage = status === 'rejected'
-      ? `Bài đăng "${post[0].title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
-      : `Bài đăng "${post[0].title}" của bạn đã được ${status === 'approved' ? 'duyệt' : 'cập nhật'}`;
+      const notificationMessage =
+        status === "rejected"
+          ? `Bài đăng "${post[0].title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
+          : `Bài đăng "${post[0].title}" của bạn đã được ${
+              status === "approved" ? "duyệt" : "cập nhật"
+            }`;
 
-    await db.promise().query(
-      `INSERT INTO notifications (user_id, title, message, type) 
+      await db.promise().query(
+        `INSERT INTO notifications (user_id, title, message, type) 
             VALUES (?, ?, ?, 'post_approval')`,
-      [post[0].author_id, notificationTitle, notificationMessage]
-    );
+        [post[0].author_id, notificationTitle, notificationMessage]
+      );
 
-    res.json({
-      success: true,
-      message: status === 'approved' ? "Đã duyệt bài đăng" : "Đã từ chối bài đăng"
-    });
-  } catch (error) {
-    console.error("Lỗi:", error);
-    res.status(500).json({ success: false, message: "Lỗi server" });
+      res.json({
+        success: true,
+        message:
+          status === "approved" ? "Đã duyệt bài đăng" : "Đã từ chối bài đăng",
+      });
+    } catch (error) {
+      console.error("Lỗi:", error);
+      res.status(500).json({ success: false, message: "Lỗi server" });
+    }
   }
-});
+);
 
 // 5. Cập nhật trạng thái người dùng
 app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
@@ -828,7 +936,7 @@ app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
 app.delete("/api/posts/:id", isAuthenticated, isUser, async (req, res) => {
   const postId = req.params.id;
   const userId = req.session.user.id;
-  
+
   const connection = await db.promise().getConnection();
   try {
     await connection.beginTransaction();
@@ -842,11 +950,15 @@ app.delete("/api/posts/:id", isAuthenticated, isUser, async (req, res) => {
     if (post.length === 0) {
       await connection.rollback();
       connection.release();
-      return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này." });
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền xóa bài đăng này." });
     }
 
     // Xóa hình ảnh của bài đăng
-    await connection.query("DELETE FROM post_images WHERE post_id = ?", [postId]);
+    await connection.query("DELETE FROM post_images WHERE post_id = ?", [
+      postId,
+    ]);
 
     // Xóa bài đăng
     await connection.query("DELETE FROM posts WHERE id = ?", [postId]);
@@ -979,134 +1091,153 @@ app.put(
 );
 
 // API để cập nhật hoạt động
-app.put("/api/admin/activities/:id", isAuthenticated, isAdmin, async (req, res) => {
-  const activityId = req.params.id;
-  const activity = { ...req.body };
-  const items = activity.items || [];
-  delete activity.items;
+app.put(
+  "/api/admin/activities/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const activityId = req.params.id;
+    const activity = { ...req.body };
+    const items = activity.items || [];
+    delete activity.items;
 
-  const connection = await db.promise().getConnection();
-  try {
-    await connection.beginTransaction();
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
 
-    // Cập nhật hoạt động
-    await connection.query(
-      "UPDATE activities SET ? WHERE id = ?",
-      [activity, activityId]
-    );
-
-    // Xóa items cũ
-    await connection.query(
-      "DELETE FROM activity_items WHERE activity_id = ?",
-      [activityId]
-    );
-
-    // Thêm items mới
-    if (items.length > 0) {
-      const values = items.map(item => [
+      // Cập nhật hoạt động
+      await connection.query("UPDATE activities SET ? WHERE id = ?", [
+        activity,
         activityId,
-        item.name,
-        item.description || "",
-        parseInt(item.quantity_needed) || 0,
-        parseInt(item.quantity_received) || 0
       ]);
 
+      // Xóa items cũ
       await connection.query(
-        "INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?",
-        [values]
+        "DELETE FROM activity_items WHERE activity_id = ?",
+        [activityId]
       );
-    }
 
-    // Tạo thông báo cho tất cả người dùng
-    const [users] = await connection.query("SELECT id FROM users WHERE role_id = 2"); // Lấy tất cả user thường
-    const notificationPromises = users.map(user =>
-      connection.query(
-        `INSERT INTO notifications (user_id, title, message, type) 
+      // Thêm items mới
+      if (items.length > 0) {
+        const values = items.map((item) => [
+          activityId,
+          item.name,
+          item.description || "",
+          parseInt(item.quantity_needed) || 0,
+          parseInt(item.quantity_received) || 0,
+        ]);
+
+        await connection.query(
+          "INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?",
+          [values]
+        );
+      }
+
+      // Tạo thông báo cho tất cả người dùng
+      const [users] = await connection.query(
+        "SELECT id FROM users WHERE role_id = 2"
+      ); // Lấy tất cả user thường
+      const notificationPromises = users.map((user) =>
+        connection.query(
+          `INSERT INTO notifications (user_id, title, message, type) 
                 VALUES (?, ?, ?, 'activity_update')`,
-        [
-          user.id,
-          'Cập nhật hoạt động',
-          `Hoạt động "${activity.title}" đã được cập nhật. Vui lòng kiểm tra thông tin mới.`
-        ]
-      )
-    );
+          [
+            user.id,
+            "Cập nhật hoạt động",
+            `Hoạt động "${activity.title}" đã được cập nhật. Vui lòng kiểm tra thông tin mới.`,
+          ]
+        )
+      );
 
-    await Promise.all(notificationPromises);
-    await connection.commit();
-    connection.release();
+      await Promise.all(notificationPromises);
+      await connection.commit();
+      connection.release();
 
-    res.json({
-      success: true,
-      message: "Cập nhật hoạt động thành công",
-      id: activityId
-    });
-  } catch (error) {
-    await connection.rollback();
-    connection.release();
-    console.error("Error updating activity:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi cập nhật hoạt động",
-      error: error.message
-    });
+      res.json({
+        success: true,
+        message: "Cập nhật hoạt động thành công",
+        id: activityId,
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      console.error("Error updating activity:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi cập nhật hoạt động",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // API để xóa hoạt động
-app.delete("/api/admin/activities/:id", isAuthenticated, isAdmin, async (req, res) => {
-  const activityId = req.params.id;
-  const connection = await db.promise().getConnection();
+app.delete(
+  "/api/admin/activities/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const activityId = req.params.id;
+    const connection = await db.promise().getConnection();
 
-  try {
-    await connection.beginTransaction();
+    try {
+      await connection.beginTransaction();
 
-    // Lấy thông tin hoạt động trước khi xóa
-    const [activity] = await connection.query(
-      "SELECT title FROM activities WHERE id = ?",
-      [activityId]
-    );
+      // Lấy thông tin hoạt động trước khi xóa
+      const [activity] = await connection.query(
+        "SELECT title FROM activities WHERE id = ?",
+        [activityId]
+      );
 
-    if (activity.length === 0) {
-      throw new Error("Không tìm thấy hoạt động");
-    }
+      if (activity.length === 0) {
+        throw new Error("Không tìm thấy hoạt động");
+      }
 
-    // Tạo thông báo cho tất cả người dùng về việc xóa hoạt động
-    const [users] = await connection.query("SELECT id FROM users WHERE role_id = 2");
-    const notificationPromises = users.map(user =>
-      connection.query(
-        `INSERT INTO notifications (user_id, title, message, type) 
+      // Tạo thông báo cho tất cả người dùng về việc xóa hoạt động
+      const [users] = await connection.query(
+        "SELECT id FROM users WHERE role_id = 2"
+      );
+      const notificationPromises = users.map((user) =>
+        connection.query(
+          `INSERT INTO notifications (user_id, title, message, type) 
                 VALUES (?, ?, ?, 'activity_update')`,
-        [
-          user.id,
-          'Hoạt động đã bị xóa',
-          `Hoạt động "${activity[0].title}" đã bị xóa bởi quản trị viên`
-        ]
-      )
-    );
+          [
+            user.id,
+            "Hoạt động đã bị xóa",
+            `Hoạt động "${activity[0].title}" đã bị xóa bởi quản trị viên`,
+          ]
+        )
+      );
 
-    // Xóa items và hoạt động
-    await connection.query("DELETE FROM activity_items WHERE activity_id = ?", [activityId]);
-    await connection.query("DELETE FROM activities WHERE id = ?", [activityId]);
+      // Xóa items và hoạt động
+      await connection.query(
+        "DELETE FROM activity_items WHERE activity_id = ?",
+        [activityId]
+      );
+      await connection.query("DELETE FROM activities WHERE id = ?", [
+        activityId,
+      ]);
 
-    await Promise.all(notificationPromises);
-    await connection.commit();
-    connection.release();
+      await Promise.all(notificationPromises);
+      await connection.commit();
+      connection.release();
 
-    res.json({
-      success: true,
-      message: "Xóa hoạt động thành công"
-    });
-  } catch (error) {
-    await connection.rollback();
-    connection.release();
-    console.error("Error deleting activity:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi xóa hoạt động",
-      error: error.message
-    });
+      res.json({
+        success: true,
+        message: "Xóa hoạt động thành công",
+      });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      console.error("Error deleting activity:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi xóa hoạt động",
+        error: error.message,
+      });
+    }
   }
-});
+);
 
 // API lấy danh sách hoạt động cho user - cập nhật lại route
 app.get("/api/public/activities", async (req, res) => {
@@ -1166,62 +1297,91 @@ app.get("/api/public/activities/:id", async (req, res) => {
 });
 
 // API tạo tài khoản mới (chỉ admin)
-app.post("/api/admin/users", isAuthenticated, isAdmin, upload.single("avatar"), async (req, res) => {
-  const { username, password, email, full_name, phone, address, school, role_id } = req.body;
+app.post(
+  "/api/admin/users",
+  isAuthenticated,
+  isAdmin,
+  upload.single("avatar"),
+  async (req, res) => {
+    const {
+      username,
+      password,
+      email,
+      full_name,
+      phone,
+      address,
+      school,
+      role_id,
+    } = req.body;
 
-  // Kiểm tra dữ liệu đầu vào
-  if (!username || !password || !email || !full_name || !role_id) {
-    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin bắt buộc" });
-  }
+    // Kiểm tra dữ liệu đầu vào
+    if (!username || !password || !email || !full_name || !role_id) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng điền đầy đủ thông tin bắt buộc" });
+    }
 
-  const connection = await db.promise().getConnection();
-  try {
-    await connection.beginTransaction();
+    const connection = await db.promise().getConnection();
+    try {
+      await connection.beginTransaction();
 
-    // Kiểm tra username và email đã tồn tại chưa
-    const [existingUser] = await connection.query(
-      "SELECT id FROM users WHERE username = ? OR email = ?",
-      [username, email]
-    );
+      // Kiểm tra username và email đã tồn tại chưa
+      const [existingUser] = await connection.query(
+        "SELECT id FROM users WHERE username = ? OR email = ?",
+        [username, email]
+      );
 
-    if (existingUser.length > 0) {
+      if (existingUser.length > 0) {
+        await connection.rollback();
+        connection.release();
+        return res
+          .status(400)
+          .json({ message: "Tên đăng nhập hoặc email đã tồn tại" });
+      }
+
+      let avatar = null;
+      if (req.file) {
+        avatar = req.file.buffer;
+      }
+
+      // Thêm người dùng mới
+      const [result] = await connection.query(
+        "INSERT INTO users (username, password, email, full_name, phone, address, school, avatar, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          username,
+          password,
+          email,
+          full_name,
+          phone || null,
+          address || null,
+          school || null,
+          avatar,
+          role_id,
+        ]
+      );
+
+      // Thêm thông báo chào mừng cho người dùng mới
+      await connection.query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+            VALUES (?, 'Thông báo hệ thống', 'Chào mừng đến với Nền tảng Trao đổi Học đường', 'system')`,
+        [result.insertId]
+      );
+
+      await connection.commit();
+      connection.release();
+
+      res.status(201).json({
+        message: "Tạo tài khoản thành công",
+        userId: result.insertId,
+      });
+    } catch (error) {
       await connection.rollback();
       connection.release();
-      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại" });
+      console.error("Lỗi khi tạo tài khoản:", error);
+      res.status(500).json({ message: "Lỗi server khi tạo tài khoản" });
     }
-
-    let avatar = null;
-    if (req.file) {
-      avatar = req.file.buffer;
-    }
-
-    // Thêm người dùng mới
-    const [result] = await connection.query(
-      "INSERT INTO users (username, password, email, full_name, phone, address, school, avatar, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [username, password, email, full_name, phone || null, address || null, school || null, avatar, role_id]
-    );
-
-    // Thêm thông báo chào mừng cho người dùng mới
-    await connection.query(
-      `INSERT INTO notifications (user_id, title, message, type) 
-            VALUES (?, 'Thông báo hệ thống', 'Chào mừng đến với Nền tảng Trao đổi Học đường', 'system')`,
-      [result.insertId]
-    );
-
-    await connection.commit();
-    connection.release();
-
-    res.status(201).json({
-      message: "Tạo tài khoản thành công",
-      userId: result.insertId
-    });
-  } catch (error) {
-    await connection.rollback();
-    connection.release();
-    console.error("Lỗi khi tạo tài khoản:", error);
-    res.status(500).json({ message: "Lỗi server khi tạo tài khoản" });
   }
-});
+);
 
 // API xóa người dùng (chỉ admin)
 app.delete(
@@ -1302,7 +1462,8 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 
   try {
     // Lấy thông tin bài đăng
-    const [posts] = await db.promise().query(`
+    const [posts] = await db.promise().query(
+      `
           SELECT 
               p.*,
               u.username as author_name,
@@ -1311,7 +1472,9 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
           JOIN users u ON p.author_id = u.id
           JOIN categories c ON p.category_id = c.id
           WHERE p.id = ?
-      `, [postId]);
+      `,
+      [postId]
+    );
 
     if (posts.length === 0) {
       return res.status(404).json({ message: "Không tìm thấy bài đăng" });
@@ -1320,7 +1483,8 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
     const post = posts[0];
 
     // Lấy hình ảnh riêng
-    const [images] = await db.promise().query(`
+    const [images] = await db.promise().query(
+      `
           SELECT 
               id,
               CONCAT('data:', image_type, ';base64,', TO_BASE64(image_data)) as image_url,
@@ -1328,31 +1492,36 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
               image_role
           FROM post_images 
           WHERE post_id = ?
-      `, [postId]);
+      `,
+      [postId]
+    );
 
     // Thêm mảng ảnh vào đối tượng post
     post.images = images;
 
     // Format lại một số trường dữ liệu
-    post.created_at = new Date(post.created_at).toLocaleString('vi-VN');
-    post.status_update_date = post.status_update_date ? new Date(post.status_update_date).toLocaleString('vi-VN') : '';
-    post.updated_at = new Date(post.updated_at).toLocaleString('vi-VN');
+    post.created_at = new Date(post.created_at).toLocaleString("vi-VN");
+    post.status_update_date = post.status_update_date
+      ? new Date(post.status_update_date).toLocaleString("vi-VN")
+      : "";
+    post.updated_at = new Date(post.updated_at).toLocaleString("vi-VN");
     post.price = parseFloat(post.price);
 
     // Thêm trạng thái được format
-    post.status_text = {
-      'pending': 'Chờ duyệt',
-      'approved': 'Đã duyệt',
-      'rejected': 'Đã từ chối',
-      'deleted': 'Đã xóa'
-    }[post.status] || post.status;
+    post.status_text =
+      {
+        pending: "Chờ duyệt",
+        approved: "Đã duyệt",
+        rejected: "Đã từ chối",
+        deleted: "Đã xóa",
+      }[post.status] || post.status;
 
     res.json(post);
   } catch (error) {
     console.error("Lỗi khi lấy chi tiết bài đăng:", error);
     res.status(500).json({
       message: "Lỗi server khi lấy thông tin bài đăng",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -1360,7 +1529,8 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 // API cập nhật bài đăng (cho admin)
 app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
   const postId = req.params.id;
-  const { title, description, price, location, status, rejection_reason } = req.body;
+  const { title, description, price, location, status, rejection_reason } =
+    req.body;
 
   try {
     await db.promise().query(
@@ -1374,25 +1544,34 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
                 status_update_date = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
-      [title, description, price, location, status, rejection_reason || null, postId]
+      [
+        title,
+        description,
+        price,
+        location,
+        status,
+        rejection_reason || null,
+        postId,
+      ]
     );
 
     // Gửi thông báo cho người đăng bài
-    const [post] = await db.promise().query(
-      'SELECT author_id FROM posts WHERE id = ?',
-      [postId]
-    );
+    const [post] = await db
+      .promise()
+      .query("SELECT author_id FROM posts WHERE id = ?", [postId]);
 
     if (post.length > 0) {
-      const notificationTitle = status === 'approved'
-        ? 'Bài đăng được duyệt'
-        : status === 'rejected'
-          ? 'Bài đăng bị từ chối'
-          : 'Bài đăng được cập nhật';
+      const notificationTitle =
+        status === "approved"
+          ? "Bài đăng được duyệt"
+          : status === "rejected"
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
-      const notificationMessage = status === 'rejected'
-        ? `Bài đăng "${title}" đã bị từ chối. Lý do: ${rejection_reason}`
-        : `Bài đăng "${title}" của bạn đã được cập nhật`;
+      const notificationMessage =
+        status === "rejected"
+          ? `Bài đăng "${title}" đã bị từ chối. Lý do: ${rejection_reason}`
+          : `Bài đăng "${title}" của bạn đã được cập nhật`;
 
       await db.promise().query(
         `INSERT INTO notifications (user_id, title, message, type) 
@@ -1409,61 +1588,68 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // API xóa bài đăng
-app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
-  const postId = req.params.id;
-
-  try {
-    const connection = await db.promise().getConnection();
-    await connection.beginTransaction();
+app.delete(
+  "/api/admin/posts/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const postId = req.params.id;
 
     try {
-      // Lấy thông tin bài đăng trước khi xóa
-      const [post] = await connection.query(
-        'SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
-        [postId]
-      );
+      const connection = await db.promise().getConnection();
+      await connection.beginTransaction();
 
-      if (post.length === 0) {
+      try {
+        // Lấy thông tin bài đăng trước khi xóa
+        const [post] = await connection.query(
+          "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
+          [postId]
+        );
+
+        if (post.length === 0) {
+          await connection.rollback();
+          connection.release();
+          return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+        }
+
+        // Xóa bài đăng và hình ảnh
+        await connection.query("DELETE FROM post_images WHERE post_id = ?", [
+          postId,
+        ]);
+        await connection.query("DELETE FROM posts WHERE id = ?", [postId]);
+
+        // Tạo thông báo cho người đăng
+        await connection.query(
+          `INSERT INTO notifications (user_id, title, message, type) 
+                VALUES (?, ?, ?, 'post_approval')`,
+          [
+            post[0].author_id,
+            "Bài đăng đã bị xóa",
+            `Bài đăng "${post[0].title}" của bạn đã bị xóa bởi quản trị viên`,
+          ]
+        );
+
+        await connection.commit();
+        connection.release();
+
+        res.json({
+          success: true,
+          message: "Xóa bài đăng thành công",
+        });
+      } catch (error) {
         await connection.rollback();
         connection.release();
-        return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+        throw error;
       }
-
-      // Xóa bài đăng và hình ảnh
-      await connection.query('DELETE FROM post_images WHERE post_id = ?', [postId]);
-      await connection.query('DELETE FROM posts WHERE id = ?', [postId]);
-
-      // Tạo thông báo cho người đăng
-      await connection.query(
-        `INSERT INTO notifications (user_id, title, message, type) 
-                VALUES (?, ?, ?, 'post_approval')`,
-        [
-          post[0].author_id,
-          'Bài đăng đã bị xóa',
-          `Bài đăng "${post[0].title}" của bạn đã bị xóa bởi quản trị viên`
-        ]
-      );
-
-      await connection.commit();
-      connection.release();
-
-      res.json({
-        success: true,
-        message: "Xóa bài đăng thành công"
-      });
     } catch (error) {
-      await connection.rollback();
-      connection.release();
-      throw error;
+      console.error("Lỗi:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi xóa bài đăng",
+      });
     }
-  } catch (error) {
-    console.error("Lỗi:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi xóa bài đăng"
-    });
   }
-});
+);
 
 // Route mặc định để phục vụ file login.html
 app.get("/", (req, res) => {
@@ -1471,84 +1657,98 @@ app.get("/", (req, res) => {
 });
 
 // API: Cập nhật bài đăng
-app.put("/api/posts/:id", isAuthenticated, isUser, upload.array('images', 5), async (req, res) => {
-  const postId = req.params.id;
-  const userId = req.session.user.id;
-  const { title, description, price, category, location } = req.body;
+app.put(
+  "/api/posts/:id",
+  isAuthenticated,
+  isUser,
+  upload.array("images", 5),
+  async (req, res) => {
+    const postId = req.params.id;
+    const userId = req.session.user.id;
+    const { title, description, price, category, location } = req.body;
 
-  // Kiểm tra dữ liệu đầu vào
-  if (!title || !description || !price || !category || !location) {
-    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
-  }
-
-  // Kiểm tra số lượng ảnh
-  if (req.files && req.files.length > 5) {
-    return res.status(400).json({ message: "Chỉ được tải lên tối đa 5 ảnh." });
-  }
-
-  const connection = await db.promise().getConnection();
-
-  try {
-    // Kiểm tra quyền sở hữu bài đăng
-    const [post] = await connection.query(
-      "SELECT id FROM posts WHERE id = ? AND author_id = ?",
-      [postId, userId]
-    );
-
-    if (post.length === 0) {
-      return res.status(403).json({ message: "Bạn không có quyền chỉnh sửa bài đăng này." });
+    // Kiểm tra dữ liệu đầu vào
+    if (!title || !description || !price || !category || !location) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng điền đầy đủ thông tin." });
     }
 
-    // Bắt đầu transaction
-    await connection.beginTransaction();
+    // Kiểm tra số lượng ảnh
+    if (req.files && req.files.length > 5) {
+      return res
+        .status(400)
+        .json({ message: "Chỉ được tải lên tối đa 5 ảnh." });
+    }
 
-    // Cập nhật thông tin bài đăng
-    await connection.query(
-      `UPDATE posts 
+    const connection = await db.promise().getConnection();
+
+    try {
+      // Kiểm tra quyền sở hữu bài đăng
+      const [post] = await connection.query(
+        "SELECT id FROM posts WHERE id = ? AND author_id = ?",
+        [postId, userId]
+      );
+
+      if (post.length === 0) {
+        return res
+          .status(403)
+          .json({ message: "Bạn không có quyền chỉnh sửa bài đăng này." });
+      }
+
+      // Bắt đầu transaction
+      await connection.beginTransaction();
+
+      // Cập nhật thông tin bài đăng
+      await connection.query(
+        `UPDATE posts 
        SET title = ?, description = ?, price = ?, category_id = ?, location = ?, status = 'pending'
        WHERE id = ?`,
-      [title, description, price, category, location, postId]
-    );
+        [title, description, price, category, location, postId]
+      );
 
-    // Nếu có hình ảnh mới, xóa ảnh cũ và thêm ảnh mới
-    if (req.files && req.files.length > 0) {
-      // Xóa ảnh cũ
-      await connection.query("DELETE FROM post_images WHERE post_id = ?", [postId]);
+      // Nếu có hình ảnh mới, xóa ảnh cũ và thêm ảnh mới
+      if (req.files && req.files.length > 0) {
+        // Xóa ảnh cũ
+        await connection.query("DELETE FROM post_images WHERE post_id = ?", [
+          postId,
+        ]);
 
-      // Thêm ảnh mới
-      const imagePromises = req.files.map((file, index) => {
-        // Kiểm tra loại file
-        if (!file.mimetype.startsWith('image/')) {
-          throw new Error('File không phải là hình ảnh');
-        }
+        // Thêm ảnh mới
+        const imagePromises = req.files.map((file, index) => {
+          // Kiểm tra loại file
+          if (!file.mimetype.startsWith("image/")) {
+            throw new Error("File không phải là hình ảnh");
+          }
 
-        const imageRole = index === 0 ? 'thumbnail' : 'image';
-        return connection.query(
-          'INSERT INTO post_images (post_id, image_data, image_type, image_role) VALUES (?, ?, ?, ?)',
-          [postId, file.buffer, file.mimetype, imageRole]
-        );
+          const imageRole = index === 0 ? "thumbnail" : "image";
+          return connection.query(
+            "INSERT INTO post_images (post_id, image_data, image_type, image_role) VALUES (?, ?, ?, ?)",
+            [postId, file.buffer, file.mimetype, imageRole]
+          );
+        });
+
+        await Promise.all(imagePromises);
+      }
+
+      // Commit transaction
+      await connection.commit();
+
+      res.json({ message: "Cập nhật bài đăng thành công!" });
+    } catch (error) {
+      // Rollback nếu có lỗi
+      await connection.rollback();
+      console.error("Lỗi khi cập nhật bài đăng:", error);
+      res.status(500).json({
+        message: "Lỗi server.",
+        error: error.message,
       });
-
-      await Promise.all(imagePromises);
+    } finally {
+      // Giải phóng connection
+      connection.release();
     }
-
-    // Commit transaction
-    await connection.commit();
-
-    res.json({ message: "Cập nhật bài đăng thành công!" });
-  } catch (error) {
-    // Rollback nếu có lỗi
-    await connection.rollback();
-    console.error("Lỗi khi cập nhật bài đăng:", error);
-    res.status(500).json({
-      message: "Lỗi server.",
-      error: error.message
-    });
-  } finally {
-    // Giải phóng connection
-    connection.release();
   }
-});
+);
 
 // API: Lấy danh sách thông báo của người dùng hiện tại
 app.get("/api/notifications", isAuthenticated, async (req, res) => {
@@ -1562,16 +1762,18 @@ app.get("/api/notifications", isAuthenticated, async (req, res) => {
     );
 
     // Format thời gian cho từng thông báo
-    notifications.forEach(notification => {
-      notification.created_at = new Date(notification.created_at).toLocaleString('vi-VN');
+    notifications.forEach((notification) => {
+      notification.created_at = new Date(
+        notification.created_at
+      ).toLocaleString("vi-VN");
     });
 
     res.json(notifications);
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error("Error fetching notifications:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching notifications'
+      message: "Error fetching notifications",
     });
   }
 });
@@ -1588,39 +1790,43 @@ app.put("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Notification marked as read'
+      message: "Notification marked as read",
     });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    console.error("Error marking notification as read:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating notification'
+      message: "Error updating notification",
     });
   }
 });
 
 // API: Đánh dấu tất cả thông báo đã đọc
-app.put("/api/notifications/mark-all-read", isAuthenticated, async (req, res) => {
-  try {
-    await db.promise().query(
-      `UPDATE notifications 
+app.put(
+  "/api/notifications/mark-all-read",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      await db.promise().query(
+        `UPDATE notifications 
              SET is_read = TRUE 
              WHERE user_id = ?`,
-      [req.session.user.id]
-    );
+        [req.session.user.id]
+      );
 
-    res.json({
-      success: true,
-      message: 'All notifications marked as read'
-    });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating notifications'
-    });
+      res.json({
+        success: true,
+        message: "All notifications marked as read",
+      });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error updating notifications",
+      });
+    }
   }
-});
+);
 
 // API: Cập nhật trạng thái đã bán
 app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
@@ -1629,20 +1835,23 @@ app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
 
   try {
     // Kiểm tra quyền sở hữu bài đăng
-    const [post] = await db.promise().query(
-      "SELECT id FROM posts WHERE id = ? AND author_id = ?",
-      [postId, userId]
-    );
+    const [post] = await db
+      .promise()
+      .query("SELECT id FROM posts WHERE id = ? AND author_id = ?", [
+        postId,
+        userId,
+      ]);
 
     if (post.length === 0) {
-      return res.status(403).json({ message: "Bạn không có quyền cập nhật bài đăng này." });
+      return res
+        .status(403)
+        .json({ message: "Bạn không có quyền cập nhật bài đăng này." });
     }
 
     // Cập nhật trạng thái availability thành sold
-    await db.promise().query(
-      "UPDATE posts SET availability = 'sold' WHERE id = ?",
-      [postId]
-    );
+    await db
+      .promise()
+      .query("UPDATE posts SET availability = 'sold' WHERE id = ?", [postId]);
 
     res.json({ message: "Cập nhật trạng thái thành công" });
   } catch (error) {
@@ -1650,6 +1859,32 @@ app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi cập nhật trạng thái" });
   }
 });
+
+async function logAuditAction(
+  userId,
+  action,
+  entityType,
+  entityId,
+  oldValue,
+  newValue
+) {
+  try {
+    await db.promise().query(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        action,
+        entityType,
+        entityId,
+        oldValue ? JSON.stringify(oldValue) : null,
+        newValue ? JSON.stringify(newValue) : null,
+      ]
+    );
+  } catch (err) {
+    console.error("Lỗi ghi audit log:", err);
+  }
+}
 
 // Start server
 app.listen(PORT, () => {
