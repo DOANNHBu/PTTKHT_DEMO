@@ -164,6 +164,10 @@
   color: #ff8800 !important;
 }
 
+.profile-product-status.rejected span {
+  color: #e74c3c !important;
+}
+
 .profile-main-grid {
   display: flex;
   gap: 40px;
@@ -708,6 +712,20 @@
   font-size: 14px;
   margin-top: 8px;
   color: #555;
+}
+
+.rejection-reason {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #fde8e8;
+  border-left: 4px solid #e74c3c;
+  color: #c53030;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rejection-reason strong {
+  color: #e74c3c;
 }
 
 /* Cửa sổ bài đăng */
