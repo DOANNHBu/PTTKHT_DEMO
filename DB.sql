@@ -168,14 +168,14 @@ INSERT INTO users (username, password, email, full_name, phone, address, school,
 
 -- Người dùng thông thường (giáo viên, học sinh)
 ('giaovien1', '1', 'giaovien1@truong.edu.vn', 'Phạm Thị Hương', '0901234570', 'Số 101 đường Giáo Viên, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh1', '2', 'hocsinh1@truong.edu.vn', 'Lê Văn Nam', '0901234571', 'Số 201 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh2', '3', 'hocsinh2@truong.edu.vn', 'Nguyễn Thị Hà', '0901234572', 'Số 202 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
-('hocsinh3', '4', 'hocsinh3@truong.edu.vn', 'Trần Văn Minh', '0901234573', 'Số 203 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
-('hocsinh4', '$2y$10$1hGtwNfBJUVYPZnCEuIY6.oMBlOVoxUXFDOkzXKVboGKQqbI.9n2S', 'hocsinh4@truong.edu.vn', 'Phạm Thị Lan', '0901234574', 'Số 204 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
-('hocsinh5', '$2y$10$kJ.GfGaVRMIzfKfLFYPZTO6gBVtCRkY0V9AgQyaEJapz0I/L.8yMa', 'hocsinh5@truong.edu.vn', 'Đỗ Hoàng Long', '0901234575', 'Số 205 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
-('sad', '1', 'hocsinh6@truong.edu.vn', 'Vũ Thị Hồng', '0901234576', 'Số 206 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
-('giaovien2', '$2y$10$W3Sjs4VGBn4.j6Ol2iNG8ecEEPwK3QYPB6JYJYl6TXkwxPBI07aeO', 'giaovien2@truong.edu.vn', 'Trần Văn Thắng', '0901234577', 'Số 102 đường Giáo Viên, Hà Nội', 'Trường THPT Phan Đình Phùng', 2, 'active'),
-('giaovien3', '$2y$10$rVewLiOInrLmrmKhW5Uice9z/IgAfWTQCgj/uB1G31cLUOA0pBlrS', 'giaovien3@truong.edu.vn', 'Nguyễn Thị Thanh', '0901234578', 'Số 103 đường Giáo Viên, Hà Nội', 'Trường THPT Lê Quý Đôn', 2, 'active');
+('hocsinh1', '1', 'hocsinh1@truong.edu.vn', 'Lê Văn Nam', '0901234571', 'Số 201 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
+('hocsinh2', '2', 'hocsinh2@truong.edu.vn', 'Nguyễn Thị Hà', '0901234572', 'Số 202 đường Học Sinh, Hà Nội', 'Trường THPT Nguyễn Du', 2, 'active'),
+('hocsinh3', '3', 'hocsinh3@truong.edu.vn', 'Trần Văn Minh', '0901234573', 'Số 203 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
+('hocsinh4', '4', 'hocsinh4@truong.edu.vn', 'Phạm Thị Lan', '0901234574', 'Số 204 đường Học Sinh, Hà Nội', 'Trường THPT Chu Văn An', 2, 'active'),
+('hocsinh5', '5', 'hocsinh5@truong.edu.vn', 'Đỗ Hoàng Long', '0901234575', 'Số 205 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
+('hocsinh6', '6', 'hocsinh6@truong.edu.vn', 'Vũ Thị Hồng', '0901234576', 'Số 206 đường Học Sinh, Hà Nội', 'Trường THPT Việt Đức', 2, 'active'),
+('giaovien2', '2', 'giaovien2@truong.edu.vn', 'Trần Văn Thắng', '0901234577', 'Số 102 đường Giáo Viên, Hà Nội', 'Trường THPT Phan Đình Phùng', 2, 'active'),
+('giaovien3', '3', 'giaovien3@truong.edu.vn', 'Nguyễn Thị Thanh', '0901234578', 'Số 103 đường Giáo Viên, Hà Nội', 'Trường THPT Lê Quý Đôn', 2, 'active');
 
 -- Chèn danh mục
 INSERT INTO categories (name, description) VALUES

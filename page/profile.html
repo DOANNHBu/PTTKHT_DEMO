@@ -1,132 +1,186 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Thông tin cá nhân</title>
-    <link rel="stylesheet" href="/asset/css/style.css" />
-    <link rel="stylesheet" href="/asset/css/profile.css" />
-  </head>
 
-  <body>
-    <header>
-      <div class="container header-content">
-        <a href="/page/index.html" class="logo">CHỢ LỚN</a>
-      </div>
-    </header>
-    <div id="add-post-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Thêm bài đăng mới</h2>
-        <form id="add-post-form">
-          <div class="form-group">
-            <label for="title">Tiêu đề:</label>
-            <input type="text" id="title" name="title" required />
-          </div>
-          <div class="form-group">
-            <label for="description">Mô tả:</label>
-            <textarea id="description" name="description" required></textarea>
-          </div>
-          <div class="form-group">
-            <label for="price">Giá:</label>
-            <input type="number" id="price" name="price" min="0" required />
-          </div>
-          <div class="form-group">
-            <label for="category">Danh mục:</label>
-            <select id="category" name="category" required>
-              <option value="">Chọn danh mục</option>
-              <option value="1">Sách</option>
-              <option value="2">Thiết bị điện tử</option>
-              <option value="3">Quần áo</option>
-              <option value="4">Dụng cụ thể thao</option>
-              <option value="5">Đồ dùng học tập</option>
-              <option value="6">Nhạc cụ</option>
-              <option value="7">Khác</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="location">Địa điểm:</label>
-            <input type="text" id="location" name="location" required />
-          </div>
-          <div class="form-group">
-            <label for="images">Hình ảnh:</label>
-            <input type="file" id="images" name="images" multiple />
-          </div>
-          <button type="submit" class="submit-button">Đăng bài</button>
-        </form>
+<head>
+  <meta charset="UTF-8" />
+  <title>Thông tin cá nhân</title>
+  <link rel="stylesheet" href="/asset/css/style.css" />
+  <link rel="stylesheet" href="/asset/css/profile.css" />
+</head>
+
+<body>
+  <header>
+    <div class="container header-content">
+      <a href="/page/index.html" class="logo">SCHOOL EXCHANGE</a>
+    </div>
+  </header>
+  <div id="add-post-modal" class="modal" style="display: none;">
+    <div class="modal-content add-post-modal-content">
+      <span class="close-button">&times;</span>
+      <h2 class="modal-title">Thêm bài đăng mới</h2>
+      <form id="add-post-form">
+        <div class="form-group">
+          <label for="title">Tiêu đề</label>
+          <input type="text" id="title" name="title" required />
+        </div>
+        <div class="form-group">
+          <label for="description">Mô tả</label>
+          <textarea id="description" name="description" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="price">Giá (VNĐ)</label>
+          <input type="number" id="price" name="price" min="0" step="1000" required />
+        </div>
+        <div class="form-group">
+          <label for="category">Danh mục</label>
+          <select id="category" name="category" required>
+            <option value="">Chọn danh mục</option>
+            <option value="1">Sách</option>
+            <option value="2">Thiết bị điện tử</option>
+            <option value="3">Quần áo</option>
+            <option value="4">Dụng cụ thể thao</option>
+            <option value="5">Đồ dùng học tập</option>
+            <option value="6">Nhạc cụ</option>
+            <option value="7">Khác</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="location">Địa điểm</label>
+          <input type="text" id="location" name="location" required />
+        </div>
+        <div class="form-group">
+          <label for="condition">Tình trạng</label>
+          <select id="condition" name="condition" required>
+            <option value="">Chọn tình trạng</option>
+            <option value="new">Mới 100%</option>
+            <option value="like_new">Như mới (99%)</option>
+            <option value="good">Còn tốt (80-90%)</option>
+            <option value="fair">Tạm được (60-80%)</option>
+            <option value="poor">Đã qua sử dụng (dưới 60%)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="images">Hình ảnh (tối đa 5 ảnh)</label>
+          <input type="file" id="images" name="images" multiple accept="image/*" />
+          <small class="input-desc">Ảnh đầu tiên sẽ được sử dụng làm ảnh đại diện</small>
+          <div id="image-preview" class="image-preview"></div>
+        </div>
+        <div class="form-actions add-post-actions">
+          <button type="submit" class="submit-button btn-primary">Đăng bài</button>
+          <button type="button" class="submit-button btn-cancel">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="profile-main-grid">
+    <div class="profile-left-col">
+      <div id="profile-info"></div>
+      <div class="profile-actions">
+        <button class="post-button profile-post-btn">Tạo bài đăng</button>
+        <button class="edit-button profile-edit-btn">Chỉnh sửa thông tin</button>
       </div>
     </div>
-    <div class="profile-main-grid">
-      <div class="profile-left-col">
-        <div id="profile-info"></div>
-        <div class="profile-actions">
-          <button class="post-button profile-post-btn">Đăng bài đăng</button>
-          <button class="edit-button profile-edit-btn">
-            Chỉnh sửa thông tin
-          </button>
-        </div>
-      </div>
-      <div class="profile-right-col">
-        <h2>Sản phẩm đã đăng</h2>
+    <div class="profile-right-col">
+      <div class="profile-posts">
+        <h2>Tổng hợp bài đăng</h2>
         <div id="user-products"></div>
       </div>
     </div>
-    <script src="/asset/js/profile.js"></script>
-    <script src="/asset/js/auth-check.js"></script>
+  </div>
+  <script src="/asset/js/profile.js"></script>
+  <script src="/asset/js/auth-check.js"></script>
 
-    <!-- Modal chỉnh sửa thông tin -->
-    <div id="edit-profile-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Chỉnh sửa thông tin cá nhân</h2>
-        <form id="edit-profile-form">
-          <div class="form-group">
-            <label for="edit-username">Tên đăng nhập:</label>
-            <input type="text" id="edit-username" name="username" required />
-          </div>
-          <div class="form-group">
-            <label for="edit-password">Mật khẩu:</label>
-            <input
-              type="password"
-              id="edit-password"
-              name="password"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="edit-email">Email:</label>
-            <input type="email" id="edit-email" name="email" required />
-          </div>
-          <div class="form-group">
-            <label for="edit-phone">Số điện thoại:</label>
-            <input type="tel" id="edit-phone" name="phone" />
-          </div>
-          <div class="form-group">
-            <label for="edit-address">Địa chỉ:</label>
-            <input type="text" id="edit-address" name="address" />
-          </div>
-          <div class="form-group">
-            <label for="edit-avatar">Ảnh đại diện:</label>
-            <input
-              type="file"
-              id="edit-avatar"
-              name="avatar"
-              accept="image/*"
-            />
-          </div>
+  <!-- Modal chỉnh sửa thông tin -->
+  <div id="edit-profile-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <h2>Chỉnh sửa thông tin cá nhân</h2>
+      <form id="edit-profile-form">
+        <div class="form-group">
+          <label for="edit-username">Tên đăng nhập:</label>
+          <input type="text" id="edit-username" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-password">Mật khẩu:</label>
+          <input type="password" id="edit-password" name="password" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-email">Email:</label>
+          <input type="email" id="edit-email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-phone">Số điện thoại:</label>
+          <input type="tel" id="edit-phone" name="phone">
+        </div>
+        <div class="form-group">
+          <label for="edit-address">Địa chỉ:</label>
+          <input type="text" id="edit-address" name="address">
+        </div>
+        <div class="form-group">
+          <label for="edit-avatar">Ảnh đại diện:</label>
+          <input type="file" id="edit-avatar" name="avatar" accept="image/*">
+        </div>
 
-          <!-- Thông tin chỉ hiển thị -->
-          <div class="form-group display-only">
-            <label>Họ tên:</label>
-            <div class="display-value" id="display-fullname"></div>
-          </div>
-          <div class="form-group display-only">
-            <label>Trường:</label>
-            <div class="display-value" id="display-school"></div>
-          </div>
+        <!-- Thông tin chỉ hiển thị -->
+        <div class="form-group display-only">
+          <label>Họ tên:</label>
+          <div class="display-value" id="display-fullname"></div>
+        </div>
+        <div class="form-group display-only">
+          <label>Trường:</label>
+          <div class="display-value" id="display-school"></div>
+        </div>
 
-          <button type="submit" class="submit-button">Lưu thay đổi</button>
-        </form>
+        <button type="submit" class="submit-button">Lưu thay đổi</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal chi tiết bài đăng -->
+  <div id="post-detail-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button">&times;</span>
+      <div class="post-detail">
+        <div class="post-images">
+          <div class="main-image" id="modal-main-image">
+            <img src="" alt="Main Image">
+          </div>
+          <div class="thumbnail-images" id="modal-thumbnails">
+          </div>
+        </div>
+        <div class="post-info">
+          <h2 id="modal-title"></h2>
+          <div class="post-price" id="modal-price"></div>
+          <div class="post-meta">
+            <div class="meta-item">
+              <span class="meta-label">Danh mục:</span>
+              <span id="modal-category"></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Khu vực:</span>
+              <span id="modal-location"></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Ngày đăng:</span>
+              <span id="modal-date"></span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Trạng thái:</span>
+              <span id="modal-status"></span>
+            </div>
+          </div>
+          <div class="post-description">
+            <h3>Mô tả</h3>
+            <p id="modal-description"></p>
+          </div>
+        </div>
+      </div>
+      <div class="post-detail-actions" style="position:absolute;right:32px;bottom:32px;z-index:10;">
+        <button id="edit-post-btn" class="submit-button btn-primary">Chỉnh sửa</button>
+        <button id="delete-post-btn" class="submit-button btn-cancel">Xóa</button>
       </div>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>

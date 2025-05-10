@@ -86,6 +86,7 @@ function renderProducts(products) {
     productElement.onclick = () => showProductDetail(product.id);
 
     const productImage =
+      (product.images && product.images.length > 0 && product.images[0].data) ||
       product.thumbnail || "/asset/images/default-thumbnail.png";
 
     // Kiểm tra trạng thái "availability" để thêm lớp CSS "sold-out"

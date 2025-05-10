@@ -127,10 +127,10 @@ function loadUserManagement() {
         </div>
     `;
 
-  document.getElementById("content-area").innerHTML = content;
+  document.getElementById('content-area').innerHTML = content;
 
   // Khởi tạo UserManager nếu chưa tồn tại
-  if (typeof window.userManager === "undefined") {
+  if (typeof window.userManager === 'undefined') {
     window.userManager = new UserManager();
   } else {
     // Nếu đã tồn tại, tải lại danh sách người dùng
@@ -138,12 +138,12 @@ function loadUserManagement() {
   }
 
   // Thêm event listener cho việc click bên ngoài modal
-  const createModal = document.getElementById("createUserModal");
+  const createModal = document.getElementById('createUserModal');
   window.onclick = function (event) {
     if (event.target == createModal) {
       userManager.closeCreateModal();
     }
-  };
+  }
 }
 
 // Duyệt bài đăng
@@ -169,8 +169,8 @@ function loadPostApproval() {
                     </thead>
                     <tbody>
                         ${posts
-                          .map(
-                            (post) => `
+          .map(
+            (post) => `
                             <tr>
                                 <td>${post.title}</td>
                                 <td>${post.author_name}</td>
@@ -178,22 +178,20 @@ function loadPostApproval() {
                                 <td>${formatDate(post.created_at)}</td>
                                 <td>${formatPostStatus(post.status)}</td>
                                 <td>
-                                    <button onclick="viewPost('${
-                                      post.id
-                                    }')">Xem</button>
-                                    ${
-                                      post.status === "pending"
-                                        ? `
+                                    <button onclick="viewPost('${post.id
+              }')">Xem</button>
+                                    ${post.status === "pending"
+                ? `
                                         <button onclick="approvePost('${post.id}')">Duyệt</button>
                                         <button onclick="rejectPost('${post.id}')">Từ chối</button>
                                     `
-                                        : ""
-                                    }
+                : ""
+              }
                                 </td>
                             </tr>
                         `
-                          )
-                          .join("")}
+          )
+          .join("")}
                     </tbody>
                 </table>
             </div>
