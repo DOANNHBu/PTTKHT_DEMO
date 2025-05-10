@@ -336,8 +336,10 @@ async function showPostDetail(postId) {
     const editBtn = document.getElementById("edit-post-btn");
     const deleteBtn = document.getElementById("delete-post-btn");
     editBtn.onclick = function () {
-      alert("Chức năng chỉnh sửa sẽ được phát triển!");
-      // TODO: Hiển thị modal chỉnh sửa bài đăng
+      // Đóng modal chi tiết bài đăng
+      document.getElementById("post-detail-modal").style.display = "none";
+      // Mở modal chỉnh sửa
+      showEditPostModal(postId);
     };
     deleteBtn.onclick = async function () {
       if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
@@ -493,8 +495,10 @@ function showPostDetailModal(postId) {
       const editBtn = document.getElementById("edit-post-btn");
       const deleteBtn = document.getElementById("delete-post-btn");
       editBtn.onclick = function () {
-        alert("Chức năng chỉnh sửa sẽ được phát triển!");
-        // TODO: Hiển thị modal chỉnh sửa bài đăng
+        // Đóng modal chi tiết bài đăng
+        document.getElementById("post-detail-modal").style.display = "none";
+        // Mở modal chỉnh sửa
+        showEditPostModal(postId);
       };
       deleteBtn.onclick = async function () {
         if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
@@ -568,5 +572,112 @@ if (imagesInput && imagePreview) {
         reader.readAsDataURL(file);
       }
     });
+  });
+}
+
+// Xử lý modal chỉnh sửa bài đăng
+function showEditPostModal(postId) {
+  const editModal = document.getElementById("edit-post-modal");
+  const editForm = document.getElementById("edit-post-form");
+  const closeButton = editModal.querySelector(".close-button");
+  const cancelButton = editModal.querySelector(".btn-cancel");
+
+  // Lấy thông tin bài đăng hiện tại
+  fetch(`/api/posts/${postId}`, { credentials: "include" })
+    .then((response) => response.json())
+    .then((post) => {
+      if (!post) return;
+
+      // Điền thông tin vào form
+      document.getElementById("edit-title").value = post.title;
+      document.getElementById("edit-description").value = post.description;
+      document.getElementById("edit-price").value = post.price;
+      document.getElementById("edit-category").value = post.category_id;
+      document.getElementById("edit-location").value = post.location;
+
+      // Hiển thị ảnh hiện tại
+      const imagePreview = document.getElementById("edit-image-preview");
+      imagePreview.innerHTML = "";
+      if (post.images && post.images.length > 0) {
+        post.images.forEach((img) => {
+          const imgElement = document.createElement("img");
+          imgElement.src = img.data;
+          imagePreview.appendChild(imgElement);
+        });
+      }
+
+      // Hiển thị modal
+      editModal.style.display = "block";
+    })
+    .catch((error) => {
+      console.error("Lỗi khi tải thông tin bài đăng:", error);
+      alert("Có lỗi xảy ra khi tải thông tin bài đăng!");
+    });
+
+  // Xử lý đóng modal
+  closeButton.onclick = function () {
+    editModal.style.display = "none";
+    editForm.reset();
+  };
+
+  cancelButton.onclick = function () {
+    editModal.style.display = "none";
+    editForm.reset();
+  };
+
+  // Đóng modal khi click bên ngoài
+  window.onclick = function (event) {
+    if (event.target === editModal) {
+      editModal.style.display = "none";
+      editForm.reset();
+    }
+  };
+
+  // Xử lý preview ảnh mới
+  const imagesInput = document.getElementById("edit-images");
+  const imagePreview = document.getElementById("edit-image-preview");
+  imagesInput.addEventListener("change", function () {
+    imagePreview.innerHTML = "";
+    const files = Array.from(this.files).slice(0, 5);
+    files.forEach((file) => {
+      if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          imagePreview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  });
+
+  // Xử lý submit form
+  editForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    formData.append("post_id", postId);
+    formData.append("status", "pending");
+
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        credentials: "include",
+        body: formData
+      });
+
+      if (response.ok) {
+        alert("Cập nhật bài đăng thành công!");
+        editModal.style.display = "none";
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(error.message || "Cập nhật bài đăng thất bại!");
+      }
+    } catch (error) {
+      console.error("Lỗi khi cập nhật bài đăng:", error);
+      alert("Có lỗi xảy ra khi cập nhật bài đăng!");
+    }
   });
 }

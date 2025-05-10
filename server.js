@@ -67,7 +67,7 @@ liveReloadServer.server.once("connection", () => {
 const db = mysql.createPool({
   host: "127.0.0.1",
   user: "root",
-  password: "root",
+  password: "duong1812004",
   database: "school_exchange",
   port: 3306,
   waitForConnections: true,
@@ -775,7 +775,7 @@ app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
   });
 });
 
-// Xóa bài đăng
+// API: Xóa bài đăng
 app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
   const postId = req.params.id;
   const userId = req.session.user.id;
@@ -1412,25 +1412,84 @@ app.get("/", (req, res) => {
   res.redirect("page/login.html");
 });
 
-// Xóa bài đăng
-app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
+// API: Cập nhật bài đăng
+app.put("/api/posts/:id", isAuthenticated, isUser, upload.array('images', 5), async (req, res) => {
   const postId = req.params.id;
   const userId = req.session.user.id;
-  // Chỉ cho phép xóa bài đăng của chính mình
-  db.query(
-    "DELETE FROM posts WHERE id = ? AND author_id = ?",
-    [postId, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Lỗi khi xóa bài đăng:", err);
-        return res.status(500).json({ message: "Lỗi server" });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: "Không tìm thấy bài đăng hoặc không có quyền xóa" });
-      }
-      res.json({ message: "Xóa bài đăng thành công" });
+  const { title, description, price, category, location } = req.body;
+
+  // Kiểm tra dữ liệu đầu vào
+  if (!title || !description || !price || !category || !location) {
+    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
+  }
+
+  // Kiểm tra số lượng ảnh
+  if (req.files && req.files.length > 5) {
+    return res.status(400).json({ message: "Chỉ được tải lên tối đa 5 ảnh." });
+  }
+
+  const connection = await db.promise().getConnection();
+  
+  try {
+    // Kiểm tra quyền sở hữu bài đăng
+    const [post] = await connection.query(
+      "SELECT id FROM posts WHERE id = ? AND author_id = ?",
+      [postId, userId]
+    );
+
+    if (post.length === 0) {
+      return res.status(403).json({ message: "Bạn không có quyền chỉnh sửa bài đăng này." });
     }
-  );
+
+    // Bắt đầu transaction
+    await connection.beginTransaction();
+
+    // Cập nhật thông tin bài đăng
+    await connection.query(
+      `UPDATE posts 
+       SET title = ?, description = ?, price = ?, category_id = ?, location = ?, status = 'pending'
+       WHERE id = ?`,
+      [title, description, price, category, location, postId]
+    );
+
+    // Nếu có hình ảnh mới, xóa ảnh cũ và thêm ảnh mới
+    if (req.files && req.files.length > 0) {
+      // Xóa ảnh cũ
+      await connection.query("DELETE FROM post_images WHERE post_id = ?", [postId]);
+
+      // Thêm ảnh mới
+      const imagePromises = req.files.map((file, index) => {
+        // Kiểm tra loại file
+        if (!file.mimetype.startsWith('image/')) {
+          throw new Error('File không phải là hình ảnh');
+        }
+
+        const imageRole = index === 0 ? 'thumbnail' : 'image';
+        return connection.query(
+          'INSERT INTO post_images (post_id, image_data, image_type, image_role) VALUES (?, ?, ?, ?)',
+          [postId, file.buffer, file.mimetype, imageRole]
+        );
+      });
+
+      await Promise.all(imagePromises);
+    }
+
+    // Commit transaction
+    await connection.commit();
+
+    res.json({ message: "Cập nhật bài đăng thành công!" });
+  } catch (error) {
+    // Rollback nếu có lỗi
+    await connection.rollback();
+    console.error("Lỗi khi cập nhật bài đăng:", error);
+    res.status(500).json({ 
+      message: "Lỗi server.",
+      error: error.message 
+    });
+  } finally {
+    // Giải phóng connection
+    connection.release();
+  }
 });
 
 // Start server
