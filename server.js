@@ -247,10 +247,11 @@ app.get("/api/user/products", isAuthenticated, isUser, (req, res) => {
       p.location, 
       c.name AS categoryName, 
       p.status,
+      p.rejection_reason,
       (SELECT image_data FROM post_images WHERE post_id = p.id AND image_role = 'thumbnail' LIMIT 1) AS thumbnail
     FROM posts p
     JOIN categories c ON p.category_id = c.id
-    WHERE p.author_id = ? AND p.status IN ('approved', 'pending')
+    WHERE p.author_id = ? AND p.status IN ('approved', 'pending', 'rejected')
     ORDER BY p.created_at DESC
   `;
 
@@ -824,25 +825,43 @@ app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
 });
 
 // Xóa bài đăng
-// app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
-//   const postId = req.params.id;
-//   const userId = req.session.user.id;
-//   // Chỉ cho phép xóa bài đăng của chính mình
-//   db.query(
-//     "DELETE FROM posts WHERE id = ? AND author_id = ?",
-//     [postId, userId],
-//     (err, result) => {
-//       if (err) {
-//         console.error("Lỗi khi xóa bài đăng:", err);
-//         return res.status(500).json({ message: "Lỗi server" });
-//       }
-//       if (result.affectedRows === 0) {
-//         return res.status(404).json({ message: "Không tìm thấy bài đăng hoặc không có quyền xóa" });
-//       }
-//       res.json({ message: "Xóa bài đăng thành công" });
-//     }
-//   );
-// });
+app.delete("/api/posts/:id", isAuthenticated, isUser, async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.session.user.id;
+  
+  const connection = await db.promise().getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Kiểm tra quyền sở hữu bài đăng
+    const [post] = await connection.query(
+      "SELECT id, title FROM posts WHERE id = ? AND author_id = ?",
+      [postId, userId]
+    );
+
+    if (post.length === 0) {
+      await connection.rollback();
+      connection.release();
+      return res.status(403).json({ message: "Bạn không có quyền xóa bài đăng này." });
+    }
+
+    // Xóa hình ảnh của bài đăng
+    await connection.query("DELETE FROM post_images WHERE post_id = ?", [postId]);
+
+    // Xóa bài đăng
+    await connection.query("DELETE FROM posts WHERE id = ?", [postId]);
+
+    await connection.commit();
+    connection.release();
+
+    res.json({ message: "Xóa bài đăng thành công" });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error("Lỗi khi xóa bài đăng:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa bài đăng" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

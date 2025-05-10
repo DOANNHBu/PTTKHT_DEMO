@@ -81,9 +81,19 @@ document.addEventListener("DOMContentLoaded", async function () {
                 </div>
                 <div class="product-status">
                   <span style="color: ${
-                    p.status === "approved" ? "green" : "orange"
+                    p.status === "approved" 
+                      ? "green" 
+                      : p.status === "rejected"
+                      ? "red"
+                      : "orange"
                   }">
-                    ${p.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt"}
+                    ${
+                      p.status === "approved" 
+                        ? "Đã duyệt" 
+                        : p.status === "rejected"
+                        ? "Từ chối duyệt"
+                        : "Đang chờ duyệt"
+                    }
                   </span>
                 </div>
               </div>
@@ -337,7 +347,7 @@ async function showPostDetail(postId) {
       // Đóng modal chi tiết bài đăng
       document.getElementById("post-detail-modal").style.display = "none";
       // Mở modal chỉnh sửa
-      showEditPostModal(postId);
+      showEditPostModal(post);
     };
     deleteBtn.onclick = async function () {
       if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
@@ -448,18 +458,54 @@ function showPostDetailModal(postId) {
         month: '2-digit',
         year: 'numeric'
       }).replace(',', '') : "";
-      document.getElementById("post-detail-status").textContent = getStatusText(post.status);
 
-      // Cập nhật trạng thái
+      // Cập nhật trạng thái và lý do từ chối
       const statusElement = document.getElementById("post-detail-status");
-      if (post.availability === "sold") {
+      const statusContainer = statusElement.parentNode;
+      
+      // Xóa lý do từ chối cũ nếu có
+      const oldRejectionReason = statusContainer.querySelector('.rejection-reason');
+      if (oldRejectionReason) {
+        oldRejectionReason.remove();
+      }
+
+      // Ẩn/hiện các nút tùy theo trạng thái
+      const editBtn = document.getElementById("edit-post-btn");
+      const deleteBtn = document.getElementById("delete-post-btn");
+      const soldBtn = document.getElementById("sold-post-btn");
+
+      if (post.status === "rejected") {
+        statusElement.textContent = "Từ chối duyệt";
+        statusElement.style.color = "#e74c3c";
+        
+        // Thêm lý do từ chối nếu có
+        if (post.rejection_reason) {
+          const rejectionReason = document.createElement("div");
+          rejectionReason.className = "rejection-reason";
+          rejectionReason.innerHTML = `<strong>Lý do từ chối:</strong> ${post.rejection_reason}`;
+          statusContainer.appendChild(rejectionReason);
+        }
+
+        // Hiển thị nút sửa và xóa cho bài đăng bị từ chối
+        editBtn.style.display = "block";
+        deleteBtn.style.display = "block";
+        soldBtn.style.display = "none";
+      } else if (post.availability === "sold") {
         statusElement.textContent = "Đã bán";
         statusElement.style.color = "#4caf50";
-        document.getElementById("sold-post-btn").style.display = "none";
+        editBtn.style.display = "none";
+        deleteBtn.style.display = "block";
+        soldBtn.style.display = "none";
       } else {
-        statusElement.textContent = "Còn hàng";
-        statusElement.style.color = "#2196f3";
-        document.getElementById("sold-post-btn").style.display = "block";
+        statusElement.textContent = post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
+        statusElement.style.color = post.status === "approved" ? "#4caf50" : "#ff8800";
+        
+        // Cho phép sửa cả bài đăng đã duyệt và đang chờ duyệt
+        editBtn.style.display = "block";
+        deleteBtn.style.display = "block";
+        
+        // Chỉ cho phép đánh dấu đã bán khi bài đăng đã được duyệt
+        soldBtn.style.display = post.status === "approved" ? "block" : "none";
       }
 
       // Cập nhật hình ảnh
@@ -488,21 +534,21 @@ function showPostDetailModal(postId) {
       };
 
       // Thêm sự kiện cho nút sửa
-      document.getElementById("edit-post-btn").onclick = function () {
+      editBtn.onclick = function () {
+        document.getElementById("post-detail-modal").style.display = "none";
         showEditPostModal(post);
       };
 
       // Thêm sự kiện cho nút xóa
-      document.getElementById("delete-post-btn").onclick = function () {
+      deleteBtn.onclick = function () {
         if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
           deletePost(post.id);
         }
       };
 
       // Thêm sự kiện cho nút đã bán
-      const soldButton = document.getElementById("sold-post-btn");
-      if (soldButton) {
-        soldButton.onclick = function () {
+      if (soldBtn) {
+        soldBtn.onclick = function () {
           if (confirm("Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?")) {
             fetch(`/api/posts/${post.id}/sold`, {
               method: "PUT",
@@ -516,7 +562,7 @@ function showPostDetailModal(postId) {
                   alert("Cập nhật trạng thái thành công!");
                   statusElement.textContent = "Đã bán";
                   statusElement.style.color = "#4caf50";
-                  soldButton.style.display = "none";
+                  soldBtn.style.display = "none";
                   loadUserPosts(); // Tải lại danh sách bài đăng
                 }
               })
@@ -580,43 +626,32 @@ if (imagesInput && imagePreview) {
 }
 
 // Xử lý modal chỉnh sửa bài đăng
-function showEditPostModal(postId) {
+function showEditPostModal(post) {
   const editModal = document.getElementById("edit-post-modal");
   const editForm = document.getElementById("edit-post-form");
   const closeButton = editModal.querySelector(".close-button");
   const cancelButton = editModal.querySelector(".btn-cancel");
+  const imagePreview = document.getElementById("edit-image-preview");
 
-  // Lấy thông tin bài đăng hiện tại
-  fetch(`/api/posts/${postId}`, { credentials: "include" })
-    .then((response) => response.json())
-    .then((post) => {
-      if (!post) return;
+  // Điền thông tin vào form
+  document.getElementById("edit-title").value = post.title;
+  document.getElementById("edit-description").value = post.description;
+  document.getElementById("edit-price").value = post.price;
+  document.getElementById("edit-category").value = post.category_id;
+  document.getElementById("edit-location").value = post.location;
 
-      // Điền thông tin vào form
-      document.getElementById("edit-title").value = post.title;
-      document.getElementById("edit-description").value = post.description;
-      document.getElementById("edit-price").value = post.price;
-      document.getElementById("edit-category").value = post.category_id;
-      document.getElementById("edit-location").value = post.location;
-
-      // Hiển thị ảnh hiện tại
-      const imagePreview = document.getElementById("edit-image-preview");
-      imagePreview.innerHTML = "";
-      if (post.images && post.images.length > 0) {
-        post.images.forEach((img) => {
-          const imgElement = document.createElement("img");
-          imgElement.src = img.data;
-          imagePreview.appendChild(imgElement);
-        });
-      }
-
-      // Hiển thị modal
-      editModal.style.display = "block";
-    })
-    .catch((error) => {
-      console.error("Lỗi khi tải thông tin bài đăng:", error);
-      alert("Có lỗi xảy ra khi tải thông tin bài đăng!");
+  // Hiển thị ảnh hiện tại
+  imagePreview.innerHTML = "";
+  if (post.images && post.images.length > 0) {
+    post.images.forEach((img) => {
+      const imgElement = document.createElement("img");
+      imgElement.src = img.data;
+      imagePreview.appendChild(imgElement);
     });
+  }
+
+  // Hiển thị modal
+  editModal.style.display = "block";
 
   // Xử lý đóng modal
   closeButton.onclick = function () {
@@ -639,7 +674,6 @@ function showEditPostModal(postId) {
 
   // Xử lý preview ảnh mới
   const imagesInput = document.getElementById("edit-images");
-  const imagePreview = document.getElementById("edit-image-preview");
   imagesInput.addEventListener("change", function () {
     imagePreview.innerHTML = "";
     const files = Array.from(this.files).slice(0, 5);
@@ -660,28 +694,65 @@ function showEditPostModal(postId) {
   editForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
+    // Kiểm tra dữ liệu đầu vào
+    const title = document.getElementById("edit-title").value.trim();
+    const description = document.getElementById("edit-description").value.trim();
+    const price = document.getElementById("edit-price").value.trim();
+    const category = document.getElementById("edit-category").value;
+    const location = document.getElementById("edit-location").value.trim();
+
+    if (!title || !description || !price || !category || !location) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return;
+    }
+
+    // Kiểm tra giá
+    if (isNaN(price) || parseFloat(price) < 0) {
+      alert("Giá không hợp lệ!");
+      return;
+    }
+
     const formData = new FormData(this);
-    formData.append("post_id", postId);
+    formData.append("post_id", post.id);
     formData.append("status", "pending");
 
     try {
-      const response = await fetch(`/api/posts/${postId}`, {
+      const response = await fetch(`/api/posts/${post.id}`, {
         method: "PUT",
         credentials: "include",
         body: formData
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        alert("Cập nhật bài đăng thành công!");
+        alert("Cập nhật bài đăng thành công! Bài đăng sẽ được xem xét lại.");
         editModal.style.display = "none";
         window.location.reload();
       } else {
-        const error = await response.json();
-        alert(error.message || "Cập nhật bài đăng thất bại!");
+        alert(result.message || "Cập nhật bài đăng thất bại!");
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật bài đăng:", error);
       alert("Có lỗi xảy ra khi cập nhật bài đăng!");
     }
   });
+}
+
+function deletePost(postId) {
+  fetch(`/api/posts/${postId}`, {
+    method: "DELETE",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.message) {
+        alert("Xóa bài đăng thành công!");
+        document.getElementById("post-detail-modal").style.display = "none";
+        loadUserPosts(); // Tải lại danh sách bài đăng
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Có lỗi xảy ra khi xóa bài đăng!");
+    });
 }
