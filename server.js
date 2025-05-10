@@ -67,7 +67,7 @@ liveReloadServer.server.once("connection", () => {
 const db = mysql.createPool({
   host: "127.0.0.1",
   user: "root",
-  password: "duong1812004",
+  password: "root",
   database: "school_exchange",
   port: 3306,
   waitForConnections: true,
@@ -1468,7 +1468,7 @@ app.put("/api/posts/:id", isAuthenticated, isUser, upload.array('images', 5), as
   }
 
   const connection = await db.promise().getConnection();
-  
+
   try {
     // Kiểm tra quyền sở hữu bài đăng
     const [post] = await connection.query(
@@ -1521,9 +1521,9 @@ app.put("/api/posts/:id", isAuthenticated, isUser, upload.array('images', 5), as
     // Rollback nếu có lỗi
     await connection.rollback();
     console.error("Lỗi khi cập nhật bài đăng:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Lỗi server.",
-      error: error.message 
+      error: error.message
     });
   } finally {
     // Giải phóng connection

@@ -2,6 +2,10 @@ class PostApproval {
     constructor() {
         this.posts = [];
         this.currentPost = null;
+        this.currentFilter = {
+            status: 'all',
+            searchText: ''
+        };
     }
 
     async initialize() {
@@ -17,8 +21,8 @@ class PostApproval {
                 throw new Error('Failed to fetch posts');
             }
             this.posts = await response.json();
-            this.renderPosts(this.posts);
-            this.setupFilters(); // Gọi setup filters sau khi có dữ liệu
+            this.filterAndRenderPosts();
+            this.setupFilters();
         } catch (error) {
             console.error('Error loading posts:', error);
             alert('Không thể tải danh sách bài đăng');
@@ -30,38 +34,37 @@ class PostApproval {
         const searchInput = document.getElementById('searchPost');
 
         if (statusFilter) {
+            // Khôi phục trạng thái filter
+            statusFilter.value = this.currentFilter.status;
             statusFilter.addEventListener('change', () => {
-                this.filterPosts();
+                this.currentFilter.status = statusFilter.value;
+                this.filterAndRenderPosts();
             });
         }
 
         if (searchInput) {
+            // Khôi phục từ khóa tìm kiếm
+            searchInput.value = this.currentFilter.searchText;
             searchInput.addEventListener('input', () => {
                 clearTimeout(this.searchTimeout);
                 this.searchTimeout = setTimeout(() => {
-                    this.filterPosts();
+                    this.currentFilter.searchText = searchInput.value;
+                    this.filterAndRenderPosts();
                 }, 300);
             });
         }
     }
 
-    filterPosts() {
-        const statusFilter = document.getElementById('statusFilter');
-        const searchInput = document.getElementById('searchPost');
-
-        if (!statusFilter || !searchInput) return;
-
-        const status = statusFilter.value;
-        const searchText = searchInput.value.toLowerCase().trim();
-
+    filterAndRenderPosts() {
         let filteredPosts = [...this.posts];
 
         // Lọc theo trạng thái
-        if (status !== 'all') {
-            filteredPosts = filteredPosts.filter(post => post.status === status);
+        if (this.currentFilter.status !== 'all') {
+            filteredPosts = filteredPosts.filter(post => post.status === this.currentFilter.status);
         }
 
         // Lọc theo từ khóa tìm kiếm
+        const searchText = this.currentFilter.searchText.toLowerCase().trim();
         if (searchText) {
             filteredPosts = filteredPosts.filter(post =>
                 post.title.toLowerCase().includes(searchText) ||
@@ -241,7 +244,8 @@ class PostApproval {
 
             if (response.ok) {
                 this.closeModal();
-                this.loadPendingPosts();
+                await this.loadPendingPosts(); // Tải lại dữ liệu
+                // Không cần gọi filterAndRenderPosts() vì đã được gọi trong loadPendingPosts
                 alert('Đã duyệt bài thành công!');
             } else {
                 throw new Error('Failed to approve post');
@@ -299,7 +303,7 @@ class PostApproval {
 
             if (response.ok) {
                 this.closeModal();
-                this.loadPendingPosts();
+                await this.loadPendingPosts();
                 alert('Đã từ chối bài đăng');
             } else {
                 throw new Error('Failed to reject post');
@@ -405,7 +409,7 @@ class PostApproval {
             }
 
             this.closeModal();
-            this.loadPendingPosts();
+            await this.loadPendingPosts();
             alert('Cập nhật bài đăng thành công!');
         } catch (error) {
             console.error('Error updating post:', error);
@@ -428,7 +432,7 @@ class PostApproval {
                 throw new Error('Failed to delete post');
             }
 
-            this.loadPendingPosts();
+            await this.loadPendingPosts();
             alert('Xóa bài đăng thành công!');
         } catch (error) {
             console.error('Error deleting post:', error);
