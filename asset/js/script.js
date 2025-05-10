@@ -24,7 +24,8 @@ async function loadProductsData(page = 1, search = "", category = "all") {
     }
 
     const products = await response.json();
-    renderProducts(products); // Hiển thị danh sách sản phẩm
+    const availableProducts = products.filter(product => product.availability !== "sold");
+    renderProducts(availableProducts); // Hiển thị danh sách sản phẩm
 
     // Cập nhật số trang hiện tại trong giao diện
     document.getElementById("current-page").textContent = page;
@@ -55,9 +56,10 @@ async function changePage(direction) {
     }
 
     const products = await response.json();
+    const availableProducts = products.filter(product => product.availability !== "sold");
 
     // Nếu không có sản phẩm nào, không chuyển trang
-    if (products.length === 0) {
+    if (availableProducts.length === 0) {
       console.log("Trang sau không có sản phẩm nào.");
       return;
     }
@@ -65,7 +67,7 @@ async function changePage(direction) {
     // Nếu có sản phẩm, cập nhật trang hiện tại và hiển thị sản phẩm
     currentPage = nextPage;
     document.getElementById("current-page").textContent = currentPage;
-    renderProducts(products);
+    renderProducts(availableProducts);
 
     // Cuộn đến phần nút phân trang sau khi danh sách sản phẩm đã được hiển thị
     const pagination = document.querySelector(".pagination");
@@ -114,6 +116,9 @@ function renderProducts(products) {
         <div class="product-meta">
           <div>${product.location}</div>
           <div>${product.categoryName}</div>
+        </div>
+        <div class="product-status">
+          <span>${product.availability === "available" ? "Còn hàng" : "Đã bán"}</span>
         </div>
       </div>
     `;
@@ -212,10 +217,10 @@ function showProductDetail(productId) {
       document.getElementById("detail-description").textContent =
         product.description;
 
-      // Hiển thị tình trạng (Còn hàng hoặc Hết hàng)
+      // Hiển thị tình trạng (Còn hàng hoặc Đã bán)
       const conditionElement = document.getElementById("detail-condition");
       conditionElement.textContent =
-        product.availability === "available" ? "Còn hàng" : "Hết hàng";
+        product.availability === "available" ? "Còn hàng" : "Đã bán";
 
       // Hiển thị ảnh
       const mainImage = document.getElementById("product-main-image");

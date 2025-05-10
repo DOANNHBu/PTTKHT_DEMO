@@ -626,6 +626,22 @@
   background: #b71c1c;
 }
 
+#sold-post-btn {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#sold-post-btn:hover {
+  background: #388e3c;
+}
+
 .products {
   display: flex;
   flex-wrap: wrap;
@@ -696,7 +712,6 @@
 
 /* Cửa sổ bài đăng */
 /* Modal styles */
-/* Modal styles */
 .modal {
   display: none;
   position: fixed;
@@ -705,96 +720,98 @@
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.7);
-  /* Làm tối nền */
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  background-color: #fff;
+  background-color: #fefefe;
   margin: 5% auto;
-  padding: 30px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.3s ease-in-out;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 800px;
+  border-radius: 8px;
+  position: relative;
 }
 
 .close-button {
-  color: #ff0000;
+  color: #aaa;
   float: right;
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
 }
 
-.close-button:hover,
-.close-button:focus {
-  color: #d00000;
-  text-decoration: none;
+.close-button:hover {
+  color: black;
 }
 
-.modal-content h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
+.post-detail-info {
+  margin: 20px 0;
 }
 
-.form-group {
-  margin-bottom: 15px;
+.post-detail-info p {
+  margin: 10px 0;
 }
 
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #555;
+.post-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0;
 }
 
-input,
-textarea,
-select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
+.post-images img {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
-textarea {
-  resize: vertical;
+.post-detail-description {
+  margin: 20px 0;
 }
 
-button.submit-button {
-  width: 100%;
-  padding: 12px;
-  background: #ff8800;
-  color: #fff;
+.post-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-edit, .btn-delete, .btn-sold {
+  padding: 8px 16px;
   border: none;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  font-weight: 500;
+  transition: background-color 0.3s;
 }
 
-button.submit-button:hover {
-  background: #ff6600;
+.btn-edit {
+  background-color: #2196f3;
+  color: white;
 }
 
-/* Animation for modal */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.btn-edit:hover {
+  background-color: #1976d2;
+}
+
+.btn-delete {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #d32f2f;
+}
+
+.btn-sold {
+  background-color: #4caf50;
+  color: white;
+}
+
+.btn-sold:hover {
+  background-color: #388e3c;
 }
 
 /* accept cả hai  */

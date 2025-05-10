@@ -437,6 +437,20 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
       });
     }
 
+    // Format lại một số trường dữ liệu
+    post.created_at = new Date(post.created_at).toLocaleString('vi-VN');
+    post.status_update_date = post.status_update_date ? new Date(post.status_update_date).toLocaleString('vi-VN') : '';
+    post.updated_at = new Date(post.updated_at).toLocaleString('vi-VN');
+    post.price = parseFloat(post.price);
+
+    // Thêm trạng thái được format
+    post.status_text = {
+      'pending': 'Chờ duyệt',
+      'approved': 'Đã duyệt',
+      'rejected': 'Đã từ chối',
+      'deleted': 'Đã xóa'
+    }[post.status] || post.status;
+
     res.json(post);
   });
 });
@@ -756,6 +770,7 @@ app.put("/api/admin/posts/:id/status", isAuthenticated, isAdmin, async (req, res
       `UPDATE posts 
             SET status = ?, 
                 rejection_reason = ?,
+                status_update_date = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
       [status, rejection_reason || null, postId]
@@ -1301,6 +1316,7 @@ app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 
     // Format lại một số trường dữ liệu
     post.created_at = new Date(post.created_at).toLocaleString('vi-VN');
+    post.status_update_date = post.status_update_date ? new Date(post.status_update_date).toLocaleString('vi-VN') : '';
     post.updated_at = new Date(post.updated_at).toLocaleString('vi-VN');
     post.price = parseFloat(post.price);
 
@@ -1336,6 +1352,7 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
                 location = ?,
                 status = ?,
                 rejection_reason = ?,
+                status_update_date = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
       [title, description, price, location, status, rejection_reason || null, postId]
@@ -1583,6 +1600,35 @@ app.put("/api/notifications/mark-all-read", isAuthenticated, async (req, res) =>
       success: false,
       message: 'Error updating notifications'
     });
+  }
+});
+
+// API: Cập nhật trạng thái đã bán
+app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.session.user.id;
+
+  try {
+    // Kiểm tra quyền sở hữu bài đăng
+    const [post] = await db.promise().query(
+      "SELECT id FROM posts WHERE id = ? AND author_id = ?",
+      [postId, userId]
+    );
+
+    if (post.length === 0) {
+      return res.status(403).json({ message: "Bạn không có quyền cập nhật bài đăng này." });
+    }
+
+    // Cập nhật trạng thái availability thành sold
+    await db.promise().query(
+      "UPDATE posts SET availability = 'sold' WHERE id = ?",
+      [postId]
+    );
+
+    res.json({ message: "Cập nhật trạng thái thành công" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái bài đăng:", error);
+    res.status(500).json({ message: "Lỗi server khi cập nhật trạng thái" });
   }
 });
 

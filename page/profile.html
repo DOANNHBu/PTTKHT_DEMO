@@ -188,45 +188,25 @@
   <!-- Modal chi tiết bài đăng -->
   <div id="post-detail-modal" class="modal">
     <div class="modal-content">
-      <span class="close-button">&times;</span>
-      <div class="post-detail">
-        <div class="post-images">
-          <div class="main-image" id="modal-main-image">
-            <img src="" alt="Main Image">
-          </div>
-          <div class="thumbnail-images" id="modal-thumbnails">
-          </div>
-        </div>
-        <div class="post-info">
-          <h2 id="modal-title"></h2>
-          <div class="post-price" id="modal-price"></div>
-          <div class="post-meta">
-            <div class="meta-item">
-              <span class="meta-label">Danh mục:</span>
-              <span id="modal-category"></span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Khu vực:</span>
-              <span id="modal-location"></span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Ngày đăng:</span>
-              <span id="modal-date"></span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Trạng thái:</span>
-              <span id="modal-status"></span>
-            </div>
-          </div>
-          <div class="post-description">
-            <h3>Mô tả</h3>
-            <p id="modal-description"></p>
-          </div>
-        </div>
+      <span id="close-post-detail" class="close-button">&times;</span>
+      <h2 id="post-detail-title"></h2>
+      <div class="post-detail-info">
+        <p><strong>Giá:</strong> <span id="post-detail-price"></span></p>
+        <p><strong>Danh mục:</strong> <span id="post-detail-category"></span></p>
+        <p><strong>Vị trí:</strong> <span id="post-detail-location"></span></p>
+        <p><strong>Ngày đăng:</strong> <span id="post-detail-date"></span></p>
+        <p><strong>Ngày duyệt:</strong> <span id="post-detail-approved-date"></span></p>
+        <p><strong>Trạng thái:</strong> <span id="post-detail-status"></span></p>
       </div>
-      <div class="post-detail-actions" style="position:absolute;right:32px;bottom:32px;z-index:10;">
-        <button id="edit-post-btn" class="submit-button btn-primary">Chỉnh sửa</button>
-        <button id="delete-post-btn" class="submit-button btn-cancel">Xóa</button>
+      <div id="post-detail-images" class="post-images"></div>
+      <div class="post-detail-description">
+        <h3>Mô tả</h3>
+        <p id="post-detail-description"></p>
+      </div>
+      <div class="post-actions">
+        <button id="edit-post-btn" class="btn-edit">Chỉnh sửa</button>
+        <button id="delete-post-btn" class="btn-delete">Xóa</button>
+        <button id="sold-post-btn" class="btn-sold">Đã bán</button>
       </div>
     </div>
   </div>

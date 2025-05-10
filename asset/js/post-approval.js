@@ -141,6 +141,7 @@ class PostApproval {
                         <p><strong>Giá:</strong> ${post.price.toLocaleString('vi-VN')} đ</p>
                         <p><strong>Địa điểm:</strong> ${post.location}</p>
                         <p><strong>Ngày đăng:</strong> ${post.created_at}</p>
+                        <p><strong>Ngày duyệt:</strong> ${post.status_update_date ? post.status_update_date : ''}</p>
                         <p><strong>Trạng thái:</strong> ${this.getStatusBadge(post.status)}</p>
                         
                         <div class="post-description">

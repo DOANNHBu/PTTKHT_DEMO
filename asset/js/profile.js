@@ -77,9 +77,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                   <div>${p.location || ""}</div>
                 </div>
                 <div class="product-meta">
-                  <div>${
-                    p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""
-                  }</div>
+                  <div>${p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""}</div>
                 </div>
                 <div class="product-status">
                   <span style="color: ${
@@ -425,109 +423,115 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Xử lý hiển thị modal chi tiết bài đăng
 function showPostDetailModal(postId) {
-  fetch(`/api/posts/${postId}`, { credentials: "include" })
+  fetch(`/api/posts/${postId}`)
     .then((response) => response.json())
     .then((post) => {
-      if (!post) return;
+      // Cập nhật nội dung modal
+      document.getElementById("post-detail-title").textContent = post.title;
+      document.getElementById("post-detail-price").textContent = `${post.price} VNĐ`;
+      document.getElementById("post-detail-description").textContent = post.description;
+      document.getElementById("post-detail-location").textContent = post.location;
+      document.getElementById("post-detail-category").textContent = post.categoryName;
+      document.getElementById("post-detail-date").textContent = new Date(post.created_at).toLocaleString("vi-VN", {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).replace(',', '');
+      document.getElementById("post-detail-approved-date").textContent = post.status_update_date ? new Date(post.status_update_date).toLocaleString("vi-VN", {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).replace(',', '') : "Chưa duyệt";
+      document.getElementById("post-detail-status").textContent = getStatusText(post.status);
 
-      // Hiển thị thông tin cơ bản
-      document.getElementById("modal-title").textContent = post.title;
-      document.getElementById("modal-price").textContent =
-        post.price === 0
-          ? "Thỏa thuận"
-          : post.price.toLocaleString("vi-VN") + " đ";
-      document.getElementById("modal-category").textContent = post.categoryName;
-      document.getElementById("modal-location").textContent = post.location;
-      document.getElementById("modal-description").textContent =
-        post.description;
+      // Cập nhật trạng thái
+      const statusElement = document.getElementById("post-detail-status");
+      if (post.availability === "sold") {
+        statusElement.textContent = "Đã bán";
+        statusElement.style.color = "#4caf50";
+        document.getElementById("sold-post-btn").style.display = "none";
+      } else {
+        statusElement.textContent = "Còn hàng";
+        statusElement.style.color = "#2196f3";
+        document.getElementById("sold-post-btn").style.display = "block";
+      }
 
-      // Format và hiển thị ngày đăng
-      const createdDate = new Date(post.created_at);
-      const formattedDate = `${createdDate
-        .getDate()
-        .toString()
-        .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${createdDate.getFullYear()}`;
-      document.getElementById("modal-date").textContent = formattedDate;
-
-      // Hiển thị trạng thái
-      const statusElement = document.getElementById("modal-status");
-      statusElement.textContent =
-        post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
-      statusElement.style.color =
-        post.status === "approved" ? "green" : "orange";
-
-      // Hiển thị ảnh
-      const mainImage = document
-        .getElementById("modal-main-image")
-        .querySelector("img");
-      const thumbnailsContainer = document.getElementById("modal-thumbnails");
-
-      // Lấy tất cả ảnh
-      const allImages =
-        post.images && post.images.length > 0
-          ? post.images
-          : [{ data: "/asset/images/default-thumbnail.png" }];
-
-      // Hiển thị ảnh chính
-      mainImage.src = allImages[0].data;
-      mainImage.alt = post.title;
-
-      // Hiển thị thumbnails
-      thumbnailsContainer.innerHTML = allImages
-        .map(
-          (img, index) => `
-          <img 
-            src="${img.data}" 
-            alt="Thumbnail ${index + 1}"
-            onclick="changeMainImage('${img.data}')"
-          />
-        `
-        )
-        .join("");
+      // Cập nhật hình ảnh
+      const imageContainer = document.getElementById("post-detail-images");
+      imageContainer.innerHTML = "";
+      if (post.images && post.images.length > 0) {
+        post.images.forEach((image) => {
+          const img = document.createElement("img");
+          img.src = image.data;
+          img.alt = post.title;
+          imageContainer.appendChild(img);
+        });
+      } else {
+        const defaultImg = document.createElement("img");
+        defaultImg.src = "/asset/images/default-thumbnail.png";
+        defaultImg.alt = "Không có hình ảnh";
+        imageContainer.appendChild(defaultImg);
+      }
 
       // Hiển thị modal
-      const modal = document.getElementById("post-detail-modal");
-      modal.style.display = "block";
+      document.getElementById("post-detail-modal").style.display = "block";
 
-      // Gắn sự kiện cho nút Chỉnh sửa và Xóa
-      const editBtn = document.getElementById("edit-post-btn");
-      const deleteBtn = document.getElementById("delete-post-btn");
-      editBtn.onclick = function () {
-        // Đóng modal chi tiết bài đăng
+      // Thêm sự kiện cho nút đóng
+      document.getElementById("close-post-detail").onclick = function () {
         document.getElementById("post-detail-modal").style.display = "none";
-        // Mở modal chỉnh sửa
-        showEditPostModal(postId);
       };
-      deleteBtn.onclick = async function () {
+
+      // Thêm sự kiện cho nút sửa
+      document.getElementById("edit-post-btn").onclick = function () {
+        showEditPostModal(post);
+      };
+
+      // Thêm sự kiện cho nút xóa
+      document.getElementById("delete-post-btn").onclick = function () {
         if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
-          try {
-            const res = await fetch(`/api/posts/${postId}`, {
-              method: "DELETE",
-              credentials: "include",
-            });
-            if (res.ok) {
-              alert("Đã xóa bài đăng thành công!");
-              modal.style.display = "none";
-              window.location.reload();
-            } else {
-              alert("Xóa bài đăng thất bại!");
-            }
-          } catch (err) {
-            alert("Có lỗi xảy ra khi xóa bài đăng!");
-          }
+          deletePost(post.id);
         }
       };
-      // Gắn sự kiện cho nút X để đóng modal
-      const closeBtn = modal.querySelector(".close-button");
-      if (closeBtn) {
-        closeBtn.onclick = function () {
-          modal.style.display = "none";
+
+      // Thêm sự kiện cho nút đã bán
+      const soldButton = document.getElementById("sold-post-btn");
+      if (soldButton) {
+        soldButton.onclick = function () {
+          if (confirm("Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?")) {
+            fetch(`/api/posts/${post.id}/sold`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                if (data.message) {
+                  alert("Cập nhật trạng thái thành công!");
+                  statusElement.textContent = "Đã bán";
+                  statusElement.style.color = "#4caf50";
+                  soldButton.style.display = "none";
+                  loadUserPosts(); // Tải lại danh sách bài đăng
+                }
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra khi cập nhật trạng thái!");
+              });
+          }
         };
       }
     })
-    .catch((error) => console.error("Lỗi khi tải chi tiết bài đăng:", error));
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("Có lỗi xảy ra khi tải thông tin bài đăng!");
+    });
 }
 
 // Hàm thay đổi ảnh chính khi click vào thumbnail
