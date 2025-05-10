@@ -140,11 +140,26 @@ function getCategoryId(vietnameseName) {
 // Lọc sản phẩm theo danh mục
 async function filterByCategory(category) {
   try {
+    const allCategories = document.querySelectorAll(".category");
+
     // Nếu danh mục hiện tại trùng với danh mục được bấm, đặt lại về "all"
     if (currentCategory === category) {
       currentCategory = "all";
+
+      // Xóa trạng thái active của tất cả danh mục
+      allCategories.forEach((el) => el.classList.remove("active"));
     } else {
       currentCategory = category;
+
+      // Cập nhật trạng thái active cho danh mục
+      allCategories.forEach((el) => {
+        const categoryName = el.querySelector(".category-name").textContent;
+        if (categoryName === category) {
+          el.classList.add("active");
+        } else {
+          el.classList.remove("active");
+        }
+      });
     }
 
     // Đặt lại trang hiện tại về 1
@@ -155,17 +170,6 @@ async function filterByCategory(category) {
 
     // Gọi API để lấy danh sách bài đăng theo danh mục và từ khóa tìm kiếm
     await loadProductsData(currentPage, searchTerm, currentCategory);
-
-    // Cập nhật trạng thái active cho danh mục
-    const allCategories = document.querySelectorAll(".category");
-    allCategories.forEach((el) => {
-      const categoryName = el.querySelector(".category-name").textContent;
-      if (categoryName === category) {
-        el.classList.add("active");
-      } else {
-        el.classList.remove("active");
-      }
-    });
   } catch (error) {
     console.error("Lỗi khi lọc sản phẩm theo danh mục:", error);
   }
