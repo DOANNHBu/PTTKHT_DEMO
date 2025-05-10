@@ -447,7 +447,7 @@ function showPostDetailModal(postId) {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
-      }).replace(',', '') : "Chưa duyệt";
+      }).replace(',', '') : "";
       document.getElementById("post-detail-status").textContent = getStatusText(post.status);
 
       // Cập nhật trạng thái
