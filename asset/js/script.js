@@ -12,10 +12,12 @@ function formatPrice(price) {
 let currentPage = 1; // Trang hiện tại
 const productsPerPage = 16; // Số sản phẩm mỗi trang
 
-async function loadProductsData(page = 1) {
+async function loadProductsData(page = 1, search = "", category = "all") {
   try {
     const response = await fetch(
-      `/api/posts?page=${page}&limit=${productsPerPage}`
+      `/api/posts?page=${page}&limit=${productsPerPage}&search=${encodeURIComponent(
+        search
+      )}&category=${encodeURIComponent(category)}`
     );
     if (!response.ok) {
       throw new Error("Không thể tải dữ liệu sản phẩm từ server");
@@ -38,9 +40,15 @@ async function changePage(direction) {
   if (nextPage < 1) return;
 
   try {
+    // Lấy từ khóa tìm kiếm và danh mục hiện tại
+    const searchTerm = document.querySelector(".search-input").value.trim();
+    const category = currentCategory;
+
     // Gọi API để kiểm tra xem trang tiếp theo có sản phẩm nào không
     const response = await fetch(
-      `/api/posts?page=${nextPage}&limit=${productsPerPage}`
+      `/api/posts?page=${nextPage}&limit=${productsPerPage}&search=${encodeURIComponent(
+        searchTerm
+      )}&category=${encodeURIComponent(category)}`
     );
     if (!response.ok) {
       throw new Error("Không thể tải dữ liệu sản phẩm từ server");
@@ -87,7 +95,8 @@ function renderProducts(products) {
 
     const productImage =
       (product.images && product.images.length > 0 && product.images[0].data) ||
-      product.thumbnail || "/asset/images/default-thumbnail.png";
+      product.thumbnail ||
+      "/asset/images/default-thumbnail.png";
 
     // Kiểm tra trạng thái "availability" để thêm lớp CSS "sold-out"
     const productInfoClass =
@@ -134,56 +143,18 @@ async function filterByCategory(category) {
     // Nếu danh mục hiện tại trùng với danh mục được bấm, đặt lại về "all"
     if (currentCategory === category) {
       currentCategory = "all";
-
-      // Lấy từ khóa tìm kiếm hiện tại
-      const searchTerm = document
-        .querySelector(".search-input")
-        .value.trim()
-        .toLowerCase();
-
-      // Gọi API để lấy toàn bộ sản phẩm (kết hợp với tìm kiếm)
-      const response = await fetch(
-        `/api/posts?search=${encodeURIComponent(searchTerm)}`
-      );
-      if (!response.ok) {
-        throw new Error("Không thể tải dữ liệu sản phẩm");
-      }
-
-      const products = await response.json();
-
-      // Hiển thị toàn bộ sản phẩm
-      renderProducts(products);
-
-      // Xóa trạng thái active của tất cả danh mục
-      const allCategories = document.querySelectorAll(".category");
-      allCategories.forEach((el) => el.classList.remove("active"));
-
-      return;
+    } else {
+      currentCategory = category;
     }
 
-    // Cập nhật danh mục hiện tại
-    currentCategory = category;
+    // Đặt lại trang hiện tại về 1
+    currentPage = 1;
 
     // Lấy từ khóa tìm kiếm hiện tại
-    const searchTerm = document
-      .querySelector(".search-input")
-      .value.trim()
-      .toLowerCase();
+    const searchTerm = document.querySelector(".search-input").value.trim();
 
     // Gọi API để lấy danh sách bài đăng theo danh mục và từ khóa tìm kiếm
-    const response = await fetch(
-      `/api/posts?search=${encodeURIComponent(
-        searchTerm
-      )}&category=${encodeURIComponent(category)}`
-    );
-    if (!response.ok) {
-      throw new Error("Không thể tải dữ liệu sản phẩm theo danh mục");
-    }
-
-    const products = await response.json();
-
-    // Hiển thị danh sách sản phẩm
-    renderProducts(products);
+    await loadProductsData(currentPage, searchTerm, currentCategory);
 
     // Cập nhật trạng thái active cho danh mục
     const allCategories = document.querySelectorAll(".category");
@@ -311,20 +282,11 @@ function setupSearchForm() {
         .toLowerCase();
 
       try {
+        // Đặt lại trang hiện tại về 1
+        currentPage = 1;
+
         // Gọi API để tìm kiếm sản phẩm (kết hợp với danh mục hiện tại)
-        const response = await fetch(
-          `/api/posts?search=${encodeURIComponent(
-            searchTerm
-          )}&category=${encodeURIComponent(currentCategory)}`
-        );
-        if (!response.ok) {
-          throw new Error("Không thể tải dữ liệu sản phẩm từ server");
-        }
-
-        const products = await response.json();
-
-        // Hiển thị danh sách sản phẩm
-        renderProducts(products);
+        await loadProductsData(currentPage, searchTerm, currentCategory);
       } catch (error) {
         console.error("Lỗi khi tìm kiếm sản phẩm:", error);
       }

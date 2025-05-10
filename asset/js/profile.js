@@ -14,15 +14,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     return;
   }
 
-  console.log('userProfile from API:', userProfile);
+  console.log("userProfile from API:", userProfile);
 
   // Hiển thị thông tin người dùng
   document.getElementById("profile-info").innerHTML = `
     <div class="profile-card-horizontal">
       <div class="profile-avatar-large-wrap">
-        <img src="${userProfile.avatar ?
-      `data:image/jpeg;base64,${userProfile.avatar}` :
-      '/asset/images/default-avatar.png'}" 
+        <img src="${
+          userProfile.avatar
+            ? `data:image/jpeg;base64,${userProfile.avatar}`
+            : "/asset/images/default-avatar.png"
+        }" 
           class="profile-avatar-large" 
           alt="Avatar"
         />
@@ -30,7 +32,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       <div class="profile-info-box">
         <div class="profile-details">
           <div><b>Họ tên:</b> ${userProfile.fullname || ""}</div>
-          <div><b>ID học sinh:</b> ${userProfile.student_id || ""}</div>
           <div><b>Trường:</b> ${userProfile.school || ""}</div>
           <div><b>Địa chỉ:</b> ${userProfile.address || ""}</div>
           <div><b>Email:</b> ${userProfile.email || ""}</div>
@@ -66,19 +67,24 @@ document.addEventListener("DOMContentLoaded", async function () {
               </div>
               <div class="product-info">
                 <div class="product-title">${p.title}</div>
-                <div class="product-price">${p.price === 0
-                  ? "Thỏa thuận"
-                  : p.price.toLocaleString("vi-VN") + " đ"
+                <div class="product-price">${
+                  p.price === 0
+                    ? "Thỏa thuận"
+                    : p.price.toLocaleString("vi-VN") + " đ"
                 }</div>
                 <div class="product-meta">
                   <div>${p.categoryName || ""}</div>
                   <div>${p.location || ""}</div>
                 </div>
                 <div class="product-meta">
-                  <div>${p.date ? new Date(p.date).toLocaleDateString('vi-VN') : ''}</div>
+                  <div>${
+                    p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""
+                  }</div>
                 </div>
                 <div class="product-status">
-                  <span style="color: ${p.status === "approved" ? "green" : "orange"}">
+                  <span style="color: ${
+                    p.status === "approved" ? "green" : "orange"
+                  }">
                     ${p.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt"}
                   </span>
                 </div>
@@ -91,9 +97,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     `;
 
     // Gắn lại sự kiện click cho các thẻ .product sau khi render
-    const productCards = userProductsDiv.querySelectorAll('.product');
-    productCards.forEach(card => {
-      card.addEventListener('click', function() {
+    const productCards = userProductsDiv.querySelectorAll(".product");
+    productCards.forEach((card) => {
+      card.addEventListener("click", function () {
         const postId = this.dataset.postId;
         if (postId) {
           showPostDetailModal(postId);
@@ -103,65 +109,67 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   // Xử lý chỉnh sửa thông tin cá nhân
-  const editProfileBtn = document.querySelector('.profile-edit-btn');
-  const editProfileModal = document.getElementById('edit-profile-modal');
-  const closeEditModal = editProfileModal.querySelector('.close-button');
-  const editProfileForm = document.getElementById('edit-profile-form');
+  const editProfileBtn = document.querySelector(".profile-edit-btn");
+  const editProfileModal = document.getElementById("edit-profile-modal");
+  const closeEditModal = editProfileModal.querySelector(".close-button");
+  const editProfileForm = document.getElementById("edit-profile-form");
 
   // Điền thông tin hiện tại vào form
-  document.getElementById('edit-username').value = userProfile.username || '';
-  document.getElementById('edit-email').value = userProfile.email || '';
-  document.getElementById('edit-phone').value = userProfile.phone || '';
-  document.getElementById('edit-address').value = userProfile.address || '';
+  document.getElementById("edit-username").value = userProfile.username || "";
+  document.getElementById("edit-email").value = userProfile.email || "";
+  document.getElementById("edit-phone").value = userProfile.phone || "";
+  document.getElementById("edit-address").value = userProfile.address || "";
 
   // Hiển thị thông tin chỉ đọc
-  document.getElementById('display-fullname').textContent = userProfile.fullname || '';
-  document.getElementById('display-school').textContent = userProfile.school || '';
+  document.getElementById("display-fullname").textContent =
+    userProfile.fullname || "";
+  document.getElementById("display-school").textContent =
+    userProfile.school || "";
 
   // Mở modal chỉnh sửa
-  editProfileBtn.addEventListener('click', () => {
-    editProfileModal.style.display = 'block';
+  editProfileBtn.addEventListener("click", () => {
+    editProfileModal.style.display = "block";
   });
 
   // Đóng modal
-  closeEditModal.addEventListener('click', () => {
-    editProfileModal.style.display = 'none';
+  closeEditModal.addEventListener("click", () => {
+    editProfileModal.style.display = "none";
   });
 
   // Đóng modal khi click bên ngoài
-  window.addEventListener('click', (e) => {
+  window.addEventListener("click", (e) => {
     if (e.target === editProfileModal) {
-      editProfileModal.style.display = 'none';
+      editProfileModal.style.display = "none";
     }
   });
 
   // Xử lý submit form chỉnh sửa
-  editProfileForm.addEventListener('submit', async (e) => {
+  editProfileForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const formData = new FormData(editProfileForm);
 
     try {
-      const response = await fetch('/api/user/profile', {
-        method: 'PUT',
-        credentials: 'include',
-        body: formData
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        credentials: "include",
+        body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Lỗi khi cập nhật thông tin');
+        throw new Error(errorData.message || "Lỗi khi cập nhật thông tin");
       }
 
       const result = await response.json();
-      alert('Cập nhật thông tin thành công!');
-      editProfileModal.style.display = 'none';
+      alert("Cập nhật thông tin thành công!");
+      editProfileModal.style.display = "none";
 
       // Reload trang để hiển thị thông tin mới
       window.location.reload();
     } catch (error) {
-      console.error('Lỗi:', error);
-      alert(error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+      console.error("Lỗi:", error);
+      alert(error.message || "Có lỗi xảy ra khi cập nhật thông tin");
     }
   });
 });
@@ -244,17 +252,19 @@ document.addEventListener("DOMContentLoaded", function () {
 // Hàm tải danh sách bài đăng
 async function loadPosts() {
   try {
-    const response = await fetch('/api/user/products');
+    const response = await fetch("/api/user/products");
     const posts = await response.json();
-    
-    const postsList = document.getElementById('posts-list');
-    postsList.innerHTML = '';
 
-    posts.forEach(post => {
-      const postCard = document.createElement('div');
-      postCard.className = 'post-card';
+    const postsList = document.getElementById("posts-list");
+    postsList.innerHTML = "";
+
+    posts.forEach((post) => {
+      const postCard = document.createElement("div");
+      postCard.className = "post-card";
       postCard.innerHTML = `
-        <img src="${post.thumbnail || '/asset/images/default-thumbnail.png'}" alt="${post.title}">
+        <img src="${
+          post.thumbnail || "/asset/images/default-thumbnail.png"
+        }" alt="${post.title}">
         <div class="post-card-content">
           <h3>${post.title}</h3>
           <div class="price">${formatPrice(post.price)}đ</div>
@@ -265,11 +275,11 @@ async function loadPosts() {
         </div>
       `;
 
-      postCard.addEventListener('click', () => showPostDetail(post.id));
+      postCard.addEventListener("click", () => showPostDetail(post.id));
       postsList.appendChild(postCard);
     });
   } catch (error) {
-    console.error('Lỗi khi tải danh sách bài đăng:', error);
+    console.error("Lỗi khi tải danh sách bài đăng:", error);
   }
 }
 
@@ -280,119 +290,127 @@ async function showPostDetail(postId) {
     const post = await response.json();
 
     // Cập nhật thông tin trong modal
-    document.getElementById('post-title').textContent = post.title;
-    document.getElementById('post-price').textContent = `Giá: ${formatPrice(post.price)}đ`;
-    document.getElementById('post-category').textContent = `Danh mục: ${post.categoryName}`;
-    document.getElementById('post-location').textContent = `Vị trí: ${post.location}`;
-    document.getElementById('post-description').textContent = post.description;
-    
+    document.getElementById("post-title").textContent = post.title;
+    document.getElementById("post-price").textContent = `Giá: ${formatPrice(
+      post.price
+    )}đ`;
+    document.getElementById(
+      "post-category"
+    ).textContent = `Danh mục: ${post.categoryName}`;
+    document.getElementById(
+      "post-location"
+    ).textContent = `Vị trí: ${post.location}`;
+    document.getElementById("post-description").textContent = post.description;
+
     // Cập nhật trạng thái
-    const statusElement = document.getElementById('post-status');
+    const statusElement = document.getElementById("post-status");
     statusElement.textContent = getStatusText(post.status);
     statusElement.className = `post-status ${post.status}`;
 
     // Cập nhật hình ảnh
-    const mainImage = document.getElementById('main-post-image');
-    const thumbnailContainer = document.getElementById('thumbnail-images');
-    thumbnailContainer.innerHTML = '';
+    const mainImage = document.getElementById("main-post-image");
+    const thumbnailContainer = document.getElementById("thumbnail-images");
+    thumbnailContainer.innerHTML = "";
 
     if (post.images && post.images.length > 0) {
       mainImage.src = post.images[0].data;
-      
+
       post.images.forEach((image, index) => {
-        const thumbnail = document.createElement('img');
+        const thumbnail = document.createElement("img");
         thumbnail.src = image.data;
         thumbnail.alt = `Ảnh ${index + 1}`;
-        thumbnail.addEventListener('click', () => {
+        thumbnail.addEventListener("click", () => {
           mainImage.src = image.data;
         });
         thumbnailContainer.appendChild(thumbnail);
       });
     } else {
-      mainImage.src = '/asset/images/default-thumbnail.png';
+      mainImage.src = "/asset/images/default-thumbnail.png";
     }
 
     // Hiển thị modal
-    const modal = document.getElementById('post-detail-modal');
-    modal.style.display = 'block';
+    const modal = document.getElementById("post-detail-modal");
+    modal.style.display = "block";
 
     // Gắn sự kiện cho nút Chỉnh sửa và Xóa
-    const editBtn = document.getElementById('edit-post-btn');
-    const deleteBtn = document.getElementById('delete-post-btn');
-    editBtn.onclick = function() {
-      alert('Chức năng chỉnh sửa sẽ được phát triển!');
+    const editBtn = document.getElementById("edit-post-btn");
+    const deleteBtn = document.getElementById("delete-post-btn");
+    editBtn.onclick = function () {
+      alert("Chức năng chỉnh sửa sẽ được phát triển!");
       // TODO: Hiển thị modal chỉnh sửa bài đăng
     };
-    deleteBtn.onclick = async function() {
-      if (confirm('Bạn có chắc chắn muốn xóa bài đăng này?')) {
+    deleteBtn.onclick = async function () {
+      if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
         try {
           const res = await fetch(`/api/posts/${postId}`, {
-            method: 'DELETE',
-            credentials: 'include'
+            method: "DELETE",
+            credentials: "include",
           });
           if (res.ok) {
-            alert('Đã xóa bài đăng thành công!');
-            modal.style.display = 'none';
+            alert("Đã xóa bài đăng thành công!");
+            modal.style.display = "none";
             window.location.reload();
           } else {
-            alert('Xóa bài đăng thất bại!');
+            alert("Xóa bài đăng thất bại!");
           }
         } catch (err) {
-          alert('Có lỗi xảy ra khi xóa bài đăng!');
+          alert("Có lỗi xảy ra khi xóa bài đăng!");
         }
       }
     };
     // Gắn sự kiện cho nút X để đóng modal
-    const closeBtn = modal.querySelector('.close-button');
+    const closeBtn = modal.querySelector(".close-button");
     if (closeBtn) {
-      closeBtn.onclick = function() {
-        modal.style.display = 'none';
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
       };
     }
   } catch (error) {
-    console.error('Lỗi khi tải chi tiết bài đăng:', error);
+    console.error("Lỗi khi tải chi tiết bài đăng:", error);
   }
 }
 
 // Hàm format giá
 function formatPrice(price) {
-  return new Intl.NumberFormat('vi-VN').format(price);
+  return new Intl.NumberFormat("vi-VN").format(price);
 }
 
 // Hàm lấy text trạng thái
 function getStatusText(status) {
   const statusMap = {
-    'pending': 'Đang chờ duyệt',
-    'approved': 'Đã được duyệt',
-    'rejected': 'Đã bị từ chối',
-    'deleted': 'Đã bị xóa'
+    pending: "Đang chờ duyệt",
+    approved: "Đã được duyệt",
+    rejected: "Đã bị từ chối",
+    deleted: "Đã bị xóa",
   };
   return statusMap[status] || status;
 }
 
 // Xử lý đóng modal
-document.querySelector('#post-detail-modal .close-button').addEventListener('click', () => {
-  document.getElementById('post-detail-modal').style.display = 'none';
-});
+document
+  .querySelector("#post-detail-modal .close-button")
+  .addEventListener("click", () => {
+    document.getElementById("post-detail-modal").style.display = "none";
+  });
 
 // Đóng modal khi click bên ngoài
-window.addEventListener('click', (event) => {
-  const modal = document.getElementById('post-detail-modal');
+window.addEventListener("click", (event) => {
+  const modal = document.getElementById("post-detail-modal");
   if (event.target === modal) {
-    modal.style.display = 'none';
+    modal.style.display = "none";
   }
 });
 
 // Tải danh sách bài đăng khi trang được load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   loadPosts();
 });
 
 // Thêm sự kiện click cho các profile-product-card
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const userProductsDiv = document.getElementById("user-products");
-  
-  userProductsDiv.addEventListener("click", function(event) {
+
+  userProductsDiv.addEventListener("click", function (event) {
     const productCard = event.target.closest(".profile-product-card");
     if (productCard) {
       const postId = productCard.dataset.postId;
@@ -412,31 +430,43 @@ function showPostDetailModal(postId) {
 
       // Hiển thị thông tin cơ bản
       document.getElementById("modal-title").textContent = post.title;
-      document.getElementById("modal-price").textContent = post.price === 0 
-        ? "Thỏa thuận" 
-        : post.price.toLocaleString("vi-VN") + " đ";
+      document.getElementById("modal-price").textContent =
+        post.price === 0
+          ? "Thỏa thuận"
+          : post.price.toLocaleString("vi-VN") + " đ";
       document.getElementById("modal-category").textContent = post.categoryName;
       document.getElementById("modal-location").textContent = post.location;
-      document.getElementById("modal-description").textContent = post.description;
+      document.getElementById("modal-description").textContent =
+        post.description;
 
       // Format và hiển thị ngày đăng
       const createdDate = new Date(post.created_at);
-      const formattedDate = `${createdDate.getDate().toString().padStart(2, "0")}/${(createdDate.getMonth() + 1).toString().padStart(2, "0")}/${createdDate.getFullYear()}`;
+      const formattedDate = `${createdDate
+        .getDate()
+        .toString()
+        .padStart(2, "0")}/${(createdDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${createdDate.getFullYear()}`;
       document.getElementById("modal-date").textContent = formattedDate;
 
       // Hiển thị trạng thái
       const statusElement = document.getElementById("modal-status");
-      statusElement.textContent = post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
-      statusElement.style.color = post.status === "approved" ? "green" : "orange";
+      statusElement.textContent =
+        post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
+      statusElement.style.color =
+        post.status === "approved" ? "green" : "orange";
 
       // Hiển thị ảnh
-      const mainImage = document.getElementById("modal-main-image").querySelector("img");
+      const mainImage = document
+        .getElementById("modal-main-image")
+        .querySelector("img");
       const thumbnailsContainer = document.getElementById("modal-thumbnails");
 
       // Lấy tất cả ảnh
-      const allImages = post.images && post.images.length > 0
-        ? post.images
-        : [{ data: "/asset/images/default-thumbnail.png" }];
+      const allImages =
+        post.images && post.images.length > 0
+          ? post.images
+          : [{ data: "/asset/images/default-thumbnail.png" }];
 
       // Hiển thị ảnh chính
       mainImage.src = allImages[0].data;
@@ -444,13 +474,15 @@ function showPostDetailModal(postId) {
 
       // Hiển thị thumbnails
       thumbnailsContainer.innerHTML = allImages
-        .map((img, index) => `
+        .map(
+          (img, index) => `
           <img 
             src="${img.data}" 
             alt="Thumbnail ${index + 1}"
             onclick="changeMainImage('${img.data}')"
           />
-        `)
+        `
+        )
         .join("");
 
       // Hiển thị modal
@@ -458,36 +490,36 @@ function showPostDetailModal(postId) {
       modal.style.display = "block";
 
       // Gắn sự kiện cho nút Chỉnh sửa và Xóa
-      const editBtn = document.getElementById('edit-post-btn');
-      const deleteBtn = document.getElementById('delete-post-btn');
-      editBtn.onclick = function() {
-        alert('Chức năng chỉnh sửa sẽ được phát triển!');
+      const editBtn = document.getElementById("edit-post-btn");
+      const deleteBtn = document.getElementById("delete-post-btn");
+      editBtn.onclick = function () {
+        alert("Chức năng chỉnh sửa sẽ được phát triển!");
         // TODO: Hiển thị modal chỉnh sửa bài đăng
       };
-      deleteBtn.onclick = async function() {
-        if (confirm('Bạn có chắc chắn muốn xóa bài đăng này?')) {
+      deleteBtn.onclick = async function () {
+        if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
           try {
             const res = await fetch(`/api/posts/${postId}`, {
-              method: 'DELETE',
-              credentials: 'include'
+              method: "DELETE",
+              credentials: "include",
             });
             if (res.ok) {
-              alert('Đã xóa bài đăng thành công!');
-              modal.style.display = 'none';
+              alert("Đã xóa bài đăng thành công!");
+              modal.style.display = "none";
               window.location.reload();
             } else {
-              alert('Xóa bài đăng thất bại!');
+              alert("Xóa bài đăng thất bại!");
             }
           } catch (err) {
-            alert('Có lỗi xảy ra khi xóa bài đăng!');
+            alert("Có lỗi xảy ra khi xóa bài đăng!");
           }
         }
       };
       // Gắn sự kiện cho nút X để đóng modal
-      const closeBtn = modal.querySelector('.close-button');
+      const closeBtn = modal.querySelector(".close-button");
       if (closeBtn) {
-        closeBtn.onclick = function() {
-          modal.style.display = 'none';
+        closeBtn.onclick = function () {
+          modal.style.display = "none";
         };
       }
     })
@@ -496,38 +528,40 @@ function showPostDetailModal(postId) {
 
 // Hàm thay đổi ảnh chính khi click vào thumbnail
 function changeMainImage(imgSrc) {
-  const mainImage = document.getElementById("modal-main-image").querySelector("img");
+  const mainImage = document
+    .getElementById("modal-main-image")
+    .querySelector("img");
   mainImage.src = imgSrc;
 }
 
 // Đóng modal khi click vào nút đóng hoặc bên ngoài modal
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   const modal = document.getElementById("post-detail-modal");
   const closeButton = modal.querySelector(".close-button");
 
-  closeButton.onclick = function() {
+  closeButton.onclick = function () {
     modal.style.display = "none";
-  }
+  };
 
-  window.onclick = function(event) {
+  window.onclick = function (event) {
     if (event.target == modal) {
       modal.style.display = "none";
     }
-  }
+  };
 });
 
 // Preview images for add post modal
-const imagesInput = document.getElementById('images');
-const imagePreview = document.getElementById('image-preview');
+const imagesInput = document.getElementById("images");
+const imagePreview = document.getElementById("image-preview");
 if (imagesInput && imagePreview) {
-  imagesInput.addEventListener('change', function() {
-    imagePreview.innerHTML = '';
+  imagesInput.addEventListener("change", function () {
+    imagePreview.innerHTML = "";
     const files = Array.from(this.files).slice(0, 5);
-    files.forEach(file => {
-      if (file && file.type.startsWith('image/')) {
+    files.forEach((file) => {
+      if (file && file.type.startsWith("image/")) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement('img');
+        reader.onload = function (e) {
+          const img = document.createElement("img");
           img.src = e.target.result;
           imagePreview.appendChild(img);
         };
