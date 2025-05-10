@@ -148,14 +148,27 @@ function loadUserManagement() {
 
 // Duyệt bài đăng
 function loadPostApproval() {
-  fetch("/api/admin/posts", {
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((posts) => {
-      const content = `
+  const content = `
+        <div class="post-approval">
             <div class="card">
-                <h2>Duyệt bài đăng</h2>
+                <h2>Quản lý bài đăng</h2>
+                
+                <!-- Thêm phần controls -->
+                <div class="post-controls">
+                    <div class="filter-group">
+                        <select id="statusFilter" class="form-control">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="pending">Chờ duyệt</option>
+                            <option value="approved">Đã duyệt</option>
+                            <option value="rejected">Đã từ chối</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <input type="text" id="searchPost" class="form-control" 
+                            placeholder="Tìm kiếm theo tiêu đề hoặc người đăng...">
+                    </div>
+                </div>
+
                 <table class="table">
                     <thead>
                         <tr>
@@ -167,37 +180,25 @@ function loadPostApproval() {
                             <th>Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${posts
-          .map(
-            (post) => `
-                            <tr>
-                                <td>${post.title}</td>
-                                <td>${post.author_name}</td>
-                                <td>${post.category_name}</td>
-                                <td>${formatDate(post.created_at)}</td>
-                                <td>${formatPostStatus(post.status)}</td>
-                                <td>
-                                    <button onclick="viewPost('${post.id
-              }')">Xem</button>
-                                    ${post.status === "pending"
-                ? `
-                                        <button onclick="approvePost('${post.id}')">Duyệt</button>
-                                        <button onclick="rejectPost('${post.id}')">Từ chối</button>
-                                    `
-                : ""
-              }
-                                </td>
-                            </tr>
-                        `
-          )
-          .join("")}
+                    <tbody id="posts-table">
+                        <!-- Dữ liệu sẽ được thêm vào đây -->
                     </tbody>
                 </table>
             </div>
-        `;
-      document.getElementById("content-area").innerHTML = content;
-    });
+            
+            <!-- Modal xem chi tiết bài đăng -->
+            <div id="postDetailModal" class="post-detail-modal">
+                <!-- Nội dung modal sẽ được thêm động -->
+            </div>
+        </div>
+    `;
+  document.getElementById('content-area').innerHTML = content;
+
+  // Khởi tạo PostApproval nếu chưa tồn tại
+  if (typeof window.postApproval === 'undefined') {
+    window.postApproval = new PostApproval();
+  }
+  postApproval.loadPendingPosts();
 }
 
 // Thay đổi hàm loadActivityManagement()

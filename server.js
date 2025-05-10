@@ -499,7 +499,7 @@ app.post("/api/posts", isAuthenticated, isUser, upload.array('images', 5), async
   }
 
   const connection = await db.promise().getConnection();
-  
+
   try {
     // Bắt đầu transaction
     await connection.beginTransaction();
@@ -538,7 +538,7 @@ app.post("/api/posts", isAuthenticated, isUser, upload.array('images', 5), async
     // Commit transaction
     await connection.commit();
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: "Bài đăng đã được thêm thành công!",
       postId: postId
     });
@@ -546,9 +546,9 @@ app.post("/api/posts", isAuthenticated, isUser, upload.array('images', 5), async
     // Rollback nếu có lỗi
     await connection.rollback();
     console.error("Lỗi khi thêm bài đăng:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Lỗi server.",
-      error: error.message 
+      error: error.message
     });
   } finally {
     // Giải phóng connection
@@ -736,23 +736,53 @@ app.get("/api/admin/activities", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // 4. Cập nhật trạng thái bài đăng
-app.put("/api/admin/posts/:id/status", isAuthenticated, isAdmin, (req, res) => {
+app.put("/api/admin/posts/:id/status", isAuthenticated, isAdmin, async (req, res) => {
   const { status, rejection_reason } = req.body;
   const postId = req.params.id;
 
-  const query = `
-    UPDATE posts 
-    SET status = ?, rejection_reason = ?
-    WHERE id = ?
-  `;
+  try {
+    await db.promise().query(
+      `UPDATE posts 
+      SET status = ?, 
+          rejection_reason = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [status, rejection_reason || null, postId]
+    );
 
-  db.query(query, [status, rejection_reason, postId], (err, result) => {
-    if (err) {
-      console.error("Lỗi khi cập nhật trạng thái:", err);
-      return res.status(500).json({ message: "Lỗi server" });
+    // Tạo thông báo cho người đăng bài
+    const [post] = await db.promise().query(
+      'SELECT author_id, title FROM posts WHERE id = ?',
+      [postId]
+    );
+
+    if (post.length > 0) {
+      const notificationTitle = status === 'approved'
+        ? 'Bài đăng được duyệt'
+        : 'Bài đăng bị từ chối';
+
+      const notificationMessage = status === 'approved'
+        ? `Bài đăng "${post[0].title}" của bạn đã được duyệt`
+        : `Bài đăng "${post[0].title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`;
+
+      await db.promise().query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+        VALUES (?, ?, ?, 'post_approval')`,
+        [post[0].author_id, notificationTitle, notificationMessage]
+      );
     }
-    res.json({ message: "Cập nhật thành công" });
-  });
+
+    res.json({
+      success: true,
+      message: status === 'approved' ? "Đã duyệt bài đăng" : "Đã từ chối bài đăng"
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật trạng thái bài đăng"
+    });
+  }
 });
 
 // 5. Cập nhật trạng thái người dùng
@@ -776,25 +806,25 @@ app.put("/api/admin/users/:id/status", isAuthenticated, isAdmin, (req, res) => {
 });
 
 // Xóa bài đăng
-app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
-  const postId = req.params.id;
-  const userId = req.session.user.id;
-  // Chỉ cho phép xóa bài đăng của chính mình
-  db.query(
-    "DELETE FROM posts WHERE id = ? AND author_id = ?",
-    [postId, userId],
-    (err, result) => {
-      if (err) {
-        console.error("Lỗi khi xóa bài đăng:", err);
-        return res.status(500).json({ message: "Lỗi server" });
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ message: "Không tìm thấy bài đăng hoặc không có quyền xóa" });
-      }
-      res.json({ message: "Xóa bài đăng thành công" });
-    }
-  );
-});
+// app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
+//   const postId = req.params.id;
+//   const userId = req.session.user.id;
+//   // Chỉ cho phép xóa bài đăng của chính mình
+//   db.query(
+//     "DELETE FROM posts WHERE id = ? AND author_id = ?",
+//     [postId, userId],
+//     (err, result) => {
+//       if (err) {
+//         console.error("Lỗi khi xóa bài đăng:", err);
+//         return res.status(500).json({ message: "Lỗi server" });
+//       }
+//       if (result.affectedRows === 0) {
+//         return res.status(404).json({ message: "Không tìm thấy bài đăng hoặc không có quyền xóa" });
+//       }
+//       res.json({ message: "Xóa bài đăng thành công" });
+//     }
+//   );
+// });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
@@ -1354,57 +1384,161 @@ app.delete(
 );
 
 // API: Lấy chi tiết bài đăng cho admin
-app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, (req, res) => {
-    const postId = req.params.id;
-    
-    const query = `
-        SELECT 
-            p.*,
-            u.username as author_name,
-            c.name as category_name,
-            GROUP_CONCAT(
-                JSON_OBJECT(
-                    'id', pi.id,
-                    'image_url', pi.image_data,
-                    'image_role', pi.image_role
-                )
-            ) as images
-        FROM posts p
-        JOIN users u ON p.author_id = u.id
-        JOIN categories c ON p.category_id = c.id
-        LEFT JOIN post_images pi ON p.id = pi.post_id
-        WHERE p.id = ?
-        GROUP BY p.id
-    `;
+app.get("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
+  const postId = req.params.id;
 
-    db.query(query, [postId], (err, results) => {
-        if (err) {
-            console.error("Lỗi khi truy vấn chi tiết bài đăng:", err);
-            return res.status(500).send("Lỗi server");
-        }
+  try {
+    // Lấy thông tin bài đăng
+    const [posts] = await db.promise().query(`
+          SELECT 
+              p.*,
+              u.username as author_name,
+              c.name as category_name
+          FROM posts p
+          JOIN users u ON p.author_id = u.id
+          JOIN categories c ON p.category_id = c.id
+          WHERE p.id = ?
+      `, [postId]);
 
-        if (results.length === 0) {
-            return res.status(404).json({ message: "Không tìm thấy bài đăng" });
-        }
+    if (posts.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+    }
 
-        const post = results[0];
-        
-        // Xử lý ảnh
-        if (post.images) {
-            post.images = post.images.split(',').map(img => {
-                const imageData = JSON.parse(img);
-                if (imageData.image_data) {
-                    imageData.image_url = `data:image/jpeg;base64,${imageData.image_data.toString('base64')}`;
-                    delete imageData.image_data;
-                }
-                return imageData;
-            });
-        } else {
-            post.images = [];
-        }
+    const post = posts[0];
 
-        res.json(post);
+    // Lấy hình ảnh riêng
+    const [images] = await db.promise().query(`
+          SELECT 
+              id,
+              CONCAT('data:', image_type, ';base64,', TO_BASE64(image_data)) as image_url,
+              image_type,
+              image_role
+          FROM post_images 
+          WHERE post_id = ?
+      `, [postId]);
+
+    // Thêm mảng ảnh vào đối tượng post
+    post.images = images;
+
+    // Format lại một số trường dữ liệu
+    post.created_at = new Date(post.created_at).toLocaleString('vi-VN');
+    post.updated_at = new Date(post.updated_at).toLocaleString('vi-VN');
+    post.price = parseFloat(post.price);
+
+    // Thêm trạng thái được format
+    post.status_text = {
+      'pending': 'Chờ duyệt',
+      'approved': 'Đã duyệt',
+      'rejected': 'Đã từ chối',
+      'deleted': 'Đã xóa'
+    }[post.status] || post.status;
+
+    res.json(post);
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết bài đăng:", error);
+    res.status(500).json({
+      message: "Lỗi server khi lấy thông tin bài đăng",
+      error: error.message
     });
+  }
+});
+
+// API cập nhật bài đăng (cho admin)
+app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
+  const postId = req.params.id;
+  const { title, description, price, location, status, rejection_reason } = req.body;
+
+  try {
+    await db.promise().query(
+      `UPDATE posts 
+            SET title = ?,
+                description = ?,
+                price = ?,
+                location = ?,
+                status = ?,
+                rejection_reason = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?`,
+      [title, description, price, location, status, rejection_reason || null, postId]
+    );
+
+    // Gửi thông báo cho người đăng bài
+    const [post] = await db.promise().query(
+      'SELECT author_id FROM posts WHERE id = ?',
+      [postId]
+    );
+
+    if (post.length > 0) {
+      const notificationTitle = status === 'approved'
+        ? 'Bài đăng được duyệt'
+        : status === 'rejected'
+          ? 'Bài đăng bị từ chối'
+          : 'Bài đăng được cập nhật';
+
+      const notificationMessage = status === 'rejected'
+        ? `Bài đăng "${title}" đã bị từ chối. Lý do: ${rejection_reason}`
+        : `Bài đăng "${title}" của bạn đã được cập nhật`;
+
+      await db.promise().query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+                VALUES (?, ?, ?, 'post_approval')`,
+        [post[0].author_id, notificationTitle, notificationMessage]
+      );
+    }
+
+    res.json({ message: "Cập nhật bài đăng thành công" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bài đăng:", error);
+    res.status(500).json({ message: "Lỗi server khi cập nhật bài đăng" });
+  }
+});
+
+// API xóa bài đăng (cho admin)
+app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    const connection = await db.promise().getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // 1. Kiểm tra bài đăng có tồn tại không
+      const [post] = await connection.query('SELECT * FROM posts WHERE id = ?', [postId]);
+
+      if (post.length === 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+      }
+
+      // 2. Xóa tất cả hình ảnh của bài đăng
+      await connection.query('DELETE FROM post_images WHERE post_id = ?', [postId]);
+
+      // 3. Xóa bài đăng
+      await connection.query('DELETE FROM posts WHERE id = ?', [postId]);
+
+      // 4. Commit transaction nếu mọi thứ OK
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        success: true,
+        message: "Xóa bài đăng thành công"
+      });
+    } catch (error) {
+      // Rollback nếu có lỗi
+      await connection.rollback();
+      connection.release();
+      throw error;
+    }
+  } catch (error) {
+    console.error("Lỗi khi xóa bài đăng:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi xóa bài đăng",
+      error: error.message
+    });
+  }
 });
 
 // Route mặc định để phục vụ file login.html
