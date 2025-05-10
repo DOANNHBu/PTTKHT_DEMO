@@ -3,25 +3,31 @@
     <a href="#" class="logo">LOGO__CHỢ ONLINE</a>
     <div class="search-container">
       <form class="search-form">
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Tìm kiếm sản phẩm..."
-        />
+        <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..." />
         <button type="submit" class="search-button">Tìm kiếm</button>
       </form>
     </div>
-    <!-- Nút đăng xuất -->
+    <!-- Thêm nút thông báo -->
+    <div class="notifications-container">
+      <button class="notifications-btn" id="notificationsBtn">
+        <span class="bell-icon">🔔</span>
+        <span class="notification-badge" id="notificationBadge">0</span>
+      </button>
+      <div class="notifications-dropdown" id="notificationsDropdown">
+        <div class="notifications-header">
+          <span>Thông báo</span>
+          <button class="mark-all-read" id="markAllRead">Đánh dấu tất cả đã đọc</button>
+        </div>
+        <div class="notifications-list" id="notificationsList">
+          <!-- Notifications will be inserted here -->
+        </div>
+      </div>
+    </div>
     <div class="user-actions">
-      <button id="logout-button" class="logout-button">Đăng xuất</button>
       <a href="/page/activities.html" class="activities-button">Hoạt động</a>
+      <button id="logout-button" class="logout-button">Đăng xuất</button>
       <a href="/page/profile.html" class="avatar-link">
-        <img
-          id="avatar-img"
-          class="avatar-img"
-          src="/asset/images/default-avatar.png"
-          alt="Avatar"
-        />
+        <img id="avatar-img" class="avatar-img" src="/asset/images/default-avatar.png" alt="Avatar" />
       </a>
     </div>
   </div>

@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadContent("dashboard");
 });
 
-// Thêm hàm xử lý đăng xuất
+// Thay thế hàm handleLogout hiện tại bằng hàm này
 function handleLogout() {
   if (!confirm("Bạn có chắc muốn đăng xuất?")) return;
 
@@ -316,18 +316,31 @@ function handleLogout() {
   })
     .then((res) => res.json())
     .then((data) => {
-      // nếu logout thành công, chuyển về login
-      window.location.href = "/page/login.html";
-    })
-    .then((res) => res.json())
-    .then((data) => {
-      // nếu logout thành công, chuyển về login
-      window.location.href = "/page/login.html";
+      // Xóa các interval và timeout đang chạy
+      for (let i = 1; i < 99999; i++) {
+        window.clearInterval(i);
+        window.clearTimeout(i);
+      }
+
+      // Xóa các dữ liệu lưu trữ
+      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("userRole");
+      sessionStorage.removeItem('isAdminAuthenticated');
+
+      // Chuyển hướng về trang login
+      window.location.replace("/page/login.html");
     })
     .catch((err) => {
       console.error("Lỗi khi gọi API logout:", err);
-      // Dù lỗi, vẫn redirect để tránh kẹt
-      window.location.href = "/page/login.html";
+      // Trong trường hợp lỗi, vẫn thực hiện cleanup và chuyển hướng
+      for (let i = 1; i < 99999; i++) {
+        window.clearInterval(i);
+        window.clearTimeout(i);
+      }
+      localStorage.removeItem("loggedInUser");
+      localStorage.removeItem("userRole");
+      sessionStorage.removeItem('isAdminAuthenticated');
+      window.location.replace("/page/login.html");
     });
 }
 

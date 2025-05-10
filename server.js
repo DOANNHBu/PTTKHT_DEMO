@@ -735,53 +735,56 @@ app.get("/api/admin/activities", isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
-// 4. Cập nhật trạng thái bài đăng
+// API cập nhật trạng thái bài đăng
 app.put("/api/admin/posts/:id/status", isAuthenticated, isAdmin, async (req, res) => {
   const { status, rejection_reason } = req.body;
   const postId = req.params.id;
 
   try {
-    await db.promise().query(
-      `UPDATE posts 
-      SET status = ?, 
-          rejection_reason = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`,
-      [status, rejection_reason || null, postId]
-    );
-
-    // Tạo thông báo cho người đăng bài
+    // Lấy thông tin bài đăng và người đăng
     const [post] = await db.promise().query(
-      'SELECT author_id, title FROM posts WHERE id = ?',
+      'SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
       [postId]
     );
 
-    if (post.length > 0) {
-      const notificationTitle = status === 'approved'
-        ? 'Bài đăng được duyệt'
-        : 'Bài đăng bị từ chối';
-
-      const notificationMessage = status === 'approved'
-        ? `Bài đăng "${post[0].title}" của bạn đã được duyệt`
-        : `Bài đăng "${post[0].title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`;
-
-      await db.promise().query(
-        `INSERT INTO notifications (user_id, title, message, type) 
-        VALUES (?, ?, ?, 'post_approval')`,
-        [post[0].author_id, notificationTitle, notificationMessage]
-      );
+    if (post.length === 0) {
+      return res.status(404).json({ message: "Không tìm thấy bài đăng" });
     }
+
+    // Cập nhật trạng thái bài đăng
+    await db.promise().query(
+      `UPDATE posts 
+            SET status = ?, 
+                rejection_reason = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?`,
+      [status, rejection_reason || null, postId]
+    );
+
+    // Tạo thông báo cho người đăng
+    const notificationTitle = status === 'approved'
+      ? 'Bài đăng được duyệt'
+      : status === 'rejected'
+        ? 'Bài đăng bị từ chối'
+        : 'Bài đăng được cập nhật';
+
+    const notificationMessage = status === 'rejected'
+      ? `Bài đăng "${post[0].title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
+      : `Bài đăng "${post[0].title}" của bạn đã được ${status === 'approved' ? 'duyệt' : 'cập nhật'}`;
+
+    await db.promise().query(
+      `INSERT INTO notifications (user_id, title, message, type) 
+            VALUES (?, ?, ?, 'post_approval')`,
+      [post[0].author_id, notificationTitle, notificationMessage]
+    );
 
     res.json({
       success: true,
       message: status === 'approved' ? "Đã duyệt bài đăng" : "Đã từ chối bài đăng"
     });
   } catch (error) {
-    console.error("Lỗi khi cập nhật trạng thái:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi cập nhật trạng thái bài đăng"
-    });
+    console.error("Lỗi:", error);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
 
@@ -942,242 +945,134 @@ app.put(
 );
 
 // API để cập nhật hoạt động
-app.put("/api/admin/activities/:id", isAuthenticated, isAdmin, (req, res) => {
+app.put("/api/admin/activities/:id", isAuthenticated, isAdmin, async (req, res) => {
   const activityId = req.params.id;
   const activity = { ...req.body };
   const items = activity.items || [];
-
-  // Remove fields that shouldn't be in the UPDATE query
   delete activity.items;
-  delete activity.id;
-  delete activity.created_at;
-  delete activity.updated_at;
-  delete activity.organizer_name;
-  // Don't delete name_organizer as it's required
 
-  db.getConnection((err, connection) => {
-    if (err) {
-      console.error("Error getting connection:", err);
-      return res.status(500).json({
-        success: false,
-        message: "Lỗi kết nối database",
-        error: err.message,
-      });
+  const connection = await db.promise().getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Cập nhật hoạt động
+    await connection.query(
+      "UPDATE activities SET ? WHERE id = ?",
+      [activity, activityId]
+    );
+
+    // Xóa items cũ
+    await connection.query(
+      "DELETE FROM activity_items WHERE activity_id = ?",
+      [activityId]
+    );
+
+    // Thêm items mới
+    if (items.length > 0) {
+      const values = items.map(item => [
+        activityId,
+        item.name,
+        item.description || "",
+        parseInt(item.quantity_needed) || 0,
+        parseInt(item.quantity_received) || 0
+      ]);
+
+      await connection.query(
+        "INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?",
+        [values]
+      );
     }
 
-    connection.beginTransaction((err) => {
-      if (err) {
-        connection.release();
-        console.error("Error starting transaction:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Lỗi khi bắt đầu transaction",
-          error: err.message,
-        });
-      }
-
-      // Update activity
+    // Tạo thông báo cho tất cả người dùng
+    const [users] = await connection.query("SELECT id FROM users WHERE role_id = 2"); // Lấy tất cả user thường
+    const notificationPromises = users.map(user =>
       connection.query(
-        "UPDATE activities SET ? WHERE id = ?",
-        [activity, activityId],
-        (error) => {
-          if (error) {
-            return connection.rollback(() => {
-              connection.release();
-              console.error("Error updating activity:", error);
-              res.status(500).json({
-                success: false,
-                message: "Lỗi khi cập nhật hoạt động",
-                error: error.message,
-              });
-            });
-          }
+        `INSERT INTO notifications (user_id, title, message, type) 
+                VALUES (?, ?, ?, 'activity_update')`,
+        [
+          user.id,
+          'Cập nhật hoạt động',
+          `Hoạt động "${activity.title}" đã được cập nhật. Vui lòng kiểm tra thông tin mới.`
+        ]
+      )
+    );
 
-          // Delete old items
-          connection.query(
-            "DELETE FROM activity_items WHERE activity_id = ?",
-            [activityId],
-            (error) => {
-              if (error) {
-                return connection.rollback(() => {
-                  connection.release();
-                  console.error("Error deleting old items:", error);
-                  res.status(500).json({
-                    success: false,
-                    message: "Lỗi khi xóa vật phẩm cũ",
-                    error: error.message,
-                  });
-                });
-              }
+    await Promise.all(notificationPromises);
+    await connection.commit();
+    connection.release();
 
-              // Insert new items if any exist
-              if (items.length > 0) {
-                const values = items.map((item) => [
-                  activityId,
-                  item.name,
-                  item.description || "",
-                  parseInt(item.quantity_needed) || 0,
-                  parseInt(item.quantity_received) || 0,
-                ]);
-
-                const itemQuery =
-                  "INSERT INTO activity_items (activity_id, name, description, quantity_needed, quantity_received) VALUES ?";
-
-                connection.query(itemQuery, [values], (error) => {
-                  if (error) {
-                    return connection.rollback(() => {
-                      connection.release();
-                      console.error("Error inserting new items:", error);
-                      res.status(500).json({
-                        success: false,
-                        message: "Lỗi khi thêm vật phẩm mới",
-                        error: error.message,
-                      });
-                    });
-                  }
-
-                  connection.commit((err) => {
-                    if (err) {
-                      return connection.rollback(() => {
-                        connection.release();
-                        res.status(500).json({
-                          success: false,
-                          message: "Lỗi khi commit transaction",
-                          error: err.message,
-                        });
-                      });
-                    }
-
-                    connection.release();
-                    res.json({
-                      success: true,
-                      message: "Cập nhật hoạt động thành công",
-                      id: activityId,
-                    });
-                  });
-                });
-              } else {
-                // If no items to insert, commit directly
-                connection.commit((err) => {
-                  if (err) {
-                    return connection.rollback(() => {
-                      connection.release();
-                      res.status(500).json({
-                        success: false,
-                        message: "Lỗi khi commit transaction",
-                        error: err.message,
-                      });
-                    });
-                  }
-
-                  connection.release();
-                  res.json({
-                    success: true,
-                    message: "Cập nhật hoạt động thành công",
-                    id: activityId,
-                  });
-                });
-              }
-            }
-          );
-        }
-      );
+    res.json({
+      success: true,
+      message: "Cập nhật hoạt động thành công",
+      id: activityId
     });
-  });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error("Error updating activity:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật hoạt động",
+      error: error.message
+    });
+  }
 });
 
 // API để xóa hoạt động
-app.delete(
-  "/api/admin/activities/:id",
-  isAuthenticated,
-  isAdmin,
-  (req, res) => {
-    const activityId = req.params.id;
+app.delete("/api/admin/activities/:id", isAuthenticated, isAdmin, async (req, res) => {
+  const activityId = req.params.id;
+  const connection = await db.promise().getConnection();
 
-    // Get connection from pool
-    db.getConnection((err, connection) => {
-      if (err) {
-        console.error("Error getting connection:", err);
-        return res.status(500).json({
-          success: false,
-          message: "Lỗi kết nối database",
-          error: err.message,
-        });
-      }
+  try {
+    await connection.beginTransaction();
 
-      // Begin transaction
-      connection.beginTransaction((err) => {
-        if (err) {
-          connection.release();
-          console.error("Error starting transaction:", err);
-          return res.status(500).json({
-            success: false,
-            message: "Lỗi khi bắt đầu transaction",
-            error: err.message,
-          });
-        }
+    // Lấy thông tin hoạt động trước khi xóa
+    const [activity] = await connection.query(
+      "SELECT title FROM activities WHERE id = ?",
+      [activityId]
+    );
 
-        // Delete activity items first
-        connection.query(
-          "DELETE FROM activity_items WHERE activity_id = ?",
-          [activityId],
-          (error) => {
-            if (error) {
-              return connection.rollback(() => {
-                connection.release();
-                console.error("Error deleting activity items:", error);
-                res.status(500).json({
-                  success: false,
-                  message: "Lỗi khi xóa vật phẩm của hoạt động",
-                  error: error.message,
-                });
-              });
-            }
+    if (activity.length === 0) {
+      throw new Error("Không tìm thấy hoạt động");
+    }
 
-            // Then delete the activity
-            connection.query(
-              "DELETE FROM activities WHERE id = ?",
-              [activityId],
-              (error) => {
-                if (error) {
-                  return connection.rollback(() => {
-                    connection.release();
-                    console.error("Error deleting activity:", error);
-                    res.status(500).json({
-                      success: false,
-                      message: "Lỗi khi xóa hoạt động",
-                      error: error.message,
-                    });
-                  });
-                }
+    // Tạo thông báo cho tất cả người dùng về việc xóa hoạt động
+    const [users] = await connection.query("SELECT id FROM users WHERE role_id = 2");
+    const notificationPromises = users.map(user =>
+      connection.query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+                VALUES (?, ?, ?, 'activity_update')`,
+        [
+          user.id,
+          'Hoạt động đã bị xóa',
+          `Hoạt động "${activity[0].title}" đã bị xóa bởi quản trị viên`
+        ]
+      )
+    );
 
-                // Commit transaction
-                connection.commit((err) => {
-                  if (err) {
-                    return connection.rollback(() => {
-                      connection.release();
-                      res.status(500).json({
-                        success: false,
-                        message: "Lỗi khi commit transaction",
-                        error: err.message,
-                      });
-                    });
-                  }
+    // Xóa items và hoạt động
+    await connection.query("DELETE FROM activity_items WHERE activity_id = ?", [activityId]);
+    await connection.query("DELETE FROM activities WHERE id = ?", [activityId]);
 
-                  connection.release();
-                  res.json({
-                    success: true,
-                    message: "Xóa hoạt động thành công",
-                  });
-                });
-              }
-            );
-          }
-        );
-      });
+    await Promise.all(notificationPromises);
+    await connection.commit();
+    connection.release();
+
+    res.json({
+      success: true,
+      message: "Xóa hoạt động thành công"
+    });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error("Error deleting activity:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi xóa hoạt động",
+      error: error.message
     });
   }
-);
+});
 
 // API lấy danh sách hoạt động cho user - cập nhật lại route
 app.get("/api/public/activities", async (req, res) => {
@@ -1237,78 +1132,62 @@ app.get("/api/public/activities/:id", async (req, res) => {
 });
 
 // API tạo tài khoản mới (chỉ admin)
-app.post(
-  "/api/admin/users",
-  isAuthenticated,
-  isAdmin,
-  upload.single("avatar"),
-  async (req, res) => {
-    const {
-      username,
-      password,
-      email,
-      full_name,
-      phone,
-      address,
-      school,
-      role_id,
-    } = req.body;
+app.post("/api/admin/users", isAuthenticated, isAdmin, upload.single("avatar"), async (req, res) => {
+  const { username, password, email, full_name, phone, address, school, role_id } = req.body;
 
-    // Kiểm tra dữ liệu đầu vào
-    if (!username || !password || !email || !full_name || !role_id) {
-      return res
-        .status(400)
-        .json({ message: "Vui lòng điền đầy đủ thông tin bắt buộc" });
-    }
-
-    try {
-      // Kiểm tra username và email đã tồn tại chưa
-      const [existingUser] = await db
-        .promise()
-        .query("SELECT id FROM users WHERE username = ? OR email = ?", [
-          username,
-          email,
-        ]);
-
-      if (existingUser.length > 0) {
-        return res
-          .status(400)
-          .json({ message: "Tên đăng nhập hoặc email đã tồn tại" });
-      }
-
-      let avatar = null;
-      if (req.file) {
-        avatar = req.file.buffer;
-      }
-
-      // Thêm người dùng mới
-      const [result] = await db
-        .promise()
-        .query(
-          "INSERT INTO users (username, password, email, full_name, phone, address, school, avatar, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          [
-            username,
-            password,
-            email,
-            full_name,
-            phone || null,
-            address || null,
-            school || null,
-            avatar,
-            role_id,
-          ]
-        );
-
-      res.status(201).json({
-        message: "Tạo tài khoản thành công",
-        userId: result.insertId,
-      });
-    } catch (error) {
-      console.error("Lỗi khi tạo tài khoản:", error);
-      res.status(500).json({ message: "Lỗi server khi tạo tài khoản" });
-    }
+  // Kiểm tra dữ liệu đầu vào
+  if (!username || !password || !email || !full_name || !role_id) {
+    return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin bắt buộc" });
   }
-);
+
+  const connection = await db.promise().getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Kiểm tra username và email đã tồn tại chưa
+    const [existingUser] = await connection.query(
+      "SELECT id FROM users WHERE username = ? OR email = ?",
+      [username, email]
+    );
+
+    if (existingUser.length > 0) {
+      await connection.rollback();
+      connection.release();
+      return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại" });
+    }
+
+    let avatar = null;
+    if (req.file) {
+      avatar = req.file.buffer;
+    }
+
+    // Thêm người dùng mới
+    const [result] = await connection.query(
+      "INSERT INTO users (username, password, email, full_name, phone, address, school, avatar, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [username, password, email, full_name, phone || null, address || null, school || null, avatar, role_id]
+    );
+
+    // Thêm thông báo chào mừng cho người dùng mới
+    await connection.query(
+      `INSERT INTO notifications (user_id, title, message, type) 
+            VALUES (?, 'Thông báo hệ thống', 'Chào mừng đến với Nền tảng Trao đổi Học đường', 'system')`,
+      [result.insertId]
+    );
+
+    await connection.commit();
+    connection.release();
+
+    res.status(201).json({
+      message: "Tạo tài khoản thành công",
+      userId: result.insertId
+    });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error("Lỗi khi tạo tài khoản:", error);
+    res.status(500).json({ message: "Lỗi server khi tạo tài khoản" });
+  }
+});
 
 // API xóa người dùng (chỉ admin)
 app.delete(
@@ -1493,7 +1372,7 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
   }
 });
 
-// API xóa bài đăng (cho admin)
+// API xóa bài đăng
 app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
   const postId = req.params.id;
 
@@ -1502,8 +1381,11 @@ app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) =>
     await connection.beginTransaction();
 
     try {
-      // 1. Kiểm tra bài đăng có tồn tại không
-      const [post] = await connection.query('SELECT * FROM posts WHERE id = ?', [postId]);
+      // Lấy thông tin bài đăng trước khi xóa
+      const [post] = await connection.query(
+        'SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?',
+        [postId]
+      );
 
       if (post.length === 0) {
         await connection.rollback();
@@ -1511,13 +1393,21 @@ app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) =>
         return res.status(404).json({ message: "Không tìm thấy bài đăng" });
       }
 
-      // 2. Xóa tất cả hình ảnh của bài đăng
+      // Xóa bài đăng và hình ảnh
       await connection.query('DELETE FROM post_images WHERE post_id = ?', [postId]);
-
-      // 3. Xóa bài đăng
       await connection.query('DELETE FROM posts WHERE id = ?', [postId]);
 
-      // 4. Commit transaction nếu mọi thứ OK
+      // Tạo thông báo cho người đăng
+      await connection.query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+                VALUES (?, ?, ?, 'post_approval')`,
+        [
+          post[0].author_id,
+          'Bài đăng đã bị xóa',
+          `Bài đăng "${post[0].title}" của bạn đã bị xóa bởi quản trị viên`
+        ]
+      );
+
       await connection.commit();
       connection.release();
 
@@ -1526,17 +1416,15 @@ app.delete("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) =>
         message: "Xóa bài đăng thành công"
       });
     } catch (error) {
-      // Rollback nếu có lỗi
       await connection.rollback();
       connection.release();
       throw error;
     }
   } catch (error) {
-    console.error("Lỗi khi xóa bài đăng:", error);
+    console.error("Lỗi:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi server khi xóa bài đăng",
-      error: error.message
+      message: "Lỗi server khi xóa bài đăng"
     });
   }
 });
@@ -1565,6 +1453,78 @@ app.delete("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
       res.json({ message: "Xóa bài đăng thành công" });
     }
   );
+});
+
+// API: Lấy danh sách thông báo của người dùng hiện tại
+app.get("/api/notifications", isAuthenticated, async (req, res) => {
+  try {
+    const [notifications] = await db.promise().query(
+      `SELECT * FROM notifications 
+             WHERE user_id = ? 
+             ORDER BY created_at DESC 
+             LIMIT 50`,
+      [req.session.user.id]
+    );
+
+    // Format thời gian cho từng thông báo
+    notifications.forEach(notification => {
+      notification.created_at = new Date(notification.created_at).toLocaleString('vi-VN');
+    });
+
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching notifications'
+    });
+  }
+});
+
+// API: Đánh dấu một thông báo đã đọc
+app.put("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
+  try {
+    await db.promise().query(
+      `UPDATE notifications 
+             SET is_read = TRUE 
+             WHERE id = ? AND user_id = ?`,
+      [req.params.id, req.session.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating notification'
+    });
+  }
+});
+
+// API: Đánh dấu tất cả thông báo đã đọc
+app.put("/api/notifications/mark-all-read", isAuthenticated, async (req, res) => {
+  try {
+    await db.promise().query(
+      `UPDATE notifications 
+             SET is_read = TRUE 
+             WHERE user_id = ?`,
+      [req.session.user.id]
+    );
+
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating notifications'
+    });
+  }
 });
 
 // Start server

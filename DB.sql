@@ -96,16 +96,6 @@ CREATE TABLE IF NOT EXISTS activity_items (
     FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
 );
 
--- Create activity_participants table
-CREATE TABLE IF NOT EXISTS activity_participants (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    activity_id INT NOT NULL,
-    user_id INT NOT NULL,
-    status ENUM('interested', 'joined') DEFAULT 'interested',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
 -- Create notifications table
 CREATE TABLE IF NOT EXISTS notifications (
@@ -145,7 +135,6 @@ TRUNCATE TABLE post_images;
 TRUNCATE TABLE posts;
 TRUNCATE TABLE notifications;
 TRUNCATE TABLE audit_logs;
-TRUNCATE TABLE activity_participants;
 TRUNCATE TABLE activity_items;
 TRUNCATE TABLE activities;
 TRUNCATE TABLE users;
@@ -243,19 +232,6 @@ INSERT INTO activity_items (activity_id, name, description, quantity_needed, qua
 (2, 'Poster thông tin', 'Poster giải thích quy trình tái chế', 12, 12),
 (3, 'Giá trưng bày', 'Giá để trưng bày thiết bị', 6, 0),
 (3, 'Bóng thể thao', 'Các loại bóng để trình diễn', 10, 2);
-
--- Chèn người tham gia hoạt động
-INSERT INTO activity_participants (activity_id, user_id, status) VALUES
-(1, 4, 'joined'),
-(1, 5, 'joined'),
-(1, 6, 'interested'),
-(1, 7, 'joined'),
-(2, 8, 'joined'),
-(2, 9, 'joined'),
-(2, 10, 'interested'),
-(3, 4, 'interested'),
-(3, 5, 'joined'),
-(3, 6, 'joined');
 
 -- Chèn thông báo mẫu
 INSERT INTO notifications (user_id, title, message, type, is_read) VALUES

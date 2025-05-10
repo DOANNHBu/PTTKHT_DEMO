@@ -203,13 +203,12 @@ function showProductDetail(productId) {
         .getDate()
         .toString()
         .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${createdDate.getFullYear()}`;
+          .toString()
+          .padStart(2, "0")}/${createdDate.getFullYear()}`;
       document.getElementById("detail-date").textContent = formattedDate;
 
-      document.getElementById("detail-seller").textContent = `Người bán: ${
-        product.seller || "Không xác định"
-      }`;
+      document.getElementById("detail-seller").textContent = `Người bán: ${product.seller || "Không xác định"
+        }`;
       document.getElementById("detail-description").textContent =
         product.description;
 
@@ -334,16 +333,16 @@ async function loadHTML() {
       headerContainer.innerHTML = await fetch("header.html").then((res) =>
         res.text()
       );
-      // Gắn sự kiện cho nút đăng xuất ngay sau khi header được tải
+      // Khởi tạo các chức năng header
       setupLogoutButton();
+      await setHeaderAvatar();
+
+      // Khởi tạo NotificationManager sau khi header đã được tải
+      if (window.NotificationManager) {
+        window.notificationManager = new NotificationManager();
+      }
     }
-    if (headerContainer) {
-      headerContainer.innerHTML = await fetch("header.html").then((res) =>
-        res.text()
-      );
-      setupLogoutButton();
-      await setHeaderAvatar(); // Thêm dòng này
-    }
+
     // Tải các phần khác
     const categoriesContainer = document.getElementById("categories-container");
     if (categoriesContainer) {
