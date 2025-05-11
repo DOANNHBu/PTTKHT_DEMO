@@ -132,3 +132,22 @@
   margin-bottom: 15px;
   cursor: pointer;
 }
+.seller-info {
+  background-color: #ff8800; /* Changed to orange */
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  color: white; /* Adding white text for better readability on orange background */
+}
+
+.seller-name {
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.seller-phone {
+  margin-top: 5px;
+  color: #fff; /* Changed text color to white for better contrast */
+  font-size: 0.95em;
+  font-weight: bold;
+}

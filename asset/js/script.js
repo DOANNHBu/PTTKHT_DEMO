@@ -24,7 +24,9 @@ async function loadProductsData(page = 1, search = "", category = "all") {
     }
 
     const products = await response.json();
-    const availableProducts = products.filter(product => product.availability !== "sold");
+    const availableProducts = products.filter(
+      (product) => product.availability !== "sold"
+    );
     renderProducts(availableProducts); // Hiển thị danh sách sản phẩm
 
     // Cập nhật số trang hiện tại trong giao diện
@@ -56,7 +58,9 @@ async function changePage(direction) {
     }
 
     const products = await response.json();
-    const availableProducts = products.filter(product => product.availability !== "sold");
+    const availableProducts = products.filter(
+      (product) => product.availability !== "sold"
+    );
 
     // Nếu không có sản phẩm nào, không chuyển trang
     if (availableProducts.length === 0) {
@@ -118,7 +122,9 @@ function renderProducts(products) {
           <div>${product.categoryName}</div>
         </div>
         <div class="product-status">
-          <span>${product.availability === "available" ? "Còn hàng" : "Đã bán"}</span>
+          <span>${
+            product.availability === "available" ? "Còn hàng" : "Đã bán"
+          }</span>
         </div>
       </div>
     `;
@@ -208,12 +214,19 @@ function showProductDetail(productId) {
         .getDate()
         .toString()
         .padStart(2, "0")}/${(createdDate.getMonth() + 1)
-          .toString()
-          .padStart(2, "0")}/${createdDate.getFullYear()}`;
+        .toString()
+        .padStart(2, "0")}/${createdDate.getFullYear()}`;
       document.getElementById("detail-date").textContent = formattedDate;
 
-      document.getElementById("detail-seller").textContent = `Người bán: ${product.seller || "Không xác định"
-        }`;
+      document.getElementById("detail-seller").textContent = `Người bán: ${
+        product.seller || "Không xác định"
+      }`;
+
+      // Hiển thị số điện thoại người bán
+      document.getElementById("detail-seller-phone").textContent = `SĐT: ${
+        product.sellerPhone || "Không cung cấp"
+      }`;
+
       document.getElementById("detail-description").textContent =
         product.description;
 

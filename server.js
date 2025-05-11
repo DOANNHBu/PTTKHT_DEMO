@@ -420,6 +420,7 @@ app.get("/api/posts/:id", isAuthenticated, isUser, (req, res) => {
       p.*,
       c.name AS categoryName,
       u.full_name AS seller,
+      u.phone AS sellerPhone,
       pi.image_data,
       pi.image_type,
       pi.image_role
@@ -1085,9 +1086,9 @@ app.post(
                 VALUES (?, ?, ?, 'activity_update', ?)`,
           [
             user.id,
-            'Hoạt động mới được tạo',
+            "Hoạt động mới được tạo",
             `Hoạt động "${activity.title}" vừa được tạo. Hãy tham gia cùng chúng tôi!`,
-            activityId
+            activityId,
           ]
         )
       );
@@ -1097,8 +1098,8 @@ app.post(
       // Thêm audit log
       await logAuditAction(
         req.session.user.id,
-        'create',
-        'activity',
+        "create",
+        "activity",
         activityId,
         null,
         { ...activity, items }
@@ -1110,9 +1111,8 @@ app.post(
       res.json({
         success: true,
         message: "Tạo hoạt động thành công",
-        id: activityId
+        id: activityId,
       });
-
     } catch (error) {
       await connection.rollback();
       connection.release();
@@ -1120,7 +1120,7 @@ app.post(
       res.status(500).json({
         success: false,
         message: "Lỗi khi tạo hoạt động",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -1284,7 +1284,7 @@ app.put(
             user.id,
             "Cập nhật hoạt động",
             `Hoạt động "${activity.title}" đã được cập nhật. Vui lòng kiểm tra thông tin mới.`,
-            activityId
+            activityId,
           ]
         )
       );
@@ -1372,7 +1372,7 @@ app.delete(
             user.id,
             "Hoạt động đã bị xóa",
             `Hoạt động "${activityRows[0].title}" đã bị xóa bởi quản trị viên`,
-            activityId
+            activityId,
           ]
         )
       );
@@ -1841,7 +1841,7 @@ app.delete(
             post.author_id,
             "Bài đăng đã bị xóa",
             `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
-            postId
+            postId,
           ]
         );
 
