@@ -127,10 +127,10 @@ function loadUserManagement() {
         </div>
     `;
 
-  document.getElementById('content-area').innerHTML = content;
+  document.getElementById("content-area").innerHTML = content;
 
   // Khởi tạo UserManager nếu chưa tồn tại
-  if (typeof window.userManager === 'undefined') {
+  if (typeof window.userManager === "undefined") {
     window.userManager = new UserManager();
   } else {
     // Nếu đã tồn tại, tải lại danh sách người dùng
@@ -138,12 +138,12 @@ function loadUserManagement() {
   }
 
   // Thêm event listener cho việc click bên ngoài modal
-  const createModal = document.getElementById('createUserModal');
+  const createModal = document.getElementById("createUserModal");
   window.onclick = function (event) {
     if (event.target == createModal) {
       userManager.closeCreateModal();
     }
-  }
+  };
 }
 
 // Duyệt bài đăng
@@ -192,10 +192,10 @@ function loadPostApproval() {
             </div>
         </div>
     `;
-  document.getElementById('content-area').innerHTML = content;
+  document.getElementById("content-area").innerHTML = content;
 
   // Khởi tạo PostApproval nếu chưa tồn tại
-  if (typeof window.postApproval === 'undefined') {
+  if (typeof window.postApproval === "undefined") {
     window.postApproval = new PostApproval();
   }
   postApproval.loadPendingPosts();
@@ -225,33 +225,7 @@ function loadActivityManagement() {
 
 // Báo cáo thống kê
 function loadReports() {
-  const content = `
-        <div class="card">
-            <h2>Báo cáo thống kê</h2>
-            <div class="report-filters">
-                <div class="form-group">
-                    <label>Loại báo cáo</label>
-                    <select class="form-control">
-                        <option>Báo cáo hoạt động</option>
-                        <option>Báo cáo giao dịch</option>
-                        <option>Báo cáo quyên góp</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Từ ngày</label>
-                    <input type="date" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Đến ngày</label>
-                    <input type="date" class="form-control">
-                </div>
-                <button class="btn btn-primary">Xem báo cáo</button>
-            </div>
-            <div id="report-content">
-                <!-- Report content will be loaded here -->
-            </div>
-        </div>
-    `;
+  const content = `placehoder for reports content`;
   document.getElementById("content-area").innerHTML = content;
 }
 
@@ -325,7 +299,7 @@ function handleLogout() {
       // Xóa các dữ liệu lưu trữ
       localStorage.removeItem("loggedInUser");
       localStorage.removeItem("userRole");
-      sessionStorage.removeItem('isAdminAuthenticated');
+      sessionStorage.removeItem("isAdminAuthenticated");
 
       // Chuyển hướng về trang login
       window.location.replace("/page/login.html");
@@ -339,7 +313,7 @@ function handleLogout() {
       }
       localStorage.removeItem("loggedInUser");
       localStorage.removeItem("userRole");
-      sessionStorage.removeItem('isAdminAuthenticated');
+      sessionStorage.removeItem("isAdminAuthenticated");
       window.location.replace("/page/login.html");
     });
 }
