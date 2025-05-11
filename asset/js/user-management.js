@@ -335,21 +335,29 @@ class UserManager {
 
     showCreateModal() {
         const modal = document.getElementById('createUserModal');
-        if (modal) {
-            modal.style.display = 'block';
+        const closeBtn = modal.querySelector('.close');
 
-            // Thêm event listener cho nút đóng
-            const closeBtn = modal.querySelector('.close');
-            if (closeBtn) {
-                closeBtn.onclick = () => this.closeCreateModal();
+        modal.style.display = 'block';
+
+        // Thêm event listener cho nút đóng
+        closeBtn.onclick = () => this.closeCreateModal();
+
+        // Đóng modal khi click bên ngoài
+        window.onclick = (event) => {
+            if (event.target === modal) {
+                this.closeCreateModal();
             }
+        };
+    }
 
-            // Thêm event listener cho click bên ngoài modal
-            window.onclick = (event) => {
-                if (event.target === modal) {
-                    this.closeCreateModal();
-                }
-            };
+    closeCreateModal() {
+        const modal = document.getElementById('createUserModal');
+        modal.style.display = 'none';
+
+        // Reset form
+        const form = document.getElementById('createUserForm');
+        if (form) {
+            form.reset();
         }
     }
 
@@ -370,24 +378,12 @@ class UserManager {
             }
 
             await this.loadUsers();
-            this.closeCreateModal(); // Thêm dòng này để đóng modal
-            form.reset(); // Reset form
+            this.closeCreateModal();
+            form.reset();
             alert('Tạo tài khoản thành công');
         } catch (error) {
             console.error('Error creating user:', error);
             alert('Không thể tạo tài khoản');
-        }
-    }
-
-    closeCreateModal() {
-        const modal = document.getElementById('createUserModal');
-        if (modal) {
-            modal.style.display = 'none';
-            // Reset form khi đóng modal
-            const form = document.getElementById('createUserForm');
-            if (form) {
-                form.reset();
-            }
         }
     }
 

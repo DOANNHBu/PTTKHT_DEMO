@@ -78,7 +78,6 @@ function loadUserManagement() {
                             </tr>
                         </thead>
                         <tbody id="users-table">
-                            <!-- Dữ liệu người dùng sẽ được thêm vào đây bởi JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -86,7 +85,52 @@ function loadUserManagement() {
 
             <!-- Modal tạo tài khoản mới -->
             <div id="createUserModal" class="modal">
-                <!-- ... existing modal content ... -->
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Tạo tài khoản mới</h2>
+                    <form id="createUserForm" onsubmit="userManager.handleCreate(event)">
+                        <div class="form-group">
+                            <label>Tên đăng nhập:</label>
+                            <input type="text" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu:</label>
+                            <input type="password" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Họ và tên:</label>
+                            <input type="text" name="full_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Số điện thoại:</label>
+                            <input type="tel" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label>Địa chỉ:</label>
+                            <input type="text" name="address">
+                        </div>
+                        <div class="form-group">
+                            <label>Trường:</label>
+                            <input type="text" name="school">
+                        </div>
+                        <div class="form-group">
+                            <label>Avatar:</label>
+                            <input type="file" name="avatar" accept="image/*">
+                        </div>
+                        <div class="form-group">
+                            <label>Vai trò:</label>
+                            <select name="role_id" required>
+                                <option value="2">User</option>
+                                <option value="1">Admin</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+                    </form>
+                </div>
             </div>
         </div>
     `;
