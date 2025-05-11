@@ -191,3 +191,34 @@ body {
     align-items: center;
     margin-bottom: 20px;
 }
+
+/* Export Controls */
+.export-controls {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.export-controls .form-group {
+    margin-bottom: 15px;
+}
+
+.export-controls label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.export-controls select,
+.export-controls input[type="date"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#export-btn {
+    margin-top: 10px;
+    width: 100%;
+}

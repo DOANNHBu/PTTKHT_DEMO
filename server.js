@@ -936,15 +936,14 @@ app.put(
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-          ? "Bài đăng bị từ chối"
-          : "Bài đăng được cập nhật";
+            ? "Bài đăng bị từ chối"
+            : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
           ? `Bài đăng "${oldPost.title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
-          : `Bài đăng "${oldPost.title}" của bạn đã được ${
-              status === "approved" ? "duyệt" : "cập nhật"
-            }`;
+          : `Bài đăng "${oldPost.title}" của bạn đã được ${status === "approved" ? "duyệt" : "cập nhật"
+          }`;
 
       await db.promise().query(
         `INSERT INTO notifications (user_id, title, message, type) 
@@ -1740,8 +1739,8 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-          ? "Bài đăng bị từ chối"
-          : "Bài đăng được cập nhật";
+            ? "Bài đăng bị từ chối"
+            : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
@@ -2471,6 +2470,125 @@ app.get(
     }
   }
 );
+
+// API xuất dữ liệu dạng CSV
+app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
+  const { table, startDate, endDate } = req.body;
+
+  // Kiểm tra table name hợp lệ để tránh SQL injection
+  const validTables = ['users', 'posts', 'activities', 'activity_items', 'notifications', 'audit_logs'];
+  if (!validTables.includes(table)) {
+    return res.status(400).json({ message: 'Bảng không hợp lệ' });
+  }
+
+  try {
+    // Xây dựng câu query dựa trên loại bảng
+    let query = '';
+    switch (table) {
+      case 'users':
+        query = `
+          SELECT id, username, email, full_name, phone, address, school, 
+                 role_id, status, created_at, updated_at
+          FROM users 
+          WHERE created_at BETWEEN ? AND ?
+        `;
+        break;
+
+      case 'posts':
+        query = `
+          SELECT p.id, p.title, p.description, p.price, c.name as category,
+                 p.location, u.username as author, p.status, p.availability,
+                 p.created_at, p.updated_at
+          FROM posts p
+          JOIN users u ON p.author_id = u.id
+          JOIN categories c ON p.category_id = c.id
+          WHERE p.created_at BETWEEN ? AND ?
+        `;
+        break;
+
+      case 'activities':
+        query = `
+          SELECT a.id, a.title, a.description, a.start_date, a.end_date,
+                 a.location, u.username as organizer, a.name_organizer,
+                 a.status, a.created_at, a.updated_at 
+          FROM activities a
+          JOIN users u ON a.organizer_id = u.id
+          WHERE a.created_at BETWEEN ? AND ?
+        `;
+        break;
+
+      case 'activity_items':
+        query = `
+          SELECT ai.id, a.title as activity_name, ai.name, ai.description,
+                 ai.quantity_needed, ai.quantity_received, ai.created_at
+          FROM activity_items ai
+          JOIN activities a ON ai.activity_id = a.id
+          WHERE ai.created_at BETWEEN ? AND ?
+        `;
+        break;
+
+      case 'notifications':
+        query = `
+          SELECT n.id, u.username as user, n.title, n.message, 
+                 n.type, n.is_read, n.created_at
+          FROM notifications n
+          JOIN users u ON n.user_id = u.id
+          WHERE n.created_at BETWEEN ? AND ?
+        `;
+        break;
+
+      case 'audit_logs':
+        query = `
+          SELECT al.id, u.username as user, al.action, al.entity_type,
+                 al.entity_id, al.old_value, al.new_value, al.created_at
+          FROM audit_logs al
+          LEFT JOIN users u ON al.user_id = u.id
+          WHERE al.created_at BETWEEN ? AND ?
+        `;
+        break;
+    }
+
+    // Thực hiện query
+    const [rows] = await db.promise().query(query, [startDate, endDate]);
+
+    // Convert to CSV
+    const csvFields = Object.keys(rows[0] || {});
+    const csvRows = rows.map(row =>
+      csvFields.map(field => {
+        let value = row[field];
+        // Format dates
+        if (value instanceof Date) {
+          value = value.toLocaleString('vi-VN');
+        }
+        // Escape special characters
+        if (typeof value === 'string') {
+          value = `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }).join(',')
+    );
+
+    const csv = [
+      csvFields.join(','),
+      ...csvRows
+    ].join('\n');
+
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${table}_${startDate}_${endDate}.csv`);
+
+    // Send CSV data
+    res.send(csv);
+
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xuất dữ liệu',
+      error: error.message
+    });
+  }
+});
 
 // Start server
 app.listen(PORT, () => {

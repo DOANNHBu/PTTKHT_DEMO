@@ -233,6 +233,39 @@ function loadReports() {
         <div class="activity-date-info" id="activity-date-info" style="margin-bottom: 10px; font-style: italic;"></div>
         <canvas id="activityChart" height="80"></canvas>
       </div>
+
+      <!-- Thêm section xuất file -->
+      <div class="report-section">
+        <h2>Xuất dữ liệu</h2>
+        <div class="export-controls">
+          <div class="form-group">
+            <label>Chọn bảng dữ liệu:</label>
+            <select id="table-select" class="form-control">
+              <option value="">-- Chọn bảng --</option>
+              <option value="users">Người dùng</option>
+              <option value="posts">Bài đăng</option>
+              <option value="activities">Hoạt động</option>
+              <option value="activity_items">Chi tiết hoạt động</option>
+              <option value="notifications">Thông báo</option>
+              <option value="audit_logs">Nhật ký hệ thống</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Từ ngày:</label>
+            <input type="date" id="start-date" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Đến ngày:</label>
+            <input type="date" id="end-date" class="form-control">
+          </div>
+
+          <button id="export-btn" class="btn btn-primary" onclick="exportData()">
+            Xuất file CSV
+          </button>
+        </div>
+      </div>
     </div>
   `;
   document.getElementById("content-area").innerHTML = content;
@@ -624,5 +657,52 @@ async function deleteUser(userId) {
   } catch (error) {
     console.error("Error deleting user:", error);
     alert("Không thể xóa tài khoản");
+  }
+}
+
+async function exportData() {
+  const tableSelect = document.getElementById('table-select');
+  const startDate = document.getElementById('start-date').value;
+  const endDate = document.getElementById('end-date').value;
+
+  if (!tableSelect.value) {
+    alert('Vui lòng chọn bảng dữ liệu');
+    return;
+  }
+
+  if (!startDate || !endDate) {
+    alert('Vui lòng chọn khoảng thời gian');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/export', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        table: tableSelect.value,
+        startDate,
+        endDate
+      })
+    });
+
+    if (!response.ok) throw new Error('Export failed');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${tableSelect.value}_${startDate}_${endDate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    alert('Có lỗi khi xuất file');
   }
 }
