@@ -2388,6 +2388,90 @@ app.get(
   }
 );
 
+// API thống kê sản phẩm của một hoạt động
+app.get(
+  "/api/admin/reports/activities",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const { activityId } = req.query;
+
+    if (!activityId) {
+      return res.status(400).json({ message: "Thiếu ID hoạt động" });
+    }
+
+    try {
+      // Lấy thông tin hoạt động (thời gian bắt đầu, kết thúc)
+      const [activityRows] = await db
+        .promise()
+        .query(
+          `SELECT title, start_date, end_date FROM activities WHERE id = ?`,
+          [activityId]
+        );
+
+      if (activityRows.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy hoạt động" });
+      }
+
+      const activity = activityRows[0];
+
+      // Lấy danh sách các sản phẩm (items) của hoạt động
+      const [itemsRows] = await db
+        .promise()
+        .query(
+          `SELECT name, quantity_needed, quantity_received FROM activity_items WHERE activity_id = ?`,
+          [activityId]
+        );
+
+      // Format dữ liệu cho biểu đồ
+      const labels = itemsRows.map((item) => item.name);
+      const neededData = itemsRows.map((item) => item.quantity_needed);
+      const receivedData = itemsRows.map((item) => item.quantity_received);
+
+      // Tính tỷ lệ nhận được so với cần
+      const percentageData = itemsRows.map((item) =>
+        item.quantity_needed > 0
+          ? Math.round((item.quantity_received / item.quantity_needed) * 100)
+          : 0
+      );
+
+      res.json({
+        activity,
+        labels,
+        datasets: {
+          needed: neededData,
+          received: receivedData,
+          percentage: percentageData,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi khi lấy dữ liệu thống kê hoạt động:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  }
+);
+
+// API lấy danh sách tất cả hoạt động (cho dropdown)
+app.get(
+  "/api/admin/reports/activities/list",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const [activities] = await db
+        .promise()
+        .query(
+          `SELECT id, title, start_date, end_date FROM activities ORDER BY start_date DESC`
+        );
+
+      res.json(activities);
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách hoạt động:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  }
+);
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);
