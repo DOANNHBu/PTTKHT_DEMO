@@ -55,6 +55,7 @@ app.use((req, res, next) => {
 // Phục vụ các file tĩnh (HTML, CSS, JS) từ thư mục "page" và "asset"
 app.use("/page", express.static(path.join(__dirname, "page")));
 app.use("/asset", express.static(path.join(__dirname, "asset")));
+app.use("/images", express.static(path.join(__dirname, "all image")));
 
 // Reload trình duyệt khi có thay đổi
 liveReloadServer.server.once("connection", () => {
@@ -67,7 +68,7 @@ liveReloadServer.server.once("connection", () => {
 const db = mysql.createPool({
   host: "127.0.0.1",
   user: "root",
-  password: "root",
+  password: "duong1812004",
   database: "school_exchange",
   port: 3306,
   waitForConnections: true,
@@ -165,7 +166,7 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
   const userId = req.session.user.id;
 
   const query = `
-    SELECT id, full_name AS fullname, username, id, school, phone, avatar, address, email
+    SELECT id, full_name AS fullname, username, id, school, phone, avatar, address, email, password
     FROM users
     WHERE id = ?
   `;
