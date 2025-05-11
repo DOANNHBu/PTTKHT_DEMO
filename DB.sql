@@ -250,7 +250,14 @@ INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_
 (2, 'update', 'activity', 1, '{"status":"pending"}', '{"status":"approved"}'),
 (1, 'create', 'user', 4, NULL, '{"username":"hocsinh1","status":"active"}');
 
+-- Cập nhật bảng notifications
+use school_exchange;
 
+ALTER TABLE notifications 
+ADD COLUMN post_id INT NULL,
+ADD COLUMN activity_id INT NULL,
+ADD FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL,
+ADD FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE SET NULL;
 
 
 

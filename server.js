@@ -55,6 +55,7 @@ app.use((req, res, next) => {
 // Phục vụ các file tĩnh (HTML, CSS, JS) từ thư mục "page" và "asset"
 app.use("/page", express.static(path.join(__dirname, "page")));
 app.use("/asset", express.static(path.join(__dirname, "asset")));
+app.use("/images", express.static(path.join(__dirname, "all image")));
 
 // Reload trình duyệt khi có thay đổi
 liveReloadServer.server.once("connection", () => {
@@ -165,7 +166,7 @@ app.get("/api/user/profile", isAuthenticated, isUser, (req, res) => {
   const userId = req.session.user.id;
 
   const query = `
-    SELECT id, full_name AS fullname, username, id, school, phone, avatar, address, email
+    SELECT id, full_name AS fullname, username, id, school, phone, avatar, address, email, password
     FROM users
     WHERE id = ?
   `;
@@ -947,9 +948,9 @@ app.put(
             }`;
 
       await db.promise().query(
-        `INSERT INTO notifications (user_id, title, message, type) 
-         VALUES (?, ?, ?, 'post_approval')`,
-        [oldPost.author_id, notificationTitle, notificationMessage]
+        `INSERT INTO notifications (user_id, title, message, type, post_id) 
+         VALUES (?, ?, ?, 'post_approval', ?)`,
+        [oldPost.author_id, notificationTitle, notificationMessage, postId]
       );
 
       res.json({
@@ -1073,25 +1074,54 @@ app.post(
         });
       }
 
-      await connection.commit();
+      // Tạo thông báo cho tất cả người dùng
+      const [users] = await connection.query(
+        "SELECT id FROM users WHERE role_id = 2" // Lấy tất cả user thường
+      );
 
-      // Thêm audit log khi tạo hoạt động mới
+      const notificationPromises = users.map((user) =>
+        connection.query(
+          `INSERT INTO notifications (user_id, title, message, type, activity_id) 
+                VALUES (?, ?, ?, 'activity_update', ?)`,
+          [
+            user.id,
+            'Hoạt động mới được tạo',
+            `Hoạt động "${activity.title}" vừa được tạo. Hãy tham gia cùng chúng tôi!`,
+            activityId
+          ]
+        )
+      );
+
+      await Promise.all(notificationPromises);
+
+      // Thêm audit log
       await logAuditAction(
         req.session.user.id,
-        "create",
-        "activity",
+        'create',
+        'activity',
         activityId,
         null,
         { ...activity, items }
       );
 
-      res.json({ id: activityId, ...activity });
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        success: true,
+        message: "Tạo hoạt động thành công",
+        id: activityId
+      });
+
     } catch (error) {
       await connection.rollback();
-      console.error("Error creating activity:", error);
-      res.status(500).json({ message: "Lỗi khi tạo hoạt động" });
-    } finally {
       connection.release();
+      console.error("Error creating activity:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi tạo hoạt động",
+        error: error.message
+      });
     }
   }
 );
@@ -1248,12 +1278,13 @@ app.put(
 
       const notificationPromises = users.map((user) =>
         connection.query(
-          `INSERT INTO notifications (user_id, title, message, type) 
-                VALUES (?, ?, ?, 'activity_update')`,
+          `INSERT INTO notifications (user_id, title, message, type, activity_id) 
+                VALUES (?, ?, ?, 'activity_update', ?)`,
           [
             user.id,
             "Cập nhật hoạt động",
             `Hoạt động "${activity.title}" đã được cập nhật. Vui lòng kiểm tra thông tin mới.`,
+            activityId
           ]
         )
       );
@@ -1335,12 +1366,13 @@ app.delete(
       );
       const notificationPromises = users.map((user) =>
         connection.query(
-          `INSERT INTO notifications (user_id, title, message, type) 
-                VALUES (?, ?, ?, 'activity_update')`,
+          `INSERT INTO notifications (user_id, title, message, type, activity_id) 
+                VALUES (?, ?, ?, 'activity_update', ?)`,
           [
             user.id,
             "Hoạt động đã bị xóa",
             `Hoạt động "${activityRows[0].title}" đã bị xóa bởi quản trị viên`,
+            activityId
           ]
         )
       );
@@ -1749,9 +1781,9 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
           : `Bài đăng "${title}" của bạn đã được cập nhật`;
 
       await db.promise().query(
-        `INSERT INTO notifications (user_id, title, message, type) 
-         VALUES (?, ?, ?, 'post_approval')`,
-        [post[0].author_id, notificationTitle, notificationMessage]
+        `INSERT INTO notifications (user_id, title, message, type, post_id) 
+         VALUES (?, ?, ?, 'post_approval', ?)`,
+        [post[0].author_id, notificationTitle, notificationMessage, postId]
       );
     }
 
@@ -1803,12 +1835,13 @@ app.delete(
 
         // Gửi thông báo cho người đăng bài
         await connection.query(
-          `INSERT INTO notifications (user_id, title, message, type) 
-           VALUES (?, ?, ?, 'post_approval')`,
+          `INSERT INTO notifications (user_id, title, message, type, post_id) 
+           VALUES (?, ?, ?, 'post_approval', ?)`,
           [
             post.author_id,
             "Bài đăng đã bị xóa",
             `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
+            postId
           ]
         );
 
