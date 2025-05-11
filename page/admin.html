@@ -1,49 +1,51 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="/asset/css/admin.css">
-    <link rel="stylesheet" href="/asset/css/activities_ad.css">
-    <link rel="stylesheet" href="/asset/css/user-management.css">
-    <link rel="stylesheet" href="/asset/css/post-approval.css">
-</head>
+    <link rel="stylesheet" href="/asset/css/admin.css" />
+    <link rel="stylesheet" href="/asset/css/activities_ad.css" />
+    <link rel="stylesheet" href="/asset/css/user-management.css" />
+    <link rel="stylesheet" href="/asset/css/post-approval.css" />
+  </head>
 
-<body>
+  <body>
     <div class="admin-layout">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo">ADMIN PANEL</div>
-            <nav class="nav-menu">
-                <a href="#dashboard" class="nav-item active">
-                    <i class="icon">📊</i> Dashboard
-                </a>
-                <a href="#users" class="nav-item">
-                    <i class="icon">👥</i> Quản lý tài khoản
-                </a>
-                <a href="#posts" class="nav-item">
-                    <i class="icon">📝</i> Quản lý bài đăng
-                </a>
-                <a href="#activities" class="nav-item">
-                    <i class="icon">🎗️</i> Quản lý hoạt động
-                </a>
-                <a href="#reports" class="nav-item">
-                    <i class="icon">📈</i> Báo cáo thống kê
-                </a>
-                <a href="#" id="logout" class="nav-item">
-                    <i class="icon">🚪</i> Đăng xuất
-                </a>
-            </nav>
-        </div>
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="logo">ADMIN PANEL</div>
+        <nav class="nav-menu">
+          <a href="#dashboard" class="nav-item active">
+            <i class="icon">📊</i> Dashboard
+          </a>
+          <a href="#users" class="nav-item">
+            <i class="icon">👥</i> Quản lý tài khoản
+          </a>
+          <a href="#posts" class="nav-item">
+            <i class="icon">📝</i> Quản lý bài đăng
+          </a>
+          <a href="#activities" class="nav-item">
+            <i class="icon">🎗️</i> Quản lý hoạt động
+          </a>
+          <a href="#reports" class="nav-item">
+            <i class="icon">📈</i> Thống kê
+          </a>
+          <a href="#" id="logout" class="nav-item">
+            <i class="icon">🚪</i> Xuất file
+          </a>
+          <a href="#" id="logout" class="nav-item">
+            <i class="icon">🚪</i> Đăng xuất
+          </a>
+        </nav>
+      </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div id="content-area">
-                <!-- Content will be loaded here -->
-            </div>
+      <!-- Main Content -->
+      <div class="main-content">
+        <div id="content-area">
+          <!-- Content will be loaded here -->
         </div>
+      </div>
     </div>
 
     <!-- Load scripts in correct order -->
@@ -51,6 +53,6 @@
     <script src="/asset/js/post-approval.js"></script>
     <script src="/asset/js/activities_ad.js"></script>
     <script src="/asset/js/admin.js"></script>
-</body>
-
+    <script src="/asset/js/chart.js"></script>
+  </body>
 </html>

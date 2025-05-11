@@ -36,6 +36,15 @@ function loadContent(section) {
   }
 }
 
+function loadDashboard() {
+  document.getElementById("content-area").innerHTML = `
+    <div class="dashboard-welcome">
+      <h2>Chào mừng đến với trang quản trị!</h2>
+      <p>Chọn chức năng ở menu bên trái để quản lý hệ thống.</p>
+    </div>
+  `;
+}
+
 // Cập nhật hàm loadUserManagement()
 function loadUserManagement() {
   const content = `
@@ -82,7 +91,7 @@ function loadUserManagement() {
         </div>
     `;
 
-  document.getElementById('content-area').innerHTML = content;
+  document.getElementById("content-area").innerHTML = content;
 
   // Đảm bảo chỉ tạo một instance mới nếu chưa tồn tại
   if (!window.userManager) {
@@ -140,10 +149,10 @@ function loadPostApproval() {
             </div>
         </div>
     `;
-  document.getElementById('content-area').innerHTML = content;
+  document.getElementById("content-area").innerHTML = content;
 
   // Khởi tạo PostApproval nếu chưa tồn tại
-  if (typeof window.postApproval === 'undefined') {
+  if (typeof window.postApproval === "undefined") {
     window.postApproval = new PostApproval();
   }
   postApproval.loadPendingPosts();
@@ -172,36 +181,295 @@ function loadActivityManagement() {
 }
 
 // Báo cáo thống kê
+// ...existing code...
+// ...existing code...
 function loadReports() {
   const content = `
-        <div class="card">
-            <h2>Báo cáo thống kê</h2>
-            <div class="report-filters">
-                <div class="form-group">
-                    <label>Loại báo cáo</label>
-                    <select class="form-control">
-                        <option>Báo cáo hoạt động</option>
-                        <option>Báo cáo giao dịch</option>
-                        <option>Báo cáo quyên góp</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Từ ngày</label>
-                    <input type="date" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Đến ngày</label>
-                    <input type="date" class="form-control">
-                </div>
-                <button class="btn btn-primary">Xem báo cáo</button>
-            </div>
-            <div id="report-content">
-                <!-- Report content will be loaded here -->
-            </div>
+    <div class="reports-container">
+      <!-- Thống kê số lượng sản phẩm -->
+      <div class="report-section">
+        <h2>Thống kê số lượng sản phẩm</h2>
+        <div class="report-controls">
+          <label>Khoảng thời gian:
+            <select id="report-range">
+              <option value="day">1 ngày</option>
+              <option value="week">1 tuần</option>
+              <option value="month" selected>1 tháng</option>
+            </select>
+          </label>
+          <label>Trạng thái:
+            <select id="report-status">
+              <option value="all">Tất cả</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </label>
         </div>
-    `;
+        <canvas id="reportChart" height="80"></canvas>
+      </div>
+      
+      <!-- Thống kê hoạt động -->
+      <div class="report-section">
+        <h2>Thống kê sản phẩm theo hoạt động</h2>
+        <div class="report-controls">
+          <label>Hoạt động:
+            <select id="activity-select">
+              <option value="">--Chọn hoạt động--</option>
+              <!-- Danh sách hoạt động sẽ được thêm vào đây -->
+            </select>
+          </label>
+          <div class="view-options">
+            <label>
+              <input type="radio" name="view-type" value="separate" checked> 
+              Hiện theo loại
+            </label>
+            <label>
+              <input type="radio" name="view-type" value="total"> 
+              Hiện tổng hợp
+            </label>
+          </div>
+        </div>
+        <div class="activity-date-info" id="activity-date-info" style="margin-bottom: 10px; font-style: italic;"></div>
+        <canvas id="activityChart" height="80"></canvas>
+      </div>
+    </div>
+  `;
   document.getElementById("content-area").innerHTML = content;
+
+  // Load các chart
+  loadReportChart();
+  loadActivitiesList();
+
+  // Event listeners
+  document.getElementById("report-range").onchange = loadReportChart;
+  document.getElementById("report-status").onchange = loadReportChart;
+  document.getElementById("activity-select").onchange = loadActivityChart;
+
+  document.querySelectorAll('input[name="view-type"]').forEach((radio) => {
+    radio.onchange = loadActivityChart;
+  });
 }
+
+// Hàm load danh sách hoạt động cho dropdown
+async function loadActivitiesList() {
+  try {
+    const res = await fetch("/api/admin/reports/activities/list", {
+      credentials: "include",
+    });
+    const activities = await res.json();
+
+    const activitySelect = document.getElementById("activity-select");
+
+    // Xóa các option cũ nếu có
+    while (activitySelect.options.length > 1) {
+      activitySelect.remove(1);
+    }
+
+    // Thêm các option mới
+    activities.forEach((activity) => {
+      const startDate = new Date(activity.start_date).toLocaleDateString(
+        "vi-VN"
+      );
+      const option = document.createElement("option");
+      option.value = activity.id;
+      option.textContent = `${activity.title} (${startDate})`;
+      activitySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách hoạt động:", error);
+  }
+}
+
+// Hàm load chart cho hoạt động
+async function loadActivityChart() {
+  const activityId = document.getElementById("activity-select").value;
+
+  if (!activityId) {
+    // Nếu chưa chọn hoạt động, xóa chart cũ nếu có
+    if (window.activityChartInstance) {
+      window.activityChartInstance.destroy();
+      window.activityChartInstance = null;
+    }
+    document.getElementById("activity-date-info").textContent = "";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `/api/admin/reports/activities?activityId=${activityId}`,
+      {
+        credentials: "include",
+      }
+    );
+    const data = await res.json();
+
+    // Hiển thị thông tin thời gian
+    const startDate = new Date(data.activity.start_date).toLocaleDateString(
+      "vi-VN"
+    );
+    const endDate = new Date(data.activity.end_date).toLocaleDateString(
+      "vi-VN"
+    );
+    document.getElementById(
+      "activity-date-info"
+    ).textContent = `Thời gian: ${startDate} - ${endDate}`;
+
+    // Xóa chart cũ nếu có
+    if (window.activityChartInstance) {
+      window.activityChartInstance.destroy();
+    }
+
+    const ctx = document.getElementById("activityChart").getContext("2d");
+    const viewType = document.querySelector(
+      'input[name="view-type"]:checked'
+    ).value;
+
+    let chartData;
+    let chartOptions;
+
+    if (viewType === "total") {
+      // Hiển thị tổng hợp (so sánh cần và đã nhận)
+      chartData = {
+        labels: data.labels,
+        datasets: [
+          {
+            label: "Số lượng cần",
+            data: data.datasets.needed,
+            backgroundColor: "rgba(255, 99, 132, 0.2)",
+            borderColor: "rgb(255, 99, 132)",
+            borderWidth: 1,
+            stack: "Stack 0",
+          },
+          {
+            label: "Số lượng đã nhận",
+            data: data.datasets.received,
+            backgroundColor: "rgba(54, 162, 235, 0.2)",
+            borderColor: "rgb(54, 162, 235)",
+            borderWidth: 1,
+            stack: "Stack 0",
+          },
+        ],
+      };
+
+      chartOptions = {
+        responsive: true,
+        scales: {
+          x: {
+            title: { display: true, text: "Sản phẩm" },
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Số lượng" },
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: `Thống kê sản phẩm: ${data.activity.title}`,
+          },
+        },
+      };
+
+      window.activityChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: chartData,
+        options: chartOptions,
+      });
+    } else {
+      // Hiển thị theo % hoàn thành cho từng loại sản phẩm
+      chartData = {
+        labels: data.labels,
+        datasets: [
+          {
+            label: "% hoàn thành",
+            data: data.datasets.percentage,
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            borderColor: "rgb(75, 192, 192)",
+            borderWidth: 1,
+            borderRadius: 5,
+          },
+        ],
+      };
+
+      chartOptions = {
+        responsive: true,
+        scales: {
+          x: {
+            title: { display: true, text: "Sản phẩm" },
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Hoàn thành (%)" },
+            max: 100,
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: `Tỷ lệ hoàn thành: ${data.activity.title}`,
+          },
+        },
+      };
+
+      window.activityChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: chartData,
+        options: chartOptions,
+      });
+    }
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu chart hoạt động:", error);
+  }
+}
+// ...existing code...
+
+// ...existing code...
+async function loadReportChart() {
+  const range = document.getElementById("report-range").value;
+  const status = document.getElementById("report-status").value;
+
+  const res = await fetch(
+    `/api/admin/reports/posts?range=${range}&status=${status}`,
+    { credentials: "include" }
+  );
+  const data = await res.json();
+
+  // Xóa chart cũ nếu có
+  if (window.reportChartInstance) {
+    window.reportChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById("reportChart").getContext("2d");
+  window.reportChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: "Số lượng sản phẩm",
+          data: data.counts,
+          borderColor: "#007bff",
+          backgroundColor: "rgba(0,123,255,0.1)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: { title: { display: true, text: data.xLabel } },
+        y: { beginAtZero: true, title: { display: true, text: "Số lượng" } },
+      },
+    },
+  });
+}
+// ...existing code...
 
 // Các hàm hỗ trợ
 function formatDate(dateString) {
@@ -273,7 +541,7 @@ function handleLogout() {
       // Xóa các dữ liệu lưu trữ
       localStorage.removeItem("loggedInUser");
       localStorage.removeItem("userRole");
-      sessionStorage.removeItem('isAdminAuthenticated');
+      sessionStorage.removeItem("isAdminAuthenticated");
 
       // Chuyển hướng về trang login
       window.location.replace("/page/login.html");
@@ -287,7 +555,7 @@ function handleLogout() {
       }
       localStorage.removeItem("loggedInUser");
       localStorage.removeItem("userRole");
-      sessionStorage.removeItem('isAdminAuthenticated');
+      sessionStorage.removeItem("isAdminAuthenticated");
       window.location.replace("/page/login.html");
     });
 }
