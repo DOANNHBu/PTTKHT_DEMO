@@ -68,7 +68,7 @@ liveReloadServer.server.once("connection", () => {
 const db = mysql.createPool({
   host: "127.0.0.1",
   user: "root",
-  password: "duong1812004",
+  password: "root",
   database: "school_exchange",
   port: 3306,
   waitForConnections: true,
