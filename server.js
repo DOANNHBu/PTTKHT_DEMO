@@ -2144,6 +2144,250 @@ app.post("/api/posts", isAuthenticated, isUser, async (req, res) => {
   }
 });
 
+// API thống kê số lượng sản phẩm theo ngày/tuần/tháng và trạng thái
+// ...existing code...
+// ...existing code...
+app.get(
+  "/api/admin/reports/posts",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const { range = "month", status = "all" } = req.query;
+
+    let sql, labels, xLabel;
+
+    try {
+      // 1. Chuẩn bị cấu trúc dữ liệu và nhãn tùy theo range
+      if (range === "day") {
+        xLabel = "Giờ";
+        labels = Array.from(
+          { length: 24 },
+          (_, h) => (h < 10 ? "0" : "") + h + ":00"
+        );
+
+        // SQL cho thống kê theo giờ trong ngày
+        sql = `
+          SELECT 
+            HOUR(created_at) as hour,
+            COUNT(*) as count
+          FROM posts
+          WHERE DATE(created_at) = CURDATE()
+          ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          GROUP BY HOUR(created_at)
+        `;
+
+        // Lấy kết quả và map vào mảng
+        const [rows] = await db.promise().query(sql);
+        const counts = Array(24).fill(0);
+        rows.forEach((row) => {
+          counts[row.hour] = Number(row.count);
+        });
+
+        res.json({
+          labels,
+          counts,
+          xLabel,
+        });
+      } else if (range === "week") {
+        xLabel = "Ngày";
+
+        // Lấy ngày đầu tuần (thứ hai)
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 0 = Chủ nhật trong JS
+
+        const monday = new Date(today);
+        monday.setDate(today.getDate() + mondayOffset);
+
+        // Định dạng ngày cho SQL
+        const mondayStr = monday.toISOString().split("T")[0];
+
+        // Tạo labels cho 7 ngày trong tuần
+        labels = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(monday);
+          d.setDate(monday.getDate() + i);
+          // Định dạng dd/MM
+          const day = d.getDate().toString().padStart(2, "0");
+          const month = (d.getMonth() + 1).toString().padStart(2, "0");
+          labels.push(`${day}/${month}`);
+        }
+
+        // Truy vấn SQL
+        sql = `
+          SELECT 
+            DATE_FORMAT(created_at, '%d/%m') as day,
+            COUNT(*) as count
+          FROM posts
+          WHERE created_at >= '${mondayStr}'
+            AND created_at < DATE_ADD('${mondayStr}', INTERVAL 7 DAY)
+            ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          GROUP BY DATE_FORMAT(created_at, '%d/%m')
+        `;
+
+        const [rows] = await db.promise().query(sql);
+
+        // Khởi tạo mảng counts với giá trị 0
+        const counts = Array(7).fill(0);
+
+        // Map dữ liệu từ SQL vào mảng counts
+        rows.forEach((row) => {
+          const index = labels.indexOf(row.day);
+          if (index !== -1) {
+            counts[index] = Number(row.count);
+          }
+        });
+
+        res.json({
+          labels,
+          counts,
+          xLabel,
+        });
+      } else {
+        // month
+        xLabel = "Ngày";
+
+        // Lấy ngày đầu tiên của tháng
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const daysInMonth = lastDay.getDate();
+
+        labels = Array.from({ length: daysInMonth }, (_, i) => {
+          const day = i + 1;
+          return (
+            (day < 10 ? "0" : "") +
+            day +
+            "/" +
+            (today.getMonth() + 1 < 10 ? "0" : "") +
+            (today.getMonth() + 1)
+          );
+        });
+
+        // Lấy dữ liệu cho tháng hiện tại
+        const [monthData] = await db.promise().query(`
+          SELECT 
+            DATE_FORMAT(created_at, '%d/%m') as day,
+            COUNT(*) as count
+          FROM posts
+          WHERE 
+            MONTH(created_at) = MONTH(CURDATE())
+            AND YEAR(created_at) = YEAR(CURDATE())
+            ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          GROUP BY DATE_FORMAT(created_at, '%d/%m')
+        `);
+
+        // Map dữ liệu vào mảng ngày
+        const counts = Array(daysInMonth).fill(0);
+        const dayMap = {};
+
+        monthData.forEach((row) => {
+          dayMap[row.day] = Number(row.count);
+        });
+
+        labels.forEach((day, i) => {
+          if (dayMap[day]) {
+            counts[i] = dayMap[day];
+          }
+        });
+
+        res.json({
+          labels,
+          counts,
+          xLabel,
+        });
+      }
+    } catch (err) {
+      console.error("Lỗi server khi thống kê:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  }
+);
+
+// API thống kê sản phẩm của một hoạt động
+app.get(
+  "/api/admin/reports/activities",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const { activityId } = req.query;
+
+    if (!activityId) {
+      return res.status(400).json({ message: "Thiếu ID hoạt động" });
+    }
+
+    try {
+      // Lấy thông tin hoạt động (thời gian bắt đầu, kết thúc)
+      const [activityRows] = await db
+        .promise()
+        .query(
+          `SELECT title, start_date, end_date FROM activities WHERE id = ?`,
+          [activityId]
+        );
+
+      if (activityRows.length === 0) {
+        return res.status(404).json({ message: "Không tìm thấy hoạt động" });
+      }
+
+      const activity = activityRows[0];
+
+      // Lấy danh sách các sản phẩm (items) của hoạt động
+      const [itemsRows] = await db
+        .promise()
+        .query(
+          `SELECT name, quantity_needed, quantity_received FROM activity_items WHERE activity_id = ?`,
+          [activityId]
+        );
+
+      // Format dữ liệu cho biểu đồ
+      const labels = itemsRows.map((item) => item.name);
+      const neededData = itemsRows.map((item) => item.quantity_needed);
+      const receivedData = itemsRows.map((item) => item.quantity_received);
+
+      // Tính tỷ lệ nhận được so với cần
+      const percentageData = itemsRows.map((item) =>
+        item.quantity_needed > 0
+          ? Math.round((item.quantity_received / item.quantity_needed) * 100)
+          : 0
+      );
+
+      res.json({
+        activity,
+        labels,
+        datasets: {
+          needed: neededData,
+          received: receivedData,
+          percentage: percentageData,
+        },
+      });
+    } catch (err) {
+      console.error("Lỗi khi lấy dữ liệu thống kê hoạt động:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  }
+);
+
+// API lấy danh sách tất cả hoạt động (cho dropdown)
+app.get(
+  "/api/admin/reports/activities/list",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const [activities] = await db
+        .promise()
+        .query(
+          `SELECT id, title, start_date, end_date FROM activities ORDER BY start_date DESC`
+        );
+
+      res.json(activities);
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách hoạt động:", err);
+      res.status(500).json({ message: "Lỗi server", error: err.message });
+    }
+  }
+);
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);

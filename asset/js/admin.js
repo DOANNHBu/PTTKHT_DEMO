@@ -36,6 +36,15 @@ function loadContent(section) {
   }
 }
 
+function loadDashboard() {
+  document.getElementById("content-area").innerHTML = `
+    <div class="dashboard-welcome">
+      <h2>Chào mừng đến với trang quản trị!</h2>
+      <p>Chọn chức năng ở menu bên trái để quản lý hệ thống.</p>
+    </div>
+  `;
+}
+
 // Cập nhật hàm loadUserManagement()
 function loadUserManagement() {
   const content = `
@@ -172,10 +181,87 @@ function loadActivityManagement() {
 }
 
 // Báo cáo thống kê
+// ...existing code...
 function loadReports() {
-  const content = `placehoder for reports content`;
+  const content = `
+    <div class="report-section">
+      <h2>Thống kê số lượng sản phẩm</h2>
+      <div class="report-controls">
+        <label>Khoảng thời gian:
+          <select id="report-range">
+            <option value="day">1 ngày</option>
+            <option value="week">1 tuần</option>
+            <option value="month" selected>1 tháng</option>
+          </select>
+        </label>
+        <label>Trạng thái:
+          <select id="report-status">
+            <option value="all">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </label>
+      </div>
+      <canvas id="reportChart" height="80"></canvas>
+    </div>
+  `;
   document.getElementById("content-area").innerHTML = content;
+
+  // Load chart lần đầu
+  loadReportChart();
+
+  // Event listeners
+  document.getElementById("report-range").onchange = loadReportChart;
+  document.getElementById("report-status").onchange = loadReportChart;
 }
+
+// ...existing code...
+async function loadReportChart() {
+  const range = document.getElementById("report-range").value;
+  const status = document.getElementById("report-status").value;
+
+  const res = await fetch(
+    `/api/admin/reports/posts?range=${range}&status=${status}`,
+    { credentials: "include" }
+  );
+  const data = await res.json();
+
+  // Xóa chart cũ nếu có
+  if (window.reportChartInstance) {
+    window.reportChartInstance.destroy();
+  }
+
+  const ctx = document.getElementById("reportChart").getContext("2d");
+  window.reportChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: "Số lượng sản phẩm",
+          data: data.counts,
+          borderColor: "#007bff",
+          backgroundColor: "rgba(0,123,255,0.1)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: { title: { display: true, text: data.xLabel } },
+        y: { beginAtZero: true, title: { display: true, text: "Số lượng" } },
+      },
+    },
+  });
+}
+// ...existing code...
 
 // Các hàm hỗ trợ
 function formatDate(dateString) {
