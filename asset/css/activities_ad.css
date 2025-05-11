@@ -475,3 +475,37 @@
     opacity: 1;
     height: 24px;
 }
+
+/* Thêm vào cuối file activities_ad.css */
+
+/* Style cho cột chứa các nút action */
+.table td:last-child {
+    white-space: nowrap;
+    width: 200px;
+    /* Đặt chiều rộng cố định cho cột action */
+}
+
+/* Style cho container chứa các nút */
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    /* Khoảng cách giữa các nút */
+    justify-content: flex-start;
+    /* Căn đều các nút từ trái sang */
+}
+
+/* Style cho từng nút */
+.action-buttons .btn {
+    min-width: 60px;
+    /* Chiều rộng tối thiểu cho mỗi nút */
+    text-align: center;
+    padding: 6px 12px;
+}
+
+/* Đảm bảo tất cả nút có cùng kích thước */
+.btn-info,
+.btn-warning,
+.btn-danger {
+    flex: 0 0 auto;
+    /* Ngăn các nút co giãn */
+}

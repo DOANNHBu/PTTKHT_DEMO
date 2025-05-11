@@ -103,10 +103,10 @@ class ActivityManager {
 
     if (!this.activities || this.activities.length === 0) {
       tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center;">Chưa có hoạt động nào</td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="6" style="text-align: center;">Chưa có hoạt động nào</td>
+            </tr>
+        `;
       return;
     }
 
@@ -115,31 +115,24 @@ class ActivityManager {
         (activity) => `
             <tr>
                 <td>${activity.title}</td>
-                <td>${this.formatDateRange(
-                  activity.start_date,
-                  activity.end_date
-                )}</td>
+                <td>${this.formatDateRange(activity.start_date, activity.end_date)}</td>
                 <td>${activity.location}</td>
                 <td>${activity.name_organizer}</td>
                 <td><span class="status-badge status-${activity.status}">
                     ${this.formatStatus(activity.status)}
                 </span></td>
                 <td>
-                    <button class="btn btn-info" onclick="activityManager.viewActivity('${
-                      activity.id
-                    }')">
-                        Chi tiết
-                    </button>
-                    <button class="btn btn-warning" onclick="activityManager.editActivity('${
-                      activity.id
-                    }')">
-                        Sửa
-                    </button>
-                    <button class="btn btn-danger" onclick="activityManager.deleteActivity('${
-                      activity.id
-                    }')">
-                        Xóa
-                    </button>
+                    <div class="action-buttons">
+                        <button class="btn btn-info" onclick="activityManager.viewActivity('${activity.id}')">
+                            Chi tiết
+                        </button>
+                        <button class="btn btn-warning" onclick="activityManager.editActivity('${activity.id}')">
+                            Sửa
+                        </button>
+                        <button class="btn btn-danger" onclick="activityManager.deleteActivity('${activity.id}')">
+                            Xóa
+                        </button>
+                    </div>
                 </td>
             </tr>
         `
@@ -391,23 +384,19 @@ class ActivityManager {
                         <h2>${activity.title}</h2>
                         <div class="activity-info">
                             <p><strong>Thời gian:</strong> ${this.formatDateRange(
-                              activity.start_date,
-                              activity.end_date
-                            )}</p>
-                            <p><strong>Địa điểm:</strong> ${
-                              activity.location
-                            }</p>
-                            <p><strong>Trạng thái:</strong> <span class="status-badge status-${
-                              activity.status
-                            }">${this.formatStatus(activity.status)}</span></p>
-                            <p><strong>Mô tả:</strong> ${
-                              activity.description
-                            }</p>
-                            ${
-                              activity.guidelines
-                                ? `<p><strong>Hướng dẫn:</strong> ${activity.guidelines}</p>`
-                                : ""
-                            }
+        activity.start_date,
+        activity.end_date
+      )}</p>
+                            <p><strong>Địa điểm:</strong> ${activity.location
+        }</p>
+                            <p><strong>Trạng thái:</strong> <span class="status-badge status-${activity.status
+        }">${this.formatStatus(activity.status)}</span></p>
+                            <p><strong>Mô tả:</strong> ${activity.description
+        }</p>
+                            ${activity.guidelines
+          ? `<p><strong>Hướng dẫn:</strong> ${activity.guidelines}</p>`
+          : ""
+        }
                         </div>
 
                         <div class="donation-items">
@@ -424,8 +413,8 @@ class ActivityManager {
                                 </thead>
                                 <tbody>
                                     ${activity.items
-                                      .map(
-                                        (item) => `
+          .map(
+            (item) => `
                                         <tr>
                                             <td>${item.name}</td>
                                             <td>${item.description || ""}</td>
@@ -433,27 +422,24 @@ class ActivityManager {
                                             <td>
                                                 <input type="number" 
                                                     class="quantity-input" 
-                                                    value="${
-                                                      item.quantity_received
-                                                    }"
+                                                    value="${item.quantity_received
+              }"
                                                     min="0"
-                                                    max="${
-                                                      item.quantity_needed
-                                                    }"
+                                                    max="${item.quantity_needed
+              }"
                                                     data-item-id="${item.id}">
                                             </td>
                                             <td>
                                                 <button class="btn btn-primary btn-sm" 
-                                                    onclick="activityManager.updateItemQuantity('${
-                                                      item.id
-                                                    }')">
+                                                    onclick="activityManager.updateItemQuantity('${item.id
+              }')">
                                                     Cập nhật
                                                 </button>
                                             </td>
                                         </tr>
                                     `
-                                      )
-                                      .join("")}
+          )
+          .join("")}
                                 </tbody>
                             </table>
                         </div>
@@ -507,54 +493,50 @@ class ActivityManager {
                 <form id="editActivityForm" onsubmit="return activityManager.handleEditSubmit(event, '${activityId}')">
                     <div class="form-group">
                         <label>Tiêu đề *</label>
-                        <input type="text" name="title" required value="${
-                          activity.title
-                        }">
+                        <input type="text" name="title" required value="${activity.title
+      }">
                     </div>
                     
                     <div class="form-group">
                         <label>Mô tả chi tiết *</label>
-                        <textarea name="description" rows="4" required>${
-                          activity.description
-                        }</textarea>
+                        <textarea name="description" rows="4" required>${activity.description
+      }</textarea>
                     </div>
                     
                     <div class="form-group">
                         <label>Ngày bắt đầu *</label>
                         <input type="datetime-local" name="start_date" required 
                                value="${this.formatDateTimeForInput(
-                                 activity.start_date
-                               )}">
+        activity.start_date
+      )}">
                     </div>
                     
                     <div class="form-group">
                         <label>Ngày kết thúc *</label>
                         <input type="datetime-local" name="end_date" required
                                value="${this.formatDateTimeForInput(
-                                 activity.end_date
-                               )}">
+        activity.end_date
+      )}">
                     </div>
                     
                     <div class="form-group">
                         <label>Địa điểm *</label>
-                        <input type="text" name="location" required value="${
-                          activity.location
-                        }">
+                        <input type="text" name="location" required value="${activity.location
+      }">
                     </div>
 
                     <div class="form-group">
                         <label>Đơn vị tổ chức *</label>
-                        <input type="text" name="name_organizer" required value="${
-                          activity.name_organizer
-                        }">
+                        <input type="text" name="name_organizer" required value="${activity.name_organizer
+      }">
                     </div>
 
                     <div class="donation-items">
                         <h3>Danh sách đồ cần quyên góp</h3>
                         <div id="itemsList">
                             ${activity.items
-                              .map(
-                                (item) => `
+        .map(
+          (item) => `
                                 <div class="item-row">
                                     <div class="form-group">
                                         <input type="text" class="item-name" placeholder="Tên vật phẩm" 
@@ -562,21 +544,19 @@ class ActivityManager {
                                     </div>
                                     <div class="form-group">
                                         <input type="number" class="item-quantity" placeholder="Số lượng" 
-                                            min="1" required value="${
-                                              item.quantity_needed
-                                            }">
+                                            min="1" required value="${item.quantity_needed
+            }">
                                     </div>
                                     <div class="form-group">
-                                        <textarea class="item-description" placeholder="Mô tả">${
-                                          item.description || ""
-                                        }</textarea>
+                                        <textarea class="item-description" placeholder="Mô tả">${item.description || ""
+            }</textarea>
                                     </div>
                                     <button type="button" class="btn btn-danger btn-sm" 
                                         onclick="this.parentElement.remove()">Xóa</button>
                                 </div>
                             `
-                              )
-                              .join("")}
+        )
+        .join("")}
                         </div>
                         <button type="button" class="btn btn-secondary" onclick="activityManager.addItemRow()">
                             + Thêm vật phẩm
@@ -585,9 +565,8 @@ class ActivityManager {
                     
                     <div class="form-group">
                         <label>Hướng dẫn tham gia</label>
-                        <textarea name="guidelines" rows="3">${
-                          activity.guidelines || ""
-                        }</textarea>
+                        <textarea name="guidelines" rows="3">${activity.guidelines || ""
+      }</textarea>
                     </div>
                     
                     <div class="form-actions">
