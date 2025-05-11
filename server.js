@@ -2568,18 +2568,24 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
       }).join(',')
     );
 
-    const csv = [
+    let csv = [
       csvFields.join(','),
       ...csvRows
-    ].join('\n');
+    ].join('\r\n');                   // 1) Dùng CRLF cho line breaks
 
-    // Set headers for CSV download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=${table}_${startDate}_${endDate}.csv`);
+    // 2) Thêm BOM vào đầu file
+    const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
+    const csvBuffer = Buffer.concat([bom, Buffer.from(csv, 'utf8')]);
 
-    // Send CSV data
-    res.send(csv);
+    // 3) Set header kèm charset
+    res.setHeader('Content-Type', 'text/csv; charset=UTF-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${table}_${startDate}_${endDate}.csv`
+    );
 
+    // 4) Gửi buffer thẳng cho client
+    res.send(csvBuffer);
   } catch (error) {
     console.error('Error exporting data:', error);
     res.status(500).json({
