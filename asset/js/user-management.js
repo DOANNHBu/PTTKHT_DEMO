@@ -1,9 +1,26 @@
 class UserManager {
     constructor() {
         this.users = [];
-        this.currentRole = '2'; // Default to user role
+        this.filterState = {
+            role: '2',
+            searchTerm: ''
+        };
+    }
+
+    async initialize() {
+        await this.loadUsers();
         this.initializeEventListeners();
-        this.loadUsers();
+    }
+
+    // Thêm phương thức mới để tái khởi tạo
+    async reinitialize() {
+        // Khôi phục trạng thái filter đã lưu
+        this.filterState = JSON.parse(sessionStorage.getItem('userManagerFilter')) || {
+            role: '2',
+            searchTerm: ''
+        };
+        await this.loadUsers();
+        this.initializeEventListeners();
     }
 
     async loadUsers() {
@@ -12,18 +29,54 @@ class UserManager {
                 credentials: 'include'
             });
             this.users = await response.json();
-            this.filterAndRenderUsers();
+            this.applyFilters();
         } catch (error) {
             console.error('Error loading users:', error);
             alert('Không thể tải danh sách người dùng');
         }
     }
 
-    filterAndRenderUsers() {
-        const filteredUsers = this.users.filter(user =>
-            user.role_id.toString() === this.currentRole
-        );
+    applyFilters() {
+        let filteredUsers = [...this.users];
+
+        // Lọc theo role
+        if (this.filterState.role !== 'all') {
+            filteredUsers = filteredUsers.filter(user =>
+                user.role_id.toString() === this.filterState.role
+            );
+        }
+
+        // Lọc theo từ khóa tìm kiếm
+        if (this.filterState.searchTerm) {
+            const searchTerm = this.filterState.searchTerm.toLowerCase();
+            filteredUsers = filteredUsers.filter(user =>
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.full_name.toLowerCase().includes(searchTerm)
+            );
+        }
+
         this.renderUsers(filteredUsers);
+        this.updateUIState();
+
+        // Lưu trạng thái filter vào sessionStorage
+        sessionStorage.setItem('userManagerFilter', JSON.stringify(this.filterState));
+    }
+
+    updateUIState() {
+        // Cập nhật UI để phản ánh trạng thái filter hiện tại
+        const searchInput = document.getElementById('searchUsername');
+        if (searchInput) {
+            searchInput.value = this.filterState.searchTerm;
+        }
+
+        // Cập nhật trạng thái active của các tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            if (tab.dataset.role === this.filterState.role) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
     }
 
     renderUsers(users) {
@@ -228,6 +281,48 @@ class UserManager {
         }
     }
 
+    initializeEventListeners() {
+        // Xóa event listeners cũ nếu có
+        const tabs = document.querySelectorAll('.tab');
+        const searchInput = document.getElementById('searchUsername');
+
+        tabs.forEach(tab => {
+            tab.removeEventListener('click', this.handleTabClick);
+            tab.addEventListener('click', (e) => this.handleTabClick(e));
+        });
+
+        if (searchInput) {
+            searchInput.removeEventListener('input', this.handleSearch);
+            searchInput.value = this.filterState.searchTerm;
+            searchInput.addEventListener('input', (e) => this.handleSearch(e));
+        }
+
+        // Cập nhật trạng thái active cho tab
+        tabs.forEach(tab => {
+            if (tab.dataset.role === this.filterState.role) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+    }
+
+    handleTabClick(event) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        this.filterState.role = event.currentTarget.dataset.role;
+        this.applyFilters();
+        // Lưu trạng thái
+        sessionStorage.setItem('userManagerFilter', JSON.stringify(this.filterState));
+    }
+
+    handleSearch(event) {
+        this.filterState.searchTerm = event.target.value;
+        this.applyFilters();
+        // Lưu trạng thái
+        sessionStorage.setItem('userManagerFilter', JSON.stringify(this.filterState));
+    }
+
     searchUsers() {
         const searchTerm = document.getElementById('searchUsername').value.toLowerCase();
         const filteredUsers = this.users.filter(user =>
@@ -296,36 +391,6 @@ class UserManager {
         }
     }
 
-    initializeEventListeners() {
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.currentRole = tab.dataset.role;
-                this.filterAndRenderUsers();
-            });
-        });
-
-        // Modal events
-        const modal = document.getElementById('createUserModal');
-        const closeBtn = modal.querySelector('.close');
-        closeBtn.onclick = () => this.closeModal();
-        window.onclick = (event) => {
-            if (event.target === modal) this.closeModal();
-        };
-
-        // Form submission
-        const createForm = document.getElementById('createUserForm');
-        createForm.onsubmit = (e) => this.handleCreate(e);
-
-        // Search functionality
-        const searchInput = document.getElementById('searchUsername');
-        if (searchInput) {
-            searchInput.addEventListener('input', () => this.searchUsers());
-        }
-    }
-
     showModal(content) {
         const modal = document.getElementById('userModal');
         if (!modal) {
@@ -362,7 +427,13 @@ class UserManager {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.querySelector('.user-management') && !window.userManager) {
-        window.userManager = new UserManager();
+    if (document.querySelector('.user-management')) {
+        // Kiểm tra xem đã có instance chưa
+        if (!window.userManager) {
+            window.userManager = new UserManager();
+        }
+
+        // Luôn gọi initialize để thiết lập lại event listeners
+        window.userManager.initialize();
     }
 });
