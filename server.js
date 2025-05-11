@@ -938,15 +938,14 @@ app.put(
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-          ? "Bài đăng bị từ chối"
-          : "Bài đăng được cập nhật";
+            ? "Bài đăng bị từ chối"
+            : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
           ? `Bài đăng "${oldPost.title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
-          : `Bài đăng "${oldPost.title}" của bạn đã được ${
-              status === "approved" ? "duyệt" : "cập nhật"
-            }`;
+          : `Bài đăng "${oldPost.title}" của bạn đã được ${status === "approved" ? "duyệt" : "cập nhật"
+          }`;
 
       await db.promise().query(
         `INSERT INTO notifications (user_id, title, message, type, post_id) 
@@ -1772,8 +1771,8 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-          ? "Bài đăng bị từ chối"
-          : "Bài đăng được cập nhật";
+            ? "Bài đăng bị từ chối"
+            : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
@@ -1795,77 +1794,90 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // API xóa bài đăng
-app.delete(
-  "/api/admin/posts/:id",
-  isAuthenticated,
-  isAdmin,
-  async (req, res) => {
-    const postId = req.params.id;
-    const adminId = req.session.user.id; // ID của admin thực hiện xóa
+app.delete('/api/admin/posts/:id', isAuthenticated, isAdmin, async (req, res) => {
+  const postId = req.params.id;
+  const adminId = req.session.user.id;
+
+  try {
+    const connection = await db.promise().getConnection();
+    await connection.beginTransaction();
 
     try {
-      const connection = await db.promise().getConnection();
-      await connection.beginTransaction();
+      // Lấy thông tin bài đăng trước khi xóa
+      const [postRows] = await connection.query(
+        "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
+        [postId]
+      );
 
-      try {
-        // Lấy thông tin bài đăng trước khi xóa (bao gồm tác giả)
-        const [postRows] = await connection.query(
-          "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
-          [postId]
-        );
-
-        if (postRows.length === 0) {
-          await connection.rollback();
-          connection.release();
-          return res.status(404).json({ message: "Không tìm thấy bài đăng" });
-        }
-
-        const post = postRows[0];
-
-        // Xóa hình ảnh liên quan
-        await connection.query("DELETE FROM post_images WHERE post_id = ?", [
-          postId,
-        ]);
-
-        // Xóa bài đăng
-        await connection.query("DELETE FROM posts WHERE id = ?", [postId]);
-
-        // Ghi log audit
-        await logAuditAction(adminId, "delete", "post", postId, post, null);
-
-        // Gửi thông báo cho người đăng bài
-        await connection.query(
-          `INSERT INTO notifications (user_id, title, message, type, post_id) 
-           VALUES (?, ?, ?, 'post_approval', ?)`,
-          [
-            post.author_id,
-            "Bài đăng đã bị xóa",
-            `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
-            postId,
-          ]
-        );
-
-        await connection.commit();
-        connection.release();
-
-        res.json({
-          success: true,
-          message: "Xóa bài đăng thành công",
-        });
-      } catch (error) {
+      if (postRows.length === 0) {
         await connection.rollback();
         connection.release();
-        throw error;
+        return res.status(404).json({ message: "Không tìm thấy bài đăng" });
       }
-    } catch (error) {
-      console.error("Lỗi:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi server khi xóa bài đăng",
+
+      const post = postRows[0];
+
+      // Tạo thông báo TRƯỚC KHI xóa bài đăng
+      await connection.query(
+        `INSERT INTO notifications (user_id, title, message, type) 
+                 VALUES (?, ?, ?, 'post_approval')`,
+        [
+          post.author_id,
+          'Bài đăng đã bị xóa',
+          `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
+        ]
+      );
+
+      // Xóa hình ảnh liên quan
+      await connection.query(
+        "DELETE FROM post_images WHERE post_id = ?",
+        [postId]
+      );
+
+      // Xóa các thông báo liên quan đến bài đăng
+      await connection.query(
+        "DELETE FROM notifications WHERE post_id = ?",
+        [postId]
+      );
+
+      // Xóa bài đăng
+      await connection.query(
+        "DELETE FROM posts WHERE id = ?",
+        [postId]
+      );
+
+      // Ghi log audit
+      await logAuditAction(
+        adminId,
+        'delete',
+        'post',
+        postId,
+        post,
+        null
+      );
+
+      await connection.commit();
+      connection.release();
+
+      res.json({
+        success: true,
+        message: "Xóa bài đăng thành công"
       });
+
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      throw error;
     }
+
+  } catch (error) {
+    console.error("Lỗi:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi xóa bài đăng"
+    });
   }
-);
+});
 
 // Route mặc định để phục vụ file login.html
 app.get("/", (req, res) => {
