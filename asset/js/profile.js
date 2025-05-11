@@ -169,14 +169,16 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
 
       const result = await response.json();
-      alert("Cập nhật thông tin thành công!");
+      toastNotification.success("Cập nhật thông tin thành công!");
       editProfileModal.style.display = "none";
 
       // Reload trang để hiển thị thông tin mới
       window.location.reload();
     } catch (error) {
       console.error("Lỗi:", error);
-      alert(error.message || "Có lỗi xảy ra khi cập nhật thông tin");
+      toastNotification.error(
+        error.message || "Có lỗi xảy ra khi cập nhật thông tin"
+      );
     }
   });
 
@@ -247,16 +249,20 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (response.ok) {
-        alert("Bài đăng đã được thêm thành công và đang chờ duyệt!");
+        toastNotification.success(
+          "Bài đăng đã được thêm thành công và đang chờ duyệt!"
+        );
         modal.style.display = "none";
         addPostForm.reset(); // Reset form sau khi đăng thành công
         window.location.reload(); // Tải lại trang để cập nhật danh sách bài đăng
       } else {
-        alert(result.message || "Đã xảy ra lỗi khi thêm bài đăng.");
+        toastNotification.error(
+          result.message || "Đã xảy ra lỗi khi thêm bài đăng."
+        );
       }
     } catch (error) {
       console.error("Lỗi khi gửi bài đăng:", error);
-      alert("Đã xảy ra lỗi khi thêm bài đăng.");
+      toastNotification.error("Đã xảy ra lỗi khi thêm bài đăng.");
     }
   });
 });
@@ -365,24 +371,36 @@ async function showPostDetail(postId) {
       // Mở modal chỉnh sửa
       showEditPostModal(post);
     };
-    deleteBtn.onclick = async function () {
-      if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
-        try {
-          const res = await fetch(`/api/posts/${postId}`, {
-            method: "DELETE",
-            credentials: "include",
-          });
-          if (res.ok) {
-            alert("Đã xóa bài đăng thành công!");
-            modal.style.display = "none";
-            window.location.reload();
-          } else {
-            alert("Xóa bài đăng thất bại!");
+    deleteBtn.onclick = function () {
+      modalDialog
+        .confirm({
+          title: "Xóa bài đăng",
+          message: "Bạn có chắc chắn muốn xóa bài đăng này?",
+          confirmText: "Xóa",
+          cancelText: "Hủy",
+          type: "error",
+        })
+        .then(async (result) => {
+          if (result) {
+            try {
+              const res = await fetch(`/api/posts/${postId}`, {
+                method: "DELETE",
+                credentials: "include",
+              });
+
+              if (res.ok) {
+                toastNotification.success("Đã xóa bài đăng thành công!");
+                modal.style.display = "none";
+                window.location.reload();
+              } else {
+                toastNotification.error("Xóa bài đăng thất bại!");
+              }
+            } catch (err) {
+              console.error("Lỗi khi xóa bài đăng:", err);
+              toastNotification.error("Có lỗi xảy ra khi xóa bài đăng!");
+            }
           }
-        } catch (err) {
-          alert("Có lỗi xảy ra khi xóa bài đăng!");
-        }
-      }
+        });
     };
     // Gắn sự kiện cho nút X để đóng modal
     const closeBtn = modal.querySelector(".close-button");
@@ -575,56 +593,82 @@ function showPostDetailModal(postId) {
 
       // Thêm sự kiện cho nút xóa
       deleteBtn.onclick = function () {
-        if (confirm("Bạn có chắc chắn muốn xóa bài đăng này?")) {
-          deletePost(post.id);
-        }
+        modalDialog
+          .confirm({
+            title: "Xóa bài đăng",
+            message: "Bạn có chắc chắn muốn xóa bài đăng này?",
+            confirmText: "Xóa",
+            cancelText: "Hủy",
+            type: "error",
+            confirmButtonClass: "", // Sử dụng màu đỏ mặc định cho nút xác nhận
+          })
+          .then((result) => {
+            if (result) {
+              deletePost(post.id);
+            }
+          });
       };
 
       // Thêm sự kiện cho nút đã bán
       if (soldBtn) {
         soldBtn.onclick = function () {
-          if (
-            confirm("Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?")
-          ) {
-            fetch(`/api/posts/${post.id}/sold`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
+          // Thay thế confirm() bằng modalDialog.confirm()
+          modalDialog
+            .confirm({
+              title: "Cập nhật trạng thái",
+              message: "Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?",
+              confirmText: "Đánh dấu đã bán",
+              cancelText: "Hủy",
+              type: "warning",
             })
-              .then((response) => {
-                if (!response.ok) {
-                  // Nếu phản hồi không thành công, ném lỗi để chuyển sang .catch()
-                  return response.json().then((data) => {
-                    throw new Error(
-                      data.message || "Cập nhật trạng thái thất bại."
+            .then((result) => {
+              // Nếu người dùng xác nhận (nhấn Đánh dấu đã bán)
+              if (result) {
+                fetch(`/api/posts/${post.id}/sold`, {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                })
+                  .then((response) => {
+                    if (!response.ok) {
+                      return response.json().then((data) => {
+                        throw new Error(
+                          data.message || "Cập nhật trạng thái thất bại."
+                        );
+                      });
+                    }
+                    return response.json();
+                  })
+                  .then((data) => {
+                    // Hiển thị thông báo thành công với toast
+                    toastNotification.success(
+                      data.message || "Cập nhật trạng thái thành công!"
                     );
+
+                    // Cập nhật UI
+                    statusElement.textContent = "Đã bán";
+                    statusElement.style.color = "#4caf50";
+                    soldBtn.style.display = "none";
+
+                    // Tải lại danh sách bài đăng
+                    loadPosts();
+                  })
+                  .catch((error) => {
+                    // Hiển thị thông báo lỗi với toast
+                    toastNotification.error(
+                      error.message || "Có lỗi xảy ra khi cập nhật trạng thái!"
+                    );
+                    console.error("Error:", error);
                   });
-                }
-                return response.json();
-              })
-              .then((data) => {
-                // Hiển thị thông báo thành công
-                alert(data.message || "Cập nhật trạng thái thành công!");
-                statusElement.textContent = "Đã bán";
-                statusElement.style.color = "#4caf50";
-                soldBtn.style.display = "none";
-                loadPosts(); // Tải lại danh sách bài đăng
-              })
-              .catch((error) => {
-                // Hiển thị thông báo lỗi
-                console.error("Error:", error);
-                alert(
-                  error.message || "Có lỗi xảy ra khi cập nhật trạng thái!"
-                );
-              });
-          }
+              }
+            });
         };
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("Có lỗi xảy ra khi tải thông tin bài đăng!");
+      toastNotification.error("Có lỗi xảy ra khi tải thông tin bài đăng!");
     });
 }
 
@@ -752,13 +796,13 @@ function showEditPostModal(post) {
     const location = document.getElementById("edit-location").value.trim();
 
     if (!title || !description || !price || !category || !location) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+      toastNotification.error("Vui lòng điền đầy đủ thông tin!");
       return;
     }
 
     // Kiểm tra giá
     if (isNaN(price) || parseFloat(price) < 0) {
-      alert("Giá không hợp lệ!");
+      toastNotification.error("Giá không hợp lệ!");
       return;
     }
 
@@ -776,15 +820,19 @@ function showEditPostModal(post) {
       const result = await response.json();
 
       if (response.ok) {
-        alert("Cập nhật bài đăng thành công! Bài đăng sẽ được xem xét lại.");
+        toastNotification.success(
+          "Cập nhật bài đăng thành công! Bài đăng sẽ được xem xét lại."
+        );
         editModal.style.display = "none";
         window.location.reload();
       } else {
-        alert(result.message || "Cập nhật bài đăng thất bại!");
+        toastNotification.error(
+          result.message || "Cập nhật bài đăng thất bại!"
+        );
       }
     } catch (error) {
       console.error("Lỗi khi cập nhật bài đăng:", error);
-      alert("Có lỗi xảy ra khi cập nhật bài đăng!");
+      toastNotification.error("Có lỗi xảy ra khi cập nhật bài đăng!");
     }
   });
 }
@@ -797,7 +845,7 @@ function deletePost(postId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        alert(data.message);
+        toastNotification.success(data.message);
 
         // Xóa bài đăng khỏi danh sách mà không cần tải lại trang
         const postElement = document.querySelector(
@@ -813,11 +861,11 @@ function deletePost(postId) {
           modal.style.display = "none";
         }
       } else {
-        alert(data.message || "Xóa bài đăng thất bại!");
+        toastNotification.error(data.message || "Xóa bài đăng thất bại!");
       }
     })
     .catch((error) => {
       console.error("Lỗi khi xóa bài đăng:", error);
-      alert("Có lỗi xảy ra khi xóa bài đăng!");
+      toastNotification.error("Có lỗi xảy ra khi xóa bài đăng!");
     });
 }

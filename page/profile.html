@@ -1,60 +1,251 @@
 <!DOCTYPE html>
 <html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Thông tin cá nhân</title>
+    <link rel="stylesheet" href="/asset/css/style.css" />
+    <link rel="stylesheet" href="/asset/css/profile.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/react-icons@4.12.0/fa/index.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/asset/css/toast-notifications.css" />
 
-  <title>Thông tin cá nhân</title>
-  <link rel="stylesheet" href="/asset/css/style.css" />
-  <link rel="stylesheet" href="/asset/css/profile.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-icons@4.12.0/fa/index.css" />
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-</head>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link rel="stylesheet" href="/asset/css/modal-dialogs.css" />
+  </head>
 
-<body>
-  <header>
-    <div class="container header-content">
-      <div class="header-left">
-        <a href="/page/index.html" class="logo">
-          <img src="/images/logo.png" alt="School Exchange Logo" class="logo-img" />
-          <span>School Exchange</span>
-        </a>
+  <body>
+    <header>
+      <div class="container header-content">
+        <div class="header-left">
+          <a href="/page/index.html" class="logo">
+            <img
+              src="/images/logo.png"
+              alt="School Exchange Logo"
+              class="logo-img"
+            />
+            <span>School Exchange</span>
+          </a>
+        </div>
+        <div class="header-center">
+          <nav class="main-nav">
+            <a href="/page/index.html" class="nav-link">Trang chủ</a>
+            <a href="/page/profile.html" class="nav-link active">Cá nhân</a>
+            <a href="/page/activities.html" class="nav-link">Hoạt động</a>
+          </nav>
+        </div>
+        <div class="header-right"></div>
       </div>
-      <div class="header-center">
-        <nav class="main-nav">
-          <a href="/page/index.html" class="nav-link">Trang chủ</a>
-          <a href="/page/profile.html" class="nav-link active">Cá nhân</a>
-          <a href="/page/activities.html" class="nav-link">Hoạt động</a>
-        </nav>
+    </header>
+
+    <div class="container">
+      <div id="add-post-modal" class="modal" style="display: none">
+        <div class="modal-content add-post-modal-content">
+          <span class="close-button">&times;</span>
+          <h2 class="modal-title">Thêm bài đăng mới</h2>
+          <form id="add-post-form">
+            <div class="form-group">
+              <label for="title">Tiêu đề</label>
+              <input type="text" id="title" name="title" required />
+            </div>
+            <div class="form-group">
+              <label for="description">Mô tả</label>
+              <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="price">Giá (VNĐ)</label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                min="0"
+                step="1000"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="category">Danh mục</label>
+              <select id="category" name="category" required>
+                <option value="">Chọn danh mục</option>
+                <option value="1">Sách</option>
+                <option value="2">Thiết bị điện tử</option>
+                <option value="3">Quần áo</option>
+                <option value="4">Dụng cụ thể thao</option>
+                <option value="5">Đồ dùng học tập</option>
+                <option value="6">Nhạc cụ</option>
+                <option value="7">Khác</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="location">Địa điểm</label>
+              <input type="text" id="location" name="location" required />
+            </div>
+            <div class="form-group">
+              <label for="condition">Tình trạng</label>
+              <select id="condition" name="condition" required>
+                <option value="">Chọn tình trạng</option>
+                <option value="new">Mới 100%</option>
+                <option value="like_new">Như mới (99%)</option>
+                <option value="good">Còn tốt (80-90%)</option>
+                <option value="fair">Tạm được (60-80%)</option>
+                <option value="poor">Đã qua sử dụng (dưới 60%)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="images">Hình ảnh (tối đa 5 ảnh)</label>
+              <input
+                type="file"
+                id="images"
+                name="images"
+                multiple
+                accept="image/*"
+              />
+              <small class="input-desc"
+                >Ảnh đầu tiên sẽ được sử dụng làm ảnh đại diện</small
+              >
+              <div id="image-preview" class="image-preview"></div>
+            </div>
+            <div class="form-actions add-post-actions">
+              <button type="submit" class="submit-button btn-primary">
+                Đăng bài
+              </button>
+              <button type="button" class="submit-button btn-cancel">
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div class="header-right"></div>
+      <div class="profile-main-grid">
+        <div class="profile-left-col">
+          <div id="profile-info"></div>
+          <div class="profile-actions">
+            <button class="post-button profile-post-btn">Tạo bài đăng</button>
+            <button class="edit-button profile-edit-btn">
+              Chỉnh sửa thông tin
+            </button>
+          </div>
+        </div>
+        <div class="profile-right-col">
+          <div class="profile-posts">
+            <h2>Tổng hợp bài đăng</h2>
+            <div id="user-products"></div>
+          </div>
+        </div>
+      </div>
     </div>
-  </header>
+    <script src="/asset/js/profile.js"></script>
+    <script src="/asset/js/auth-check.js"></script>
+    <script src="/asset/js/toast-notifications.js"></script>
+    <script src="/asset/js/modal-dialogs.js"></script>
+    <!-- Modal chỉnh sửa thông tin -->
+    <div id="edit-profile-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Chỉnh sửa thông tin cá nhân</h2>
+        <form id="edit-profile-form">
+          <div class="form-group">
+            <label for="edit-username">Tên đăng nhập:</label>
+            <input type="text" id="edit-username" name="username" required />
+          </div>
+          <div class="form-group">
+            <label for="edit-password">Mật khẩu:</label>
+            <div class="password-input-container">
+              <input
+                type="password"
+                id="edit-password"
+                name="password"
+                required
+              />
+              <span class="toggle-password" id="toggle-password">👁️‍🗨️</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-phone">Số điện thoại:</label>
+            <input type="tel" id="edit-phone" name="phone" />
+          </div>
+          <div class="form-group">
+            <label for="edit-address">Địa chỉ:</label>
+            <input type="text" id="edit-address" name="address" />
+          </div>
+          <div class="form-group">
+            <label for="edit-avatar">Ảnh đại diện:</label>
+            <input
+              type="file"
+              id="edit-avatar"
+              name="avatar"
+              accept="image/*"
+            />
+          </div>
 
-  <div class="container">
-    <div id="add-post-modal" class="modal" style="display: none;">
+          <!-- Thông tin chỉ hiển thị -->
+          <div class="form-group display-only">
+            <label>Họ tên:</label>
+            <div class="display-value" id="display-fullname"></div>
+          </div>
+          <div class="form-group display-only">
+            <label>Trường:</label>
+            <div class="display-value" id="display-school"></div>
+          </div>
+          <div class="form-group display-only">
+            <label>Email:</label>
+            <div class="display-value" id="display-email"></div>
+          </div>
+
+          <button type="submit" class="submit-button">Lưu thay đổi</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal chỉnh sửa bài đăng -->
+    <div id="edit-post-modal" class="modal" style="display: none">
       <div class="modal-content add-post-modal-content">
         <span class="close-button">&times;</span>
-        <h2 class="modal-title">Thêm bài đăng mới</h2>
-        <form id="add-post-form">
+        <h2 class="modal-title">Chỉnh sửa bài đăng</h2>
+        <form id="edit-post-form">
           <div class="form-group">
-            <label for="title">Tiêu đề</label>
-            <input type="text" id="title" name="title" required />
+            <label for="edit-title">Tiêu đề</label>
+            <input type="text" id="edit-title" name="title" required />
           </div>
           <div class="form-group">
-            <label for="description">Mô tả</label>
-            <textarea id="description" name="description" required></textarea>
+            <label for="edit-description">Mô tả</label>
+            <textarea
+              id="edit-description"
+              name="description"
+              required
+            ></textarea>
           </div>
           <div class="form-group">
-            <label for="price">Giá (VNĐ)</label>
-            <input type="number" id="price" name="price" min="0" step="1000" required />
+            <label for="edit-price">Giá (VNĐ)</label>
+            <input
+              type="number"
+              id="edit-price"
+              name="price"
+              min="0"
+              step="1000"
+              required
+            />
           </div>
           <div class="form-group">
-            <label for="category">Danh mục</label>
-            <select id="category" name="category" required>
+            <label for="edit-category">Danh mục</label>
+            <select id="edit-category" name="category" required>
               <option value="">Chọn danh mục</option>
               <option value="1">Sách</option>
               <option value="2">Thiết bị điện tử</option>
@@ -66,175 +257,64 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="location">Địa điểm</label>
-            <input type="text" id="location" name="location" required />
+            <label for="edit-location">Địa điểm</label>
+            <input type="text" id="edit-location" name="location" required />
           </div>
           <div class="form-group">
-            <label for="condition">Tình trạng</label>
-            <select id="condition" name="condition" required>
-              <option value="">Chọn tình trạng</option>
-              <option value="new">Mới 100%</option>
-              <option value="like_new">Như mới (99%)</option>
-              <option value="good">Còn tốt (80-90%)</option>
-              <option value="fair">Tạm được (60-80%)</option>
-              <option value="poor">Đã qua sử dụng (dưới 60%)</option>
-            </select>
+            <label for="edit-images">Hình ảnh</label>
+            <input
+              type="file"
+              id="edit-images"
+              name="images"
+              multiple
+              accept="image/*"
+            />
+            <small class="input-desc">Có thể chọn tối đa 5 ảnh</small>
+            <div id="edit-image-preview" class="image-preview"></div>
           </div>
-          <div class="form-group">
-            <label for="images">Hình ảnh (tối đa 5 ảnh)</label>
-            <input type="file" id="images" name="images" multiple accept="image/*" />
-            <small class="input-desc">Ảnh đầu tiên sẽ được sử dụng làm ảnh đại diện</small>
-            <div id="image-preview" class="image-preview"></div>
-          </div>
-          <div class="form-actions add-post-actions">
-            <button type="submit" class="submit-button btn-primary">Đăng bài</button>
+          <div class="add-post-actions">
             <button type="button" class="submit-button btn-cancel">Hủy</button>
+            <button type="submit" class="submit-button btn-primary">
+              Lưu thay đổi
+            </button>
           </div>
         </form>
       </div>
     </div>
-    <div class="profile-main-grid">
-      <div class="profile-left-col">
-        <div id="profile-info"></div>
-        <div class="profile-actions">
-          <button class="post-button profile-post-btn">Tạo bài đăng</button>
-          <button class="edit-button profile-edit-btn">Chỉnh sửa thông tin</button>
-        </div>
-      </div>
-      <div class="profile-right-col">
-        <div class="profile-posts">
-          <h2>Tổng hợp bài đăng</h2>
-          <div id="user-products"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script src="/asset/js/profile.js"></script>
-  <script src="/asset/js/auth-check.js"></script>
 
-  <!-- Modal chỉnh sửa thông tin -->
-  <div id="edit-profile-modal" class="modal">
-    <div class="modal-content">
-      <span class="close-button">&times;</span>
-      <h2>Chỉnh sửa thông tin cá nhân</h2>
-      <form id="edit-profile-form">
-        <div class="form-group">
-          <label for="edit-username">Tên đăng nhập:</label>
-          <input type="text" id="edit-username" name="username" required>
+    <!-- Modal chi tiết bài đăng -->
+    <div id="post-detail-modal" class="modal">
+      <div class="modal-content">
+        <span id="close-post-detail" class="close-button">&times;</span>
+        <h2 id="post-detail-title"></h2>
+        <div class="post-detail-info">
+          <p><strong>Giá:</strong> <span id="post-detail-price"></span></p>
+          <p>
+            <strong>Danh mục:</strong> <span id="post-detail-category"></span>
+          </p>
+          <p>
+            <strong>Vị trí:</strong> <span id="post-detail-location"></span>
+          </p>
+          <p><strong>Ngày đăng:</strong> <span id="post-detail-date"></span></p>
+          <p>
+            <strong>Ngày duyệt:</strong>
+            <span id="post-detail-approved-date"></span>
+          </p>
+          <p>
+            <strong>Trạng thái:</strong> <span id="post-detail-status"></span>
+          </p>
         </div>
-        <div class="form-group">
-          <label for="edit-password">Mật khẩu:</label>
-          <div class="password-input-container">
-            <input type="password" id="edit-password" name="password" required>
-            <span class="toggle-password" id="toggle-password">👁️‍🗨️</span>
-          </div>
+        <div id="post-detail-images" class="post-images"></div>
+        <div class="post-detail-description">
+          <h3>Mô tả</h3>
+          <p id="post-detail-description"></p>
         </div>
-        <div class="form-group">
-          <label for="edit-phone">Số điện thoại:</label>
-          <input type="tel" id="edit-phone" name="phone">
+        <div class="post-actions">
+          <button id="edit-post-btn" class="btn-edit">Chỉnh sửa</button>
+          <button id="delete-post-btn" class="btn-delete">Xóa</button>
+          <button id="sold-post-btn" class="btn-sold">Đã bán</button>
         </div>
-        <div class="form-group">
-          <label for="edit-address">Địa chỉ:</label>
-          <input type="text" id="edit-address" name="address">
-        </div>
-        <div class="form-group">
-          <label for="edit-avatar">Ảnh đại diện:</label>
-          <input type="file" id="edit-avatar" name="avatar" accept="image/*">
-        </div>
-
-        <!-- Thông tin chỉ hiển thị -->
-        <div class="form-group display-only">
-          <label>Họ tên:</label>
-          <div class="display-value" id="display-fullname"></div>
-        </div>
-        <div class="form-group display-only">
-          <label>Trường:</label>
-          <div class="display-value" id="display-school"></div>
-        </div>
-        <div class="form-group display-only">
-          <label>Email:</label>
-          <div class="display-value" id="display-email"></div>
-        </div>
-
-        <button type="submit" class="submit-button">Lưu thay đổi</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal chỉnh sửa bài đăng -->
-  <div id="edit-post-modal" class="modal" style="display: none;">
-    <div class="modal-content add-post-modal-content">
-      <span class="close-button">&times;</span>
-      <h2 class="modal-title">Chỉnh sửa bài đăng</h2>
-      <form id="edit-post-form">
-        <div class="form-group">
-          <label for="edit-title">Tiêu đề</label>
-          <input type="text" id="edit-title" name="title" required />
-        </div>
-        <div class="form-group">
-          <label for="edit-description">Mô tả</label>
-          <textarea id="edit-description" name="description" required></textarea>
-        </div>
-        <div class="form-group">
-          <label for="edit-price">Giá (VNĐ)</label>
-          <input type="number" id="edit-price" name="price" min="0" step="1000" required />
-        </div>
-        <div class="form-group">
-          <label for="edit-category">Danh mục</label>
-          <select id="edit-category" name="category" required>
-            <option value="">Chọn danh mục</option>
-            <option value="1">Sách</option>
-            <option value="2">Thiết bị điện tử</option>
-            <option value="3">Quần áo</option>
-            <option value="4">Dụng cụ thể thao</option>
-            <option value="5">Đồ dùng học tập</option>
-            <option value="6">Nhạc cụ</option>
-            <option value="7">Khác</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="edit-location">Địa điểm</label>
-          <input type="text" id="edit-location" name="location" required />
-        </div>
-        <div class="form-group">
-          <label for="edit-images">Hình ảnh</label>
-          <input type="file" id="edit-images" name="images" multiple accept="image/*" />
-          <small class="input-desc">Có thể chọn tối đa 5 ảnh</small>
-          <div id="edit-image-preview" class="image-preview"></div>
-        </div>
-        <div class="add-post-actions">
-          <button type="button" class="submit-button btn-cancel">Hủy</button>
-          <button type="submit" class="submit-button btn-primary">Lưu thay đổi</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal chi tiết bài đăng -->
-  <div id="post-detail-modal" class="modal">
-    <div class="modal-content">
-      <span id="close-post-detail" class="close-button">&times;</span>
-      <h2 id="post-detail-title"></h2>
-      <div class="post-detail-info">
-        <p><strong>Giá:</strong> <span id="post-detail-price"></span></p>
-        <p><strong>Danh mục:</strong> <span id="post-detail-category"></span></p>
-        <p><strong>Vị trí:</strong> <span id="post-detail-location"></span></p>
-        <p><strong>Ngày đăng:</strong> <span id="post-detail-date"></span></p>
-        <p><strong>Ngày duyệt:</strong> <span id="post-detail-approved-date"></span></p>
-        <p><strong>Trạng thái:</strong> <span id="post-detail-status"></span></p>
-      </div>
-      <div id="post-detail-images" class="post-images"></div>
-      <div class="post-detail-description">
-        <h3>Mô tả</h3>
-        <p id="post-detail-description"></p>
-      </div>
-      <div class="post-actions">
-        <button id="edit-post-btn" class="btn-edit">Chỉnh sửa</button>
-        <button id="delete-post-btn" class="btn-delete">Xóa</button>
-        <button id="sold-post-btn" class="btn-sold">Đã bán</button>
       </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>
