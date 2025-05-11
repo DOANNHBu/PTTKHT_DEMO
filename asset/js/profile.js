@@ -77,19 +77,21 @@ document.addEventListener("DOMContentLoaded", async function () {
                   <div>${p.location || ""}</div>
                 </div>
                 <div class="product-meta">
-                  <div>${p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""}</div>
+                  <div>${
+                    p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""
+                  }</div>
                 </div>
                 <div class="product-status">
                   <span style="color: ${
-                    p.status === "approved" 
-                      ? "green" 
+                    p.status === "approved"
+                      ? "green"
                       : p.status === "rejected"
                       ? "red"
                       : "orange"
                   }">
                     ${
-                      p.status === "approved" 
-                        ? "Đã duyệt" 
+                      p.status === "approved"
+                        ? "Đã duyệt"
                         : p.status === "rejected"
                         ? "Từ chối duyệt"
                         : "Đang chờ duyệt"
@@ -438,33 +440,48 @@ function showPostDetailModal(postId) {
     .then((post) => {
       // Cập nhật nội dung modal
       document.getElementById("post-detail-title").textContent = post.title;
-      document.getElementById("post-detail-price").textContent = `${post.price} VNĐ`;
-      document.getElementById("post-detail-description").textContent = post.description;
-      document.getElementById("post-detail-location").textContent = post.location;
-      document.getElementById("post-detail-category").textContent = post.categoryName;
-      document.getElementById("post-detail-date").textContent = new Date(post.created_at).toLocaleString("vi-VN", {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).replace(',', '');
-      document.getElementById("post-detail-approved-date").textContent = post.status_update_date ? new Date(post.status_update_date).toLocaleString("vi-VN", {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).replace(',', '') : "";
+      document.getElementById(
+        "post-detail-price"
+      ).textContent = `${post.price} VNĐ`;
+      document.getElementById("post-detail-description").textContent =
+        post.description;
+      document.getElementById("post-detail-location").textContent =
+        post.location;
+      document.getElementById("post-detail-category").textContent =
+        post.categoryName;
+      document.getElementById("post-detail-date").textContent = new Date(
+        post.created_at
+      )
+        .toLocaleString("vi-VN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(",", "");
+      document.getElementById("post-detail-approved-date").textContent =
+        post.status_update_date
+          ? new Date(post.status_update_date)
+              .toLocaleString("vi-VN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+              .replace(",", "")
+          : "";
 
       // Cập nhật trạng thái và lý do từ chối
       const statusElement = document.getElementById("post-detail-status");
       const statusContainer = statusElement.parentNode;
-      
+
       // Xóa lý do từ chối cũ nếu có
-      const oldRejectionReason = statusContainer.querySelector('.rejection-reason');
+      const oldRejectionReason =
+        statusContainer.querySelector(".rejection-reason");
       if (oldRejectionReason) {
         oldRejectionReason.remove();
       }
@@ -477,7 +494,7 @@ function showPostDetailModal(postId) {
       if (post.status === "rejected") {
         statusElement.textContent = "Từ chối duyệt";
         statusElement.style.color = "#e74c3c";
-        
+
         // Thêm lý do từ chối nếu có
         if (post.rejection_reason) {
           const rejectionReason = document.createElement("div");
@@ -497,13 +514,15 @@ function showPostDetailModal(postId) {
         deleteBtn.style.display = "block";
         soldBtn.style.display = "none";
       } else {
-        statusElement.textContent = post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
-        statusElement.style.color = post.status === "approved" ? "#4caf50" : "#ff8800";
-        
+        statusElement.textContent =
+          post.status === "approved" ? "Đã duyệt" : "Đang chờ duyệt";
+        statusElement.style.color =
+          post.status === "approved" ? "#4caf50" : "#ff8800";
+
         // Cho phép sửa cả bài đăng đã duyệt và đang chờ duyệt
         editBtn.style.display = "block";
         deleteBtn.style.display = "block";
-        
+
         // Chỉ cho phép đánh dấu đã bán khi bài đăng đã được duyệt
         soldBtn.style.display = post.status === "approved" ? "block" : "none";
       }
@@ -549,7 +568,9 @@ function showPostDetailModal(postId) {
       // Thêm sự kiện cho nút đã bán
       if (soldBtn) {
         soldBtn.onclick = function () {
-          if (confirm("Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?")) {
+          if (
+            confirm("Bạn có chắc chắn muốn đánh dấu sản phẩm này là đã bán?")
+          ) {
             fetch(`/api/posts/${post.id}/sold`, {
               method: "PUT",
               headers: {
@@ -696,7 +717,9 @@ function showEditPostModal(post) {
 
     // Kiểm tra dữ liệu đầu vào
     const title = document.getElementById("edit-title").value.trim();
-    const description = document.getElementById("edit-description").value.trim();
+    const description = document
+      .getElementById("edit-description")
+      .value.trim();
     const price = document.getElementById("edit-price").value.trim();
     const category = document.getElementById("edit-category").value;
     const location = document.getElementById("edit-location").value.trim();
@@ -720,7 +743,7 @@ function showEditPostModal(post) {
       const response = await fetch(`/api/posts/${post.id}`, {
         method: "PUT",
         credentials: "include",
-        body: formData
+        body: formData,
       });
 
       const result = await response.json();
@@ -742,17 +765,32 @@ function showEditPostModal(post) {
 function deletePost(postId) {
   fetch(`/api/posts/${postId}`, {
     method: "DELETE",
+    credentials: "include",
   })
     .then((response) => response.json())
     .then((data) => {
-      if (data.message) {
-        alert("Xóa bài đăng thành công!");
-        document.getElementById("post-detail-modal").style.display = "none";
-        loadUserPosts(); // Tải lại danh sách bài đăng
+      if (data.success) {
+        alert(data.message);
+
+        // Xóa bài đăng khỏi danh sách mà không cần tải lại trang
+        const postElement = document.querySelector(
+          `.product[data-post-id="${postId}"]`
+        );
+        if (postElement) {
+          postElement.remove();
+        }
+
+        // Ẩn modal chi tiết bài đăng nếu đang mở
+        const modal = document.getElementById("post-detail-modal");
+        if (modal) {
+          modal.style.display = "none";
+        }
+      } else {
+        alert(data.message || "Xóa bài đăng thất bại!");
       }
     })
     .catch((error) => {
-      console.error("Error:", error);
+      console.error("Lỗi khi xóa bài đăng:", error);
       alert("Có lỗi xảy ra khi xóa bài đăng!");
     });
 }
