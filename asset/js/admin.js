@@ -205,6 +205,12 @@ function loadReports() {
               <option value="rejected">Từ chối</option>
             </select>
           </label>
+          <label>Danh mục:
+            <select id="report-category">
+              <option value="all">Tất cả</option>
+              <!-- Danh sách danh mục sẽ được thêm vào đây -->
+            </select>
+          </label>
         </div>
         <canvas id="reportChart" height="80"></canvas>
       </div>
@@ -273,10 +279,13 @@ function loadReports() {
   // Load các chart
   loadReportChart();
   loadActivitiesList();
+  loadCategories(); // Thêm dòng này
 
   // Event listeners
   document.getElementById("report-range").onchange = loadReportChart;
   document.getElementById("report-status").onchange = loadReportChart;
+  document.getElementById("report-category").onchange = loadReportChart; // Thêm dòng này
+
   document.getElementById("activity-select").onchange = loadActivityChart;
 
   document.querySelectorAll('input[name="view-type"]').forEach((radio) => {
@@ -456,14 +465,38 @@ async function loadActivityChart() {
   }
 }
 // ...existing code...
+// Hàm load danh sách danh mục cho dropdown
+async function loadCategories() {
+  try {
+    const res = await fetch("/api/categories");
+    const categories = await res.json();
 
+    const categorySelect = document.getElementById("report-category");
+
+    // Giữ lại option "Tất cả"
+    while (categorySelect.options.length > 1) {
+      categorySelect.remove(1);
+    }
+
+    // Thêm các option danh mục
+    categories.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = category.name;
+      categorySelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách danh mục:", error);
+  }
+}
 // ...existing code...
 async function loadReportChart() {
   const range = document.getElementById("report-range").value;
   const status = document.getElementById("report-status").value;
+  const category = document.getElementById("report-category").value;
 
   const res = await fetch(
-    `/api/admin/reports/posts?range=${range}&status=${status}`,
+    `/api/admin/reports/posts?range=${range}&status=${status}&category=${category}`,
     { credentials: "include" }
   );
   const data = await res.json();
@@ -661,48 +694,47 @@ async function deleteUser(userId) {
 }
 
 async function exportData() {
-  const tableSelect = document.getElementById('table-select');
-  const startDate = document.getElementById('start-date').value;
-  const endDate = document.getElementById('end-date').value;
+  const tableSelect = document.getElementById("table-select");
+  const startDate = document.getElementById("start-date").value;
+  const endDate = document.getElementById("end-date").value;
 
   if (!tableSelect.value) {
-    alert('Vui lòng chọn bảng dữ liệu');
+    alert("Vui lòng chọn bảng dữ liệu");
     return;
   }
 
   if (!startDate || !endDate) {
-    alert('Vui lòng chọn khoảng thời gian');
+    alert("Vui lòng chọn khoảng thời gian");
     return;
   }
 
   try {
-    const response = await fetch('/api/admin/export', {
-      method: 'POST',
+    const response = await fetch("/api/admin/export", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
       body: JSON.stringify({
         table: tableSelect.value,
         startDate,
-        endDate
-      })
+        endDate,
+      }),
     });
 
-    if (!response.ok) throw new Error('Export failed');
+    if (!response.ok) throw new Error("Export failed");
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${tableSelect.value}_${startDate}_${endDate}.csv`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-
   } catch (error) {
-    console.error('Error exporting data:', error);
-    alert('Có lỗi khi xuất file');
+    console.error("Error exporting data:", error);
+    alert("Có lỗi khi xuất file");
   }
 }

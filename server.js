@@ -936,14 +936,15 @@ app.put(
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-            ? "Bài đăng bị từ chối"
-            : "Bài đăng được cập nhật";
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
           ? `Bài đăng "${oldPost.title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
-          : `Bài đăng "${oldPost.title}" của bạn đã được ${status === "approved" ? "duyệt" : "cập nhật"
-          }`;
+          : `Bài đăng "${oldPost.title}" của bạn đã được ${
+              status === "approved" ? "duyệt" : "cập nhật"
+            }`;
 
       await db.promise().query(
         `INSERT INTO notifications (user_id, title, message, type) 
@@ -1739,8 +1740,8 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-            ? "Bài đăng bị từ chối"
-            : "Bài đăng được cập nhật";
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
@@ -2151,7 +2152,7 @@ app.get(
   isAuthenticated,
   isAdmin,
   async (req, res) => {
-    const { range = "month", status = "all" } = req.query;
+    const { range = "month", status = "all", category = "all" } = req.query;
 
     let sql, labels, xLabel;
 
@@ -2165,13 +2166,22 @@ app.get(
         );
 
         // SQL cho thống kê theo giờ trong ngày
+        let whereClause = "DATE(created_at) = CURDATE()";
+
+        if (status !== "all") {
+          whereClause += ` AND status = ${mysql.escape(status)}`;
+        }
+
+        if (category !== "all") {
+          whereClause += ` AND category_id = ${mysql.escape(category)}`;
+        }
+
         sql = `
           SELECT 
             HOUR(created_at) as hour,
             COUNT(*) as count
           FROM posts
-          WHERE DATE(created_at) = CURDATE()
-          ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          WHERE ${whereClause}
           GROUP BY HOUR(created_at)
         `;
 
@@ -2190,50 +2200,52 @@ app.get(
       } else if (range === "week") {
         xLabel = "Ngày";
 
-        // Lấy ngày đầu tuần (thứ hai)
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // 0 = Chủ nhật trong JS
+        // Lấy 7 ngày gần nhất
+        let whereClause = "created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
 
-        const monday = new Date(today);
-        monday.setDate(today.getDate() + mondayOffset);
-
-        // Định dạng ngày cho SQL
-        const mondayStr = monday.toISOString().split("T")[0];
-
-        // Tạo labels cho 7 ngày trong tuần
-        labels = [];
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(monday);
-          d.setDate(monday.getDate() + i);
-          // Định dạng dd/MM
-          const day = d.getDate().toString().padStart(2, "0");
-          const month = (d.getMonth() + 1).toString().padStart(2, "0");
-          labels.push(`${day}/${month}`);
+        if (status !== "all") {
+          whereClause += ` AND status = ${mysql.escape(status)}`;
         }
 
-        // Truy vấn SQL
-        sql = `
+        if (category !== "all") {
+          whereClause += ` AND category_id = ${mysql.escape(category)}`;
+        }
+
+        const [weekData] = await db.promise().query(`
           SELECT 
             DATE_FORMAT(created_at, '%d/%m') as day,
             COUNT(*) as count
           FROM posts
-          WHERE created_at >= '${mondayStr}'
-            AND created_at < DATE_ADD('${mondayStr}', INTERVAL 7 DAY)
-            ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          WHERE ${whereClause}
           GROUP BY DATE_FORMAT(created_at, '%d/%m')
-        `;
+          ORDER BY MIN(created_at)
+        `);
 
-        const [rows] = await db.promise().query(sql);
+        // Tạo labels cho 7 ngày
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 6);
 
-        // Khởi tạo mảng counts với giá trị 0
+        labels = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startDate);
+          d.setDate(startDate.getDate() + i);
+          labels.push(
+            d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
+          );
+        }
+
+        // Map dữ liệu vào mảng ngày
         const counts = Array(7).fill(0);
+        const dayMap = {};
+        weekData.forEach((row) => {
+          dayMap[row.day] = Number(row.count);
+        });
 
-        // Map dữ liệu từ SQL vào mảng counts
-        rows.forEach((row) => {
-          const index = labels.indexOf(row.day);
-          if (index !== -1) {
-            counts[index] = Number(row.count);
+        labels.forEach((day, i) => {
+          const [d, m] = day.split("/");
+          const shortDay = `${d}/${m}`;
+          if (dayMap[shortDay]) {
+            counts[i] = dayMap[shortDay];
           }
         });
 
@@ -2264,22 +2276,32 @@ app.get(
         });
 
         // Lấy dữ liệu cho tháng hiện tại
+        let whereClause = `
+          created_at >= '${firstDay.toISOString().split("T")[0]}' 
+          AND created_at <= '${lastDay.toISOString().split("T")[0]} 23:59:59'
+        `;
+
+        if (status !== "all") {
+          whereClause += ` AND status = ${mysql.escape(status)}`;
+        }
+
+        if (category !== "all") {
+          whereClause += ` AND category_id = ${mysql.escape(category)}`;
+        }
+
         const [monthData] = await db.promise().query(`
           SELECT 
             DATE_FORMAT(created_at, '%d/%m') as day,
             COUNT(*) as count
           FROM posts
-          WHERE 
-            MONTH(created_at) = MONTH(CURDATE())
-            AND YEAR(created_at) = YEAR(CURDATE())
-            ${status !== "all" ? `AND status = ${mysql.escape(status)}` : ""}
+          WHERE ${whereClause}
           GROUP BY DATE_FORMAT(created_at, '%d/%m')
+          ORDER BY MIN(created_at)
         `);
 
         // Map dữ liệu vào mảng ngày
         const counts = Array(daysInMonth).fill(0);
         const dayMap = {};
-
         monthData.forEach((row) => {
           dayMap[row.day] = Number(row.count);
         });
@@ -2302,6 +2324,19 @@ app.get(
     }
   }
 );
+
+// API để lấy danh sách các danh mục
+app.get("/api/categories", async (req, res) => {
+  try {
+    const [categories] = await db
+      .promise()
+      .query("SELECT id, name FROM categories ORDER BY name");
+    res.json(categories);
+  } catch (err) {
+    console.error("Lỗi khi lấy danh sách danh mục:", err);
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+});
 
 // API thống kê sản phẩm của một hoạt động
 app.get(
@@ -2472,20 +2507,27 @@ app.get(
 );
 
 // API xuất dữ liệu dạng CSV
-app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
+app.post("/api/admin/export", isAuthenticated, isAdmin, async (req, res) => {
   const { table, startDate, endDate } = req.body;
 
   // Kiểm tra table name hợp lệ để tránh SQL injection
-  const validTables = ['users', 'posts', 'activities', 'activity_items', 'notifications', 'audit_logs'];
+  const validTables = [
+    "users",
+    "posts",
+    "activities",
+    "activity_items",
+    "notifications",
+    "audit_logs",
+  ];
   if (!validTables.includes(table)) {
-    return res.status(400).json({ message: 'Bảng không hợp lệ' });
+    return res.status(400).json({ message: "Bảng không hợp lệ" });
   }
 
   try {
     // Xây dựng câu query dựa trên loại bảng
-    let query = '';
+    let query = "";
     switch (table) {
-      case 'users':
+      case "users":
         query = `
           SELECT id, username, email, full_name, phone, address, school, 
                  role_id, status, created_at, updated_at
@@ -2494,7 +2536,7 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
         `;
         break;
 
-      case 'posts':
+      case "posts":
         query = `
           SELECT p.id, p.title, p.description, p.price, c.name as category,
                  p.location, u.username as author, p.status, p.availability,
@@ -2506,7 +2548,7 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
         `;
         break;
 
-      case 'activities':
+      case "activities":
         query = `
           SELECT a.id, a.title, a.description, a.start_date, a.end_date,
                  a.location, u.username as organizer, a.name_organizer,
@@ -2517,7 +2559,7 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
         `;
         break;
 
-      case 'activity_items':
+      case "activity_items":
         query = `
           SELECT ai.id, a.title as activity_name, ai.name, ai.description,
                  ai.quantity_needed, ai.quantity_received, ai.created_at
@@ -2527,7 +2569,7 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
         `;
         break;
 
-      case 'notifications':
+      case "notifications":
         query = `
           SELECT n.id, u.username as user, n.title, n.message, 
                  n.type, n.is_read, n.created_at
@@ -2537,7 +2579,7 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
         `;
         break;
 
-      case 'audit_logs':
+      case "audit_logs":
         query = `
           SELECT al.id, u.username as user, al.action, al.entity_type,
                  al.entity_id, al.old_value, al.new_value, al.created_at
@@ -2553,45 +2595,44 @@ app.post('/api/admin/export', isAuthenticated, isAdmin, async (req, res) => {
 
     // Convert to CSV
     const csvFields = Object.keys(rows[0] || {});
-    const csvRows = rows.map(row =>
-      csvFields.map(field => {
-        let value = row[field];
-        // Format dates
-        if (value instanceof Date) {
-          value = value.toLocaleString('vi-VN');
-        }
-        // Escape special characters
-        if (typeof value === 'string') {
-          value = `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(',')
+    const csvRows = rows.map((row) =>
+      csvFields
+        .map((field) => {
+          let value = row[field];
+          // Format dates
+          if (value instanceof Date) {
+            value = value.toLocaleString("vi-VN");
+          }
+          // Escape special characters
+          if (typeof value === "string") {
+            value = `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        })
+        .join(",")
     );
 
-    let csv = [
-      csvFields.join(','),
-      ...csvRows
-    ].join('\r\n');                   // 1) Dùng CRLF cho line breaks
+    let csv = [csvFields.join(","), ...csvRows].join("\r\n"); // 1) Dùng CRLF cho line breaks
 
     // 2) Thêm BOM vào đầu file
-    const bom = Buffer.from([0xEF, 0xBB, 0xBF]);
-    const csvBuffer = Buffer.concat([bom, Buffer.from(csv, 'utf8')]);
+    const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+    const csvBuffer = Buffer.concat([bom, Buffer.from(csv, "utf8")]);
 
     // 3) Set header kèm charset
-    res.setHeader('Content-Type', 'text/csv; charset=UTF-8');
+    res.setHeader("Content-Type", "text/csv; charset=UTF-8");
     res.setHeader(
-      'Content-Disposition',
+      "Content-Disposition",
       `attachment; filename=${table}_${startDate}_${endDate}.csv`
     );
 
     // 4) Gửi buffer thẳng cho client
     res.send(csvBuffer);
   } catch (error) {
-    console.error('Error exporting data:', error);
+    console.error("Error exporting data:", error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi khi xuất dữ liệu',
-      error: error.message
+      message: "Lỗi khi xuất dữ liệu",
+      error: error.message,
     });
   }
 });
