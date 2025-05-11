@@ -20,10 +20,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   document.getElementById("profile-info").innerHTML = `
     <div class="profile-card-horizontal">
       <div class="profile-avatar-large-wrap">
-        <img src="${userProfile.avatar
-      ? `data:image/jpeg;base64,${userProfile.avatar}`
-      : "/asset/images/default-avatar.png"
-    }" 
+        <img src="${
+          userProfile.avatar
+            ? `data:image/jpeg;base64,${userProfile.avatar}`
+            : "/asset/images/default-avatar.png"
+        }" 
           class="profile-avatar-large" 
           alt="Avatar"
         />
@@ -58,8 +59,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     userProductsDiv.innerHTML = `
       <div class="products">
         ${userProducts
-        .map(
-          (p) => `
+          .map(
+            (p) => `
             <div class="product" data-post-id="${p.id}">
               <div class="product-image">
                 <img src="${p.thumbnail}" alt="${p.title}" />
@@ -72,29 +73,32 @@ document.addEventListener("DOMContentLoaded", async function () {
                   <div>${p.location || ""}</div>
                 </div>
                 <div class="product-meta">
-                  <div>${p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""
-            }</div>
+                  <div>${
+                    p.date ? new Date(p.date).toLocaleDateString("vi-VN") : ""
+                  }</div>
                 </div>
                 <div class="product-status">
-                  <span style="color: ${p.status === "approved"
-              ? "green"
-              : p.status === "rejected"
-                ? "red"
-                : "orange"
-            }">
-                    ${p.status === "approved"
-              ? "Đã duyệt"
-              : p.status === "rejected"
-                ? "Từ chối duyệt"
-                : "Đang chờ duyệt"
-            }
+                  <span style="color: ${
+                    p.status === "approved"
+                      ? "green"
+                      : p.status === "rejected"
+                      ? "red"
+                      : "orange"
+                  }">
+                    ${
+                      p.status === "approved"
+                        ? "Đã duyệt"
+                        : p.status === "rejected"
+                        ? "Từ chối duyệt"
+                        : "Đang chờ duyệt"
+                    }
                   </span>
                 </div>
               </div>
             </div>
           `
-        )
-        .join("")}
+          )
+          .join("")}
       </div>
     `;
 
@@ -126,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     userProfile.fullname || "";
   document.getElementById("display-school").textContent =
     userProfile.school || "";
-    document.getElementById("display-email").textContent =
+  document.getElementById("display-email").textContent =
     userProfile.email || "";
 
   // Mở modal chỉnh sửa
@@ -177,17 +181,19 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
   // Xử lý hiển thị/ẩn mật khẩu
-  const togglePassword = document.getElementById('toggle-password');
-  const passwordInput = document.getElementById('edit-password');
+  const togglePassword = document.getElementById("toggle-password");
+  const passwordInput = document.getElementById("edit-password");
 
   if (togglePassword && passwordInput) {
-    togglePassword.addEventListener('click', function() {
+    togglePassword.addEventListener("click", function () {
       // Toggle password visibility
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      
+      const type =
+        passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+
       // Toggle emoji
-      this.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';categories-container
+      this.textContent = type === "password" ? "👁️‍🗨️" : "👁️";
+      categories - container;
     });
   }
 });
@@ -280,7 +286,8 @@ async function loadPosts() {
       const postCard = document.createElement("div");
       postCard.className = "post-card";
       postCard.innerHTML = `
-        <img src="${post.thumbnail || "/asset/images/default-thumbnail.png"
+        <img src="${
+          post.thumbnail || "/asset/images/default-thumbnail.png"
         }" alt="${post.title}">
         <div class="post-card-content">
           <h3>${post.title}</h3>
@@ -448,9 +455,9 @@ function showPostDetailModal(postId) {
     .then((post) => {
       // Cập nhật nội dung modal
       document.getElementById("post-detail-title").textContent = post.title;
-      document.getElementById(
-        "post-detail-price"
-      ).textContent = formatPrice(post.price);
+      document.getElementById("post-detail-price").textContent = formatPrice(
+        post.price
+      );
       document.getElementById("post-detail-description").textContent =
         post.description;
       document.getElementById("post-detail-location").textContent =
@@ -472,15 +479,15 @@ function showPostDetailModal(postId) {
       document.getElementById("post-detail-approved-date").textContent =
         post.status_update_date
           ? new Date(post.status_update_date)
-            .toLocaleString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })
-            .replace(",", "")
+              .toLocaleString("vi-VN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+              .replace(",", "")
           : "";
 
       // Cập nhật trạng thái và lý do từ chối
@@ -585,19 +592,31 @@ function showPostDetailModal(postId) {
                 "Content-Type": "application/json",
               },
             })
-              .then((response) => response.json())
-              .then((data) => {
-                if (data.message) {
-                  alert("Cập nhật trạng thái thành công!");
-                  statusElement.textContent = "Đã bán";
-                  statusElement.style.color = "#4caf50";
-                  soldBtn.style.display = "none";
-                  loadUserPosts(); // Tải lại danh sách bài đăng
+              .then((response) => {
+                if (!response.ok) {
+                  // Nếu phản hồi không thành công, ném lỗi để chuyển sang .catch()
+                  return response.json().then((data) => {
+                    throw new Error(
+                      data.message || "Cập nhật trạng thái thất bại."
+                    );
+                  });
                 }
+                return response.json();
+              })
+              .then((data) => {
+                // Hiển thị thông báo thành công
+                alert(data.message || "Cập nhật trạng thái thành công!");
+                statusElement.textContent = "Đã bán";
+                statusElement.style.color = "#4caf50";
+                soldBtn.style.display = "none";
+                loadPosts(); // Tải lại danh sách bài đăng
               })
               .catch((error) => {
+                // Hiển thị thông báo lỗi
                 console.error("Error:", error);
-                alert("Có lỗi xảy ra khi cập nhật trạng thái!");
+                alert(
+                  error.message || "Có lỗi xảy ra khi cập nhật trạng thái!"
+                );
               });
           }
         };

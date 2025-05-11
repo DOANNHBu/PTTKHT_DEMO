@@ -2088,18 +2088,26 @@ app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
     if (post.length === 0) {
       return res
         .status(403)
-        .json({ message: "Bạn không có quyền cập nhật bài đăng này." });
+        .json({
+          success: false,
+          message: "Bạn không có quyền cập nhật bài đăng này.",
+        });
     }
 
-    // Cập nhật trạng thái availability thành sold
+    // Cập nhật trạng thái availability thành 'sold'
     await db
       .promise()
       .query("UPDATE posts SET availability = 'sold' WHERE id = ?", [postId]);
 
-    res.json({ message: "Cập nhật trạng thái thành công" });
+    return res.json({
+      success: true,
+      message: "Cập nhật trạng thái thành công.",
+    });
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái bài đăng:", error);
-    res.status(500).json({ message: "Lỗi server khi cập nhật trạng thái" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Lỗi server khi cập nhật trạng thái." });
   }
 });
 

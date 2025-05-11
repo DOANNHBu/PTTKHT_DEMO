@@ -230,6 +230,7 @@
   border: none;
   cursor: pointer;
   transition: background-color 0.3s;
+  font-weight: bold;
 }
 
 .profile-edit-btn:hover {
@@ -796,7 +797,9 @@
   margin-top: 20px;
 }
 
-.btn-edit, .btn-delete, .btn-sold {
+.btn-edit,
+.btn-delete,
+.btn-sold {
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
