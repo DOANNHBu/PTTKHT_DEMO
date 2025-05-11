@@ -1,34 +1,53 @@
 <header>
   <div class="container header-content">
-    <a href="#" class="logo">LOGO__CHỢ ONLINE</a>
-    <div class="search-container">
-      <form class="search-form">
-        <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..." />
-        <button type="submit" class="search-button">Tìm kiếm</button>
-      </form>
+    <div class="header-left">
+      <a href="/page/index.html" class="logo">
+        <img src="/images/logo.png" alt="School Exchange Logo" class="logo-img" />
+        <span>School Exchange</span>
+      </a>
     </div>
-    <!-- Thêm nút thông báo -->
-    <div class="notifications-container">
-      <button class="notifications-btn" id="notificationsBtn">
-        <span class="bell-icon">🔔</span>
-        <span class="notification-badge" id="notificationBadge">0</span>
-      </button>
-      <div class="notifications-dropdown" id="notificationsDropdown">
-        <div class="notifications-header">
-          <span>Thông báo</span>
-          <button class="mark-all-read" id="markAllRead">Đánh dấu tất cả đã đọc</button>
-        </div>
-        <div class="notifications-list" id="notificationsList">
-          <!-- Notifications will be inserted here -->
-        </div>
+    
+    <div class="header-center">
+      <div class="search-container">
+        <form class="search-form">
+          <input type="text" class="search-input" placeholder="Tìm kiếm sản phẩm..." />
+          <button type="submit" class="search-button">
+            <i class="fas fa-search"></i>
+          </button>
+        </form>
       </div>
     </div>
-    <div class="user-actions">
-      <a href="/page/activities.html" class="activities-button">Hoạt động</a>
-      <button id="logout-button" class="logout-button">Đăng xuất</button>
-      <a href="/page/profile.html" class="avatar-link">
-        <img id="avatar-img" class="avatar-img" src="/asset/images/default-avatar.png" alt="Avatar" />
-      </a>
+
+    <div class="header-right">
+      <div class="user-actions">
+        <div class="notifications-container">
+          <button class="notifications-btn" id="notificationsBtn">
+            <img src="/images/notice_icon.png" alt="Notifications" class="notice-icon" />
+            <span class="notification-badge" id="notificationBadge">0</span>
+          </button>
+          <div class="notifications-dropdown" id="notificationsDropdown">
+            <div class="notifications-header">
+              <span>Thông báo</span>
+              <button class="mark-all-read" id="markAllRead">Đánh dấu tất cả đã đọc</button>
+            </div>
+            <div class="notifications-list" id="notificationsList">
+              <!-- Notifications will be inserted here -->
+            </div>
+          </div>
+        </div>
+        <a href="/page/profile.html" class="avatar-link">
+          <img id="avatar-img" class="avatar-img" src="/images/profile_icon.png" alt="Avatar" />
+        </a>
+        <a href="/page/activities.html" class="activities-button">
+          <i class="fas fa-heart"></i>
+          <span>Hoạt động</span>
+        </a>
+      </div>
+
+      <button id="logout-button" class="logout-button">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Đăng xuất</span>
+      </button>
     </div>
   </div>
 </header>

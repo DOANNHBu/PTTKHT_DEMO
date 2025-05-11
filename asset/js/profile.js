@@ -126,15 +126,16 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Điền thông tin hiện tại vào form
   document.getElementById("edit-username").value = userProfile.username || "";
-  document.getElementById("edit-email").value = userProfile.email || "";
   document.getElementById("edit-phone").value = userProfile.phone || "";
   document.getElementById("edit-address").value = userProfile.address || "";
-
+  document.getElementById("edit-password").value = userProfile.password || "";
   // Hiển thị thông tin chỉ đọc
   document.getElementById("display-fullname").textContent =
     userProfile.fullname || "";
   document.getElementById("display-school").textContent =
     userProfile.school || "";
+    document.getElementById("display-email").textContent =
+    userProfile.email || "";
 
   // Mở modal chỉnh sửa
   editProfileBtn.addEventListener("click", () => {
@@ -182,6 +183,21 @@ document.addEventListener("DOMContentLoaded", async function () {
       alert(error.message || "Có lỗi xảy ra khi cập nhật thông tin");
     }
   });
+
+  // Xử lý hiển thị/ẩn mật khẩu
+  const togglePassword = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('edit-password');
+
+  if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', function() {
+      // Toggle password visibility
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      // Toggle emoji
+      this.textContent = type === 'password' ? '👁️‍🗨️' : '👁️';categories-container
+    });
+  }
 });
 
 // xử lý đăng bài
