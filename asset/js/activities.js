@@ -123,6 +123,12 @@ async function showActivityDetail(activityId) {
             </div>
             <button onclick="renderActivitiesList()">Quay lại</button>
         `;
+    activityDetail.style.display = "block";
+    activityDetail.style.opacity = 0;
+    setTimeout(() => {
+      activityDetail.style.opacity = 1;
+      activityDetail.style.transition = "opacity 0.5s ease";
+    }, 10);
 
     activityDetail.style.display = "block";
     activitiesList.style.display = "none";
