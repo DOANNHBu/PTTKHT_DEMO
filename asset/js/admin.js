@@ -508,7 +508,6 @@ async function loadActivityChart() {
     console.error("Lỗi khi lấy dữ liệu chart hoạt động:", error);
   }
 }
-// ...existing code...
 // Hàm load danh sách danh mục cho dropdown
 async function loadCategories() {
   try {
@@ -579,7 +578,6 @@ async function loadReportChart() {
     },
   });
 }
-// ...existing code...
 
 // Các hàm hỗ trợ
 function formatDate(dateString) {

@@ -938,14 +938,15 @@ app.put(
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-            ? "Bài đăng bị từ chối"
-            : "Bài đăng được cập nhật";
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
           ? `Bài đăng "${oldPost.title}" của bạn đã bị từ chối. Lý do: ${rejection_reason}`
-          : `Bài đăng "${oldPost.title}" của bạn đã được ${status === "approved" ? "duyệt" : "cập nhật"
-          }`;
+          : `Bài đăng "${oldPost.title}" của bạn đã được ${
+              status === "approved" ? "duyệt" : "cập nhật"
+            }`;
 
       await db.promise().query(
         `INSERT INTO notifications (user_id, title, message, type, post_id) 
@@ -1771,8 +1772,8 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
         status === "approved"
           ? "Bài đăng được duyệt"
           : status === "rejected"
-            ? "Bài đăng bị từ chối"
-            : "Bài đăng được cập nhật";
+          ? "Bài đăng bị từ chối"
+          : "Bài đăng được cập nhật";
 
       const notificationMessage =
         status === "rejected"
@@ -1794,90 +1795,81 @@ app.put("/api/admin/posts/:id", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // API xóa bài đăng
-app.delete('/api/admin/posts/:id', isAuthenticated, isAdmin, async (req, res) => {
-  const postId = req.params.id;
-  const adminId = req.session.user.id;
-
-  try {
-    const connection = await db.promise().getConnection();
-    await connection.beginTransaction();
+app.delete(
+  "/api/admin/posts/:id",
+  isAuthenticated,
+  isAdmin,
+  async (req, res) => {
+    const postId = req.params.id;
+    const adminId = req.session.user.id;
 
     try {
-      // Lấy thông tin bài đăng trước khi xóa
-      const [postRows] = await connection.query(
-        "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
-        [postId]
-      );
+      const connection = await db.promise().getConnection();
+      await connection.beginTransaction();
 
-      if (postRows.length === 0) {
+      try {
+        // Lấy thông tin bài đăng trước khi xóa
+        const [postRows] = await connection.query(
+          "SELECT p.*, u.id as author_id FROM posts p JOIN users u ON p.author_id = u.id WHERE p.id = ?",
+          [postId]
+        );
+
+        if (postRows.length === 0) {
+          await connection.rollback();
+          connection.release();
+          return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+        }
+
+        const post = postRows[0];
+
+        // Tạo thông báo TRƯỚC KHI xóa bài đăng
+        await connection.query(
+          `INSERT INTO notifications (user_id, title, message, type) 
+                 VALUES (?, ?, ?, 'post_approval')`,
+          [
+            post.author_id,
+            "Bài đăng đã bị xóa",
+            `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
+          ]
+        );
+
+        // Xóa hình ảnh liên quan
+        await connection.query("DELETE FROM post_images WHERE post_id = ?", [
+          postId,
+        ]);
+
+        // Xóa các thông báo liên quan đến bài đăng
+        await connection.query("DELETE FROM notifications WHERE post_id = ?", [
+          postId,
+        ]);
+
+        // Xóa bài đăng
+        await connection.query("DELETE FROM posts WHERE id = ?", [postId]);
+
+        // Ghi log audit
+        await logAuditAction(adminId, "delete", "post", postId, post, null);
+
+        await connection.commit();
+        connection.release();
+
+        res.json({
+          success: true,
+          message: "Xóa bài đăng thành công",
+        });
+      } catch (error) {
         await connection.rollback();
         connection.release();
-        return res.status(404).json({ message: "Không tìm thấy bài đăng" });
+        throw error;
       }
-
-      const post = postRows[0];
-
-      // Tạo thông báo TRƯỚC KHI xóa bài đăng
-      await connection.query(
-        `INSERT INTO notifications (user_id, title, message, type) 
-                 VALUES (?, ?, ?, 'post_approval')`,
-        [
-          post.author_id,
-          'Bài đăng đã bị xóa',
-          `Bài đăng "${post.title}" của bạn đã bị xóa bởi quản trị viên`,
-        ]
-      );
-
-      // Xóa hình ảnh liên quan
-      await connection.query(
-        "DELETE FROM post_images WHERE post_id = ?",
-        [postId]
-      );
-
-      // Xóa các thông báo liên quan đến bài đăng
-      await connection.query(
-        "DELETE FROM notifications WHERE post_id = ?",
-        [postId]
-      );
-
-      // Xóa bài đăng
-      await connection.query(
-        "DELETE FROM posts WHERE id = ?",
-        [postId]
-      );
-
-      // Ghi log audit
-      await logAuditAction(
-        adminId,
-        'delete',
-        'post',
-        postId,
-        post,
-        null
-      );
-
-      await connection.commit();
-      connection.release();
-
-      res.json({
-        success: true,
-        message: "Xóa bài đăng thành công"
-      });
-
     } catch (error) {
-      await connection.rollback();
-      connection.release();
-      throw error;
+      console.error("Lỗi:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server khi xóa bài đăng",
+      });
     }
-
-  } catch (error) {
-    console.error("Lỗi:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi server khi xóa bài đăng"
-    });
   }
-});
+);
 
 // Route mặc định để phục vụ file login.html
 app.get("/", (req, res) => {
@@ -2098,12 +2090,10 @@ app.put("/api/posts/:id/sold", isAuthenticated, isUser, async (req, res) => {
       ]);
 
     if (post.length === 0) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Bạn không có quyền cập nhật bài đăng này.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Bạn không có quyền cập nhật bài đăng này.",
+      });
     }
 
     // Cập nhật trạng thái availability thành 'sold'
@@ -2280,10 +2270,12 @@ app.get(
 
         labels = [];
         for (let i = 0; i < 7; i++) {
-          const d = new Date(startDate);
-          d.setDate(startDate.getDate() + i);
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + i);
+          const day = date.getDate();
+          const month = date.getMonth() + 1;
           labels.push(
-            d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
+            `${day < 10 ? "0" + day : day}/${month < 10 ? "0" + month : month}`
           );
         }
 
@@ -2295,11 +2287,7 @@ app.get(
         });
 
         labels.forEach((day, i) => {
-          const [d, m] = day.split("/");
-          const shortDay = `${d}/${m}`;
-          if (dayMap[shortDay]) {
-            counts[i] = dayMap[shortDay];
-          }
+          counts[i] = dayMap[day] || 0;
         });
 
         res.json({
@@ -2319,13 +2307,10 @@ app.get(
 
         labels = Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
-          return (
-            (day < 10 ? "0" : "") +
-            day +
-            "/" +
-            (today.getMonth() + 1 < 10 ? "0" : "") +
-            (today.getMonth() + 1)
-          );
+          const month = today.getMonth() + 1;
+          return `${day < 10 ? "0" + day : day}/${
+            month < 10 ? "0" + month : month
+          }`;
         });
 
         // Lấy dữ liệu cho tháng hiện tại
@@ -2344,25 +2329,18 @@ app.get(
 
         const [monthData] = await db.promise().query(`
           SELECT 
-            DATE_FORMAT(created_at, '%d/%m') as day,
+            DAY(created_at) as day,
             COUNT(*) as count
           FROM posts
           WHERE ${whereClause}
-          GROUP BY DATE_FORMAT(created_at, '%d/%m')
-          ORDER BY MIN(created_at)
+          GROUP BY DAY(created_at)
+          ORDER BY day
         `);
 
         // Map dữ liệu vào mảng ngày
         const counts = Array(daysInMonth).fill(0);
-        const dayMap = {};
         monthData.forEach((row) => {
-          dayMap[row.day] = Number(row.count);
-        });
-
-        labels.forEach((day, i) => {
-          if (dayMap[day]) {
-            counts[i] = dayMap[day];
-          }
+          counts[row.day - 1] = Number(row.count);
         });
 
         res.json({
@@ -2593,7 +2571,7 @@ app.post("/api/admin/export", isAuthenticated, isAdmin, async (req, res) => {
         query = `
           SELECT p.id, p.title, p.description, p.price, c.name as category,
                  p.location, u.username as author, p.status, p.availability,
-                 p.created_at, p.updated_at
+                 p.created_at, p.updated_at, p.status_update_date
           FROM posts p
           JOIN users u ON p.author_id = u.id
           JOIN categories c ON p.category_id = c.id
