@@ -412,34 +412,7 @@ class ActivityManager {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${activity.items
-          .map(
-            (item) => `
-                                        <tr>
-                                            <td>${item.name}</td>
-                                            <td>${item.description || ""}</td>
-                                            <td>${item.quantity_needed}</td>
-                                            <td>
-                                                <input type="number" 
-                                                    class="quantity-input" 
-                                                    value="${item.quantity_received
-              }"
-                                                    min="0"
-                                                    max="${item.quantity_needed
-              }"
-                                                    data-item-id="${item.id}">
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-primary btn-sm" 
-                                                    onclick="activityManager.updateItemQuantity('${item.id
-              }')">
-                                                    Cập nhật
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `
-          )
-          .join("")}
+                                    ${this.renderItems(activity.items)}
                                 </tbody>
                             </table>
                         </div>
@@ -805,6 +778,65 @@ class ActivityManager {
       this.showToast("Lỗi khi xóa hoạt động", "error");
       this.hideLoading();
     }
+  }
+
+  renderItems(items) {
+    return items.map(item => `
+        <tr>
+            <td>${item.name}</td>
+            <td>${item.description || ""}</td>
+            <td>${item.quantity_needed}</td>
+            <td>
+                <div class="quantity-control">
+                    <input type="number" 
+                        class="quantity-input" 
+                        value="${item.quantity_received}"
+                        min="0"
+                        max="${item.quantity_needed}"
+                        data-item-id="${item.id}"
+                        onchange="activityManager.handleQuantityChange(this)">
+                    <div class="quantity-buttons">
+                        <button onclick="activityManager.adjustQuantity(${item.id}, 1)" 
+                                class="quantity-btn">
+                            ▲
+                        </button>
+                        <button onclick="activityManager.adjustQuantity(${item.id}, -1)" 
+                                class="quantity-btn">
+                            ▼
+                        </button>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <button class="btn btn-primary btn-sm" 
+                        onclick="activityManager.updateItemQuantity('${item.id}')">
+                    Cập nhật
+                </button>
+            </td>
+        </tr>
+    `).join('');
+  }
+
+  adjustQuantity(itemId, change) {
+    const input = document.querySelector(`input[data-item-id="${itemId}"]`);
+    const currentValue = parseInt(input.value);
+    const newValue = currentValue + change;
+
+    // Chỉ giới hạn không cho nhập số âm
+    if (newValue >= 0) {
+      input.value = newValue;
+    }
+  }
+
+  handleQuantityChange(input) {
+    let value = parseInt(input.value);
+
+    // Chỉ giới hạn không cho nhập số âm
+    if (isNaN(value) || value < 0) {
+      value = 0;
+    }
+
+    input.value = value;
   }
 
   // Initialize

@@ -509,3 +509,41 @@
     flex: 0 0 auto;
     /* Ngăn các nút co giãn */
 }
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quantity-input {
+    width: 60px;
+    padding: 4px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.quantity-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.quantity-btn {
+    padding: 2px 6px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.quantity-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.quantity-btn:hover:not(:disabled) {
+    background: #e9ecef;
+}
